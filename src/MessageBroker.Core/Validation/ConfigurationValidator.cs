@@ -286,5 +286,81 @@ public class ConfigurationValidator : IConfigurationValidator
         {
             result.AddError("LeafNode.AuthPassword", "LeafNode password is set but username is not");
         }
+
+        // Validate import subjects
+        if (leafNode.ImportSubjects != null && leafNode.ImportSubjects.Any())
+        {
+            for (int i = 0; i < leafNode.ImportSubjects.Count; i++)
+            {
+                var subject = leafNode.ImportSubjects[i];
+                if (string.IsNullOrWhiteSpace(subject))
+                {
+                    result.AddError($"LeafNode.ImportSubjects[{i}]", "Subject pattern cannot be empty");
+                }
+                else if (!IsValidSubjectPattern(subject))
+                {
+                    result.AddError($"LeafNode.ImportSubjects[{i}]", $"Invalid subject pattern: {subject}");
+                }
+            }
+        }
+
+        // Validate export subjects
+        if (leafNode.ExportSubjects != null && leafNode.ExportSubjects.Any())
+        {
+            for (int i = 0; i < leafNode.ExportSubjects.Count; i++)
+            {
+                var subject = leafNode.ExportSubjects[i];
+                if (string.IsNullOrWhiteSpace(subject))
+                {
+                    result.AddError($"LeafNode.ExportSubjects[{i}]", "Subject pattern cannot be empty");
+                }
+                else if (!IsValidSubjectPattern(subject))
+                {
+                    result.AddError($"LeafNode.ExportSubjects[{i}]", $"Invalid subject pattern: {subject}");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Validates a NATS subject pattern.
+    /// Subject patterns can contain alphanumeric characters, dots, hyphens, underscores,
+    /// asterisks (*) for single token wildcards, and greater-than (>) for multi-token wildcards.
+    /// </summary>
+    private static bool IsValidSubjectPattern(string subject)
+    {
+        if (string.IsNullOrWhiteSpace(subject))
+            return false;
+
+        // Subject cannot start or end with a dot
+        if (subject.StartsWith('.') || subject.EndsWith('.'))
+            return false;
+
+        // Subject cannot have consecutive dots
+        if (subject.Contains(".."))
+            return false;
+
+        // Subject can only contain valid characters: alphanumeric, dots, hyphens, underscores, *, and >
+        // The > wildcard must be the last character and preceded by a dot or be the only character
+        if (subject.Contains('>'))
+        {
+            var gtIndex = subject.IndexOf('>');
+            // > must be at the end
+            if (gtIndex != subject.Length - 1)
+                return false;
+
+            // > must be preceded by a dot (or be the entire subject)
+            if (gtIndex > 0 && subject[gtIndex - 1] != '.')
+                return false;
+        }
+
+        // Check each character
+        foreach (var c in subject)
+        {
+            if (!char.IsLetterOrDigit(c) && c != '.' && c != '-' && c != '_' && c != '*' && c != '>')
+                return false;
+        }
+
+        return true;
     }
 }

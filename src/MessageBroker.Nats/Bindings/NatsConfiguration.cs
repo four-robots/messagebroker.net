@@ -126,6 +126,12 @@ public class LeafNodeConfig
 
     [JsonPropertyName("tls_ca_cert")]
     public string? TLSCACert { get; set; }
+
+    [JsonPropertyName("import_subjects")]
+    public List<string> ImportSubjects { get; set; } = new List<string>();
+
+    [JsonPropertyName("export_subjects")]
+    public List<string> ExportSubjects { get; set; } = new List<string>();
 }
 
 /// <summary>

@@ -391,4 +391,162 @@ public static class NatsControllerExtensions
 
         return controller.ApplyChangesAsync(config => config.WriteDeadline = seconds, cancellationToken);
     }
+
+    /// <summary>
+    /// Sets the leaf node import subjects (subjects to receive from remote leaf nodes).
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="subjects">The list of subject patterns to import.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> SetLeafNodeImportSubjectsAsync(
+        this NatsController controller,
+        IEnumerable<string> subjects,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.LeafNode.ImportSubjects = subjects?.ToList() ?? new List<string>();
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the leaf node export subjects (subjects to send to remote leaf nodes).
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="subjects">The list of subject patterns to export.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> SetLeafNodeExportSubjectsAsync(
+        this NatsController controller,
+        IEnumerable<string> subjects,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.LeafNode.ExportSubjects = subjects?.ToList() ?? new List<string>();
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds import subjects to the leaf node configuration.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="subjects">The subject patterns to add to the import list.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> AddLeafNodeImportSubjectsAsync(
+        this NatsController controller,
+        params string[] subjects)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            foreach (var subject in subjects)
+            {
+                if (!config.LeafNode.ImportSubjects.Contains(subject))
+                {
+                    config.LeafNode.ImportSubjects.Add(subject);
+                }
+            }
+        });
+    }
+
+    /// <summary>
+    /// Adds export subjects to the leaf node configuration.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="subjects">The subject patterns to add to the export list.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> AddLeafNodeExportSubjectsAsync(
+        this NatsController controller,
+        params string[] subjects)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            foreach (var subject in subjects)
+            {
+                if (!config.LeafNode.ExportSubjects.Contains(subject))
+                {
+                    config.LeafNode.ExportSubjects.Add(subject);
+                }
+            }
+        });
+    }
+
+    /// <summary>
+    /// Removes import subjects from the leaf node configuration.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="subjects">The subject patterns to remove from the import list.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> RemoveLeafNodeImportSubjectsAsync(
+        this NatsController controller,
+        params string[] subjects)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            foreach (var subject in subjects)
+            {
+                config.LeafNode.ImportSubjects.Remove(subject);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Removes export subjects from the leaf node configuration.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="subjects">The subject patterns to remove from the export list.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> RemoveLeafNodeExportSubjectsAsync(
+        this NatsController controller,
+        params string[] subjects)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            foreach (var subject in subjects)
+            {
+                config.LeafNode.ExportSubjects.Remove(subject);
+            }
+        });
+    }
 }

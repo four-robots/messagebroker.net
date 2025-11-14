@@ -162,7 +162,9 @@ public static class ConfigurationMapper
             AuthPassword = leafNode.AuthPassword,
             TLSCert = leafNode.TlsCert,
             TLSKey = leafNode.TlsKey,
-            TLSCACert = leafNode.TlsCaCert
+            TLSCACert = leafNode.TlsCaCert,
+            ImportSubjects = new List<string>(leafNode.ImportSubjects),
+            ExportSubjects = new List<string>(leafNode.ExportSubjects)
         };
     }
 
@@ -187,7 +189,9 @@ public static class ConfigurationMapper
             AuthPassword = leafNode.AuthPassword,
             TlsCert = leafNode.TLSCert,
             TlsKey = leafNode.TLSKey,
-            TlsCaCert = leafNode.TLSCACert
+            TlsCaCert = leafNode.TLSCACert,
+            ImportSubjects = new List<string>(leafNode.ImportSubjects),
+            ExportSubjects = new List<string>(leafNode.ExportSubjects)
         };
     }
 }

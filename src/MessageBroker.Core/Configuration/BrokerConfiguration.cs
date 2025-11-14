@@ -275,6 +275,20 @@ public class LeafNodeConfiguration : ICloneable
     public string? TlsCaCert { get; set; }
 
     /// <summary>
+    /// Gets or sets the list of subjects to import from remote leaf nodes.
+    /// These subjects will be visible to clients connected to this server.
+    /// </summary>
+    [JsonPropertyName("importSubjects")]
+    public List<string> ImportSubjects { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the list of subjects to export to remote leaf nodes.
+    /// These subjects will be visible to clients on remote servers.
+    /// </summary>
+    [JsonPropertyName("exportSubjects")]
+    public List<string> ExportSubjects { get; set; } = new();
+
+    /// <summary>
     /// Creates a deep copy of this leaf node configuration.
     /// </summary>
     public object Clone()
@@ -288,7 +302,9 @@ public class LeafNodeConfiguration : ICloneable
             AuthPassword = AuthPassword,
             TlsCert = TlsCert,
             TlsKey = TlsKey,
-            TlsCaCert = TlsCaCert
+            TlsCaCert = TlsCaCert,
+            ImportSubjects = new List<string>(ImportSubjects),
+            ExportSubjects = new List<string>(ExportSubjects)
         };
     }
 }
