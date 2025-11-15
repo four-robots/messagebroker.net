@@ -45,8 +45,15 @@ MessageBroker.NET/
 │   ├── MessageBroker.Nats/          # NATS-specific implementation
 │   │   ├── Bindings/                # P/Invoke layer (Windows/Linux)
 │   │   ├── Implementation/          # NatsController
-│   │   └── nats-bindings.dll/.so    # Native Go library
+│   │   └── nats-bindings.dll/.so    # Native Go library (copied from native/)
 │   └── MessageBroker.Examples/      # Interactive examples and tests
+├── native/                          # Go source code for native bindings
+│   ├── nats-bindings.go             # cgo bindings implementation
+│   ├── go.mod                       # Go module dependencies
+│   ├── build.sh                     # Linux/macOS build script
+│   ├── build.ps1                    # Windows build script
+│   ├── build-all.sh                 # Cross-platform build
+│   └── README.md                    # Native bindings documentation
 ├── docs/                            # Comprehensive documentation (5,592 lines)
 │   ├── GETTING_STARTED.md
 │   ├── API_DESIGN.md
@@ -107,7 +114,14 @@ MessageBroker.NET/
 ### Building the Project
 
 ```bash
-# Build entire solution
+# 1. Build native Go bindings first (required before .NET build)
+cd native
+./build.sh           # Linux/macOS
+# or
+.\build.ps1          # Windows (PowerShell)
+
+# 2. Build entire solution
+cd ..
 dotnet build MessageBroker.NET.sln
 
 # Build specific project
@@ -116,6 +130,8 @@ dotnet build src/MessageBroker.Core/MessageBroker.Core.csproj
 # Build in Release mode
 dotnet build MessageBroker.NET.sln -c Release
 ```
+
+**Important**: The native bindings must be built before the .NET projects, as the .NET code depends on `nats-bindings.dll` (Windows) or `nats-bindings.so` (Linux).
 
 ### Running Examples
 
@@ -238,6 +254,36 @@ validator.AddRule(config =>
 });
 ```
 
+### Building and Updating Native Bindings
+
+The native bindings are located in the `native/` directory and must be built before running the .NET projects.
+
+**Quick Build:**
+```bash
+cd native
+./build.sh           # Linux/macOS - builds .so file
+.\build.ps1          # Windows - builds .dll file
+```
+
+**Cross-Platform Build:**
+```bash
+cd native
+./build-all.sh       # Builds both .so and .dll (requires cross-compilation setup)
+```
+
+**Upgrading NATS Server Version:**
+1. Edit `native/go.mod` and update the version:
+   ```go
+   require (
+       github.com/nats-io/nats-server/v2 v2.11.0  // Update this
+   )
+   ```
+2. Run `cd native && go get github.com/nats-io/nats-server/v2@v2.11.0 && go mod tidy`
+3. Rebuild: `./build.sh` or `.\build.ps1`
+4. Test thoroughly with `cd src/MessageBroker.Examples && dotnet run -- test`
+
+See **[native/README.md](../native/README.md)** for comprehensive build documentation.
+
 ### Troubleshooting Native Bindings
 
 **Platform Detection Issues:**
@@ -245,14 +291,15 @@ validator.AddRule(config =>
 - Windows: Requires `nats-bindings.dll` in output directory
 - Linux: Requires `nats-bindings.so` in output directory
 
-**Building Go Bindings:**
-```bash
-# Windows
-go build -buildmode=c-shared -o nats-bindings.dll nats-bindings.go
+**Build Issues:**
+- "go: cannot find main module" → Run from `native/` directory
+- "gcc not found" (Windows) → Install TDM-GCC or MinGW-w64
+- "undefined: server.Server" → Run `go mod download && go mod tidy`
 
-# Linux
-go build -buildmode=c-shared -o nats-bindings.so nats-bindings.go
-```
+**Runtime Issues:**
+- "Unable to load DLL/shared library" → Ensure bindings are in same directory as .exe
+- Run build script to copy bindings to output directories
+- On Linux, check dependencies: `ldd native/nats-bindings.so`
 
 ## File Locations Reference
 

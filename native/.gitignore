@@ -1,0 +1,11 @@
+# Compiled binaries
+*.dll
+*.so
+*.h
+
+# Go build artifacts
+go.sum
+
+# OS-specific files
+.DS_Store
+Thumbs.db

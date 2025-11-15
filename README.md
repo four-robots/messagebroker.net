@@ -135,22 +135,25 @@ dotnet add package MessageBroker.NET
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/messagebroker.net.git
+git clone https://github.com/four-robots/messagebroker.net.git
 cd messagebroker.net
 
-# Build Go bindings
-cd nats-csharp/NatsBindings
-go build -buildmode=c-shared -o ../NatsSharp/nats-bindings.dll nats-bindings.go  # Windows
-go build -buildmode=c-shared -o ../NatsSharp/nats-bindings.so nats-bindings.go   # Linux
+# Build native Go bindings first
+cd native
+./build.sh           # Linux/macOS
+# or
+.\build.ps1          # Windows (PowerShell)
 
-# Build C# library
-cd ../NatsSharp
-dotnet build
+# Build .NET library
+cd ..
+dotnet build MessageBroker.NET.sln
 
-# Run example
-cd ../
+# Run examples
+cd src/MessageBroker.Examples
 dotnet run
 ```
+
+See **[native/README.md](./native/README.md)** for detailed build instructions and cross-platform builds.
 
 ## Platform Support
 
