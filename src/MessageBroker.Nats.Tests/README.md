@@ -10,6 +10,20 @@ This project contains unit tests for the MessageBroker.Nats library using xUnit.
 
 ### Implementation Tests
 - **ConfigurationMapperTests**: Tests for bidirectional mapping between Core and Bindings configuration models
+- **NatsControllerMonitoringTests**: Comprehensive tests for all monitoring endpoints (40+ tests)
+  - GetConnzAsync() - Connection monitoring
+  - GetSubszAsync() - Subscription monitoring
+  - GetJszAsync() - JetStream statistics
+  - GetRoutezAsync() - Cluster routing
+  - GetLeafzAsync() - Leaf node monitoring
+  - GetAccountzAsync() - Account monitoring
+  - GetVarzAsync() - Server variables
+  - GetGatewayzAsync() - Gateway monitoring
+  - DisconnectClientAsync() - Client disconnection
+  - GetClientInfoAsync() - Client information
+  - Memory management (IntPtr disposal)
+  - Thread safety (concurrent access)
+  - Error handling (server not running, client not found)
 
 ## Running Tests
 
