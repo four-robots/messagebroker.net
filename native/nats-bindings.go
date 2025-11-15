@@ -807,6 +807,96 @@ func GetClientInfo(clientID C.ulonglong) *C.char {
 	return C.CString(string(jsonBytes))
 }
 
+//export GetAccountz
+func GetAccountz(accountName *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.AccountzOptions{}
+
+	// If account name provided, get specific account info
+	if accountName != nil {
+		acctStr := C.GoString(accountName)
+		if acctStr != "" {
+			opts.Account = acctStr
+		}
+	}
+
+	accountz, err := srv.Accountz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get account info: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(accountz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal account info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export GetVarz
+func GetVarz() *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	// Get full Varz information
+	varz, err := srv.Varz(nil)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get server variables: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(varz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal server variables: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export GetGatewayz
+func GetGatewayz(gatewayName *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.GatewayzOptions{}
+
+	// If gateway name provided, get specific gateway info
+	if gatewayName != nil {
+		gwStr := C.GoString(gatewayName)
+		if gwStr != "" {
+			opts.Name = gwStr
+		}
+	}
+
+	gatewayz, err := srv.Gatewayz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get gateway info: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(gatewayz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal gateway info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
 func main() {
 	// Required for c-shared library
 }

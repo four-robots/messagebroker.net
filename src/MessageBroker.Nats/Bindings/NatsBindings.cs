@@ -30,6 +30,11 @@ internal interface INatsBindings
     // Connection management
     IntPtr DisconnectClientByID(ulong clientId);
     IntPtr GetClientInfo(ulong clientId);
+
+    // Additional monitoring endpoints
+    IntPtr GetAccountz(string? accountName);
+    IntPtr GetVarz();
+    IntPtr GetGatewayz(string? gatewayName);
 }
 
 internal sealed class WindowsNatsBindings : INatsBindings
@@ -143,6 +148,22 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern IntPtr _getClientInfo(ulong clientId);
 
     public IntPtr GetClientInfo(ulong clientId) => _getClientInfo(clientId);
+
+    // Additional monitoring endpoints
+    [DllImport("nats-bindings.dll", EntryPoint = "GetAccountz")]
+    internal static extern IntPtr _getAccountz(string? accountName);
+
+    public IntPtr GetAccountz(string? accountName) => _getAccountz(accountName);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetVarz")]
+    internal static extern IntPtr _getVarz();
+
+    public IntPtr GetVarz() => _getVarz();
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetGatewayz")]
+    internal static extern IntPtr _getGatewayz(string? gatewayName);
+
+    public IntPtr GetGatewayz(string? gatewayName) => _getGatewayz(gatewayName);
 }
 
 
@@ -257,4 +278,20 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern IntPtr _getClientInfo(ulong clientId);
 
     public IntPtr GetClientInfo(ulong clientId) => _getClientInfo(clientId);
+
+    // Additional monitoring endpoints
+    [DllImport("nats-bindings.so", EntryPoint = "GetAccountz")]
+    internal static extern IntPtr _getAccountz(string? accountName);
+
+    public IntPtr GetAccountz(string? accountName) => _getAccountz(accountName);
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetVarz")]
+    internal static extern IntPtr _getVarz();
+
+    public IntPtr GetVarz() => _getVarz();
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetGatewayz")]
+    internal static extern IntPtr _getGatewayz(string? gatewayName);
+
+    public IntPtr GetGatewayz(string? gatewayName) => _getGatewayz(gatewayName);
 }

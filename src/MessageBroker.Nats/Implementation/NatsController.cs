@@ -781,6 +781,129 @@ public class NatsController : IBrokerController, IDisposable
     }
 
     /// <summary>
+    /// Gets account monitoring information (Accountz).
+    /// </summary>
+    /// <param name="accountName">Optional account name to filter account info.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing account information.</returns>
+    public async Task<string> GetAccountzAsync(string? accountName = null, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.GetAccountz(accountName);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to get account info: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Gets full server variables and statistics (Varz).
+    /// This is an enhanced version that returns complete server information.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing full server variables.</returns>
+    public async Task<string> GetVarzAsync(CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.GetVarz();
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to get server variables: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Gets gateway monitoring information (Gatewayz).
+    /// </summary>
+    /// <param name="gatewayName">Optional gateway name to filter gateway info.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing gateway information.</returns>
+    public async Task<string> GetGatewayzAsync(string? gatewayName = null, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.GetGatewayz(gatewayName);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to get gateway info: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Ensures the broker is running, throwing an exception if not.
     /// </summary>
     private void EnsureRunning()

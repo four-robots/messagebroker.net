@@ -19,6 +19,9 @@ public class MonitoringTestSuite : IIntegrationTest
         await results.AssertAsync("Client Management", MonitoringTests.TestClientManagement);
         await results.AssertAsync("Subscription Filter", MonitoringTests.TestMonitoringWithSubscriptionFilter);
         await results.AssertAsync("Jsz Account Filter", MonitoringTests.TestJszWithAccountFilter);
+        await results.AssertAsync("Accountz Monitoring", MonitoringTests.TestAccountzMonitoring);
+        await results.AssertAsync("Varz Monitoring", MonitoringTests.TestVarzMonitoring);
+        await results.AssertAsync("Gatewayz Monitoring", MonitoringTests.TestGatewayzMonitoring);
     }
 }
 
@@ -531,6 +534,226 @@ public static class MonitoringTests
             {
                 // Ignore cleanup errors
             }
+        }
+    }
+
+    public static async Task<bool> TestAccountzMonitoring()
+    {
+        Console.WriteLine("\n=== Testing Accountz (Account Monitoring) ===");
+
+        using var controller = new NatsController();
+
+        var config = new BrokerConfiguration
+        {
+            Host = "127.0.0.1",
+            Port = 4230,
+            Description = "Accountz monitoring test"
+        };
+
+        var result = await controller.ConfigureAsync(config);
+        if (!result.Success)
+        {
+            Console.WriteLine($"❌ Failed to start server: {result.ErrorMessage}");
+            return false;
+        }
+
+        await Task.Delay(500);
+
+        try
+        {
+            // Get account information
+            var accountz = await controller.GetAccountzAsync();
+            Console.WriteLine($"✓ Retrieved Accountz data");
+
+            // Parse and validate JSON
+            using var doc = JsonDocument.Parse(accountz);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("system_account", out var sysAcct))
+            {
+                Console.WriteLine($"  System account: {sysAcct.GetString()}");
+            }
+
+            if (root.TryGetProperty("accounts", out var accounts))
+            {
+                Console.WriteLine($"  Number of accounts: {accounts.GetArrayLength()}");
+            }
+
+            Console.WriteLine("✓ Accountz test passed");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Accountz test failed: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            await controller.ShutdownAsync();
+        }
+    }
+
+    public static async Task<bool> TestVarzMonitoring()
+    {
+        Console.WriteLine("\n=== Testing Varz (Server Variables) ===");
+
+        using var controller = new NatsController();
+
+        var config = new BrokerConfiguration
+        {
+            Host = "127.0.0.1",
+            Port = 4231,
+            Jetstream = true,
+            JetstreamStoreDir = Path.Combine(Path.GetTempPath(), "nats-varz-test"),
+            Description = "Varz monitoring test"
+        };
+
+        var result = await controller.ConfigureAsync(config);
+        if (!result.Success)
+        {
+            Console.WriteLine($"❌ Failed to start server: {result.ErrorMessage}");
+            return false;
+        }
+
+        await Task.Delay(500);
+
+        try
+        {
+            // Get full server variables
+            var varz = await controller.GetVarzAsync();
+            Console.WriteLine($"✓ Retrieved Varz data");
+
+            // Parse and validate JSON
+            using var doc = JsonDocument.Parse(varz);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("server_id", out var serverId))
+            {
+                Console.WriteLine($"  Server ID: {serverId.GetString()}");
+            }
+
+            if (root.TryGetProperty("version", out var version))
+            {
+                Console.WriteLine($"  Version: {version.GetString()}");
+            }
+
+            if (root.TryGetProperty("go", out var goVersion))
+            {
+                Console.WriteLine($"  Go Version: {goVersion.GetString()}");
+            }
+
+            if (root.TryGetProperty("cores", out var cores))
+            {
+                Console.WriteLine($"  CPU Cores: {cores.GetInt32()}");
+            }
+
+            if (root.TryGetProperty("mem", out var mem))
+            {
+                Console.WriteLine($"  Memory: {mem.GetInt64():N0} bytes");
+            }
+
+            if (root.TryGetProperty("connections", out var connections))
+            {
+                Console.WriteLine($"  Connections: {connections.GetInt32()}");
+            }
+
+            if (root.TryGetProperty("jetstream", out var jetstream))
+            {
+                Console.WriteLine($"  JetStream enabled: {jetstream.ValueKind != JsonValueKind.Null}");
+            }
+
+            Console.WriteLine("✓ Varz test passed");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Varz test failed: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            await controller.ShutdownAsync();
+
+            // Cleanup
+            try
+            {
+                if (Directory.Exists(config.JetstreamStoreDir))
+                {
+                    Directory.Delete(config.JetstreamStoreDir, true);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
+        }
+    }
+
+    public static async Task<bool> TestGatewayzMonitoring()
+    {
+        Console.WriteLine("\n=== Testing Gatewayz (Gateway Monitoring) ===");
+
+        using var controller = new NatsController();
+
+        var config = new BrokerConfiguration
+        {
+            Host = "127.0.0.1",
+            Port = 4232,
+            Description = "Gatewayz monitoring test"
+            // Note: Gateway configuration would be needed for actual gateway connections
+        };
+
+        var result = await controller.ConfigureAsync(config);
+        if (!result.Success)
+        {
+            Console.WriteLine($"❌ Failed to start server: {result.ErrorMessage}");
+            return false;
+        }
+
+        await Task.Delay(500);
+
+        try
+        {
+            // Get gateway information
+            var gatewayz = await controller.GetGatewayzAsync();
+            Console.WriteLine($"✓ Retrieved Gatewayz data");
+
+            // Parse and validate JSON
+            using var doc = JsonDocument.Parse(gatewayz);
+            var root = doc.RootElement;
+
+            // Even without gateway configuration, the endpoint should return valid data
+            if (root.TryGetProperty("server_id", out var serverId))
+            {
+                Console.WriteLine($"  Server ID: {serverId.GetString()}");
+            }
+
+            if (root.TryGetProperty("name", out var name))
+            {
+                Console.WriteLine($"  Gateway name: {name.GetString()}");
+            }
+
+            if (root.TryGetProperty("outbound_gateways", out var outbound))
+            {
+                Console.WriteLine($"  Outbound gateways: {outbound.GetArrayLength()}");
+            }
+
+            if (root.TryGetProperty("inbound_gateways", out var inbound))
+            {
+                Console.WriteLine($"  Inbound gateways: {inbound.GetArrayLength()}");
+            }
+
+            Console.WriteLine("✓ Gatewayz test passed");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Gatewayz test failed: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            await controller.ShutdownAsync();
         }
     }
 }
