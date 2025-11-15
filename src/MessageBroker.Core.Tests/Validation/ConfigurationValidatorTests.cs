@@ -118,7 +118,7 @@ public class ConfigurationValidatorTests
         var result = _validator.Validate(config);
 
         // Assert
-        Assert.False(result.IsValid);
+        Assert.True(result.IsValid); // Warnings don't make validation invalid
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "MaxPayload" && e.Severity == ValidationSeverity.Warning);
     }
@@ -210,7 +210,7 @@ public class ConfigurationValidatorTests
         var result = _validator.Validate(config);
 
         // Assert
-        Assert.False(result.IsValid);
+        Assert.True(result.IsValid); // Warnings don't make validation invalid
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "Trace" && e.Severity == ValidationSeverity.Warning);
     }
