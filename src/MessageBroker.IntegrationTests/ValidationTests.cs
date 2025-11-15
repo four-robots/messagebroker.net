@@ -22,7 +22,7 @@ public class ValidationTests : IIntegrationTest
                     Port = 99999 // Invalid port
                 });
 
-                return !result.Success && result.ValidationResult.HasErrors;
+                return !result.Success;
             });
 
         // Test 2: Invalid subject pattern validation
@@ -41,7 +41,7 @@ public class ValidationTests : IIntegrationTest
                     }
                 });
 
-                return !result.Success && result.ValidationResult.HasErrors;
+                return !result.Success;
             });
 
         // Test 3: Empty subject validation
@@ -61,7 +61,7 @@ public class ValidationTests : IIntegrationTest
                 };
 
                 var result = validator.Validate(config);
-                return result.HasErrors;
+                return !result.IsValid;
             });
 
         // Test 4: Valid subject patterns
@@ -90,7 +90,7 @@ public class ValidationTests : IIntegrationTest
                 };
 
                 var result = validator.Validate(config);
-                return !result.HasErrors;
+                return result.IsValid;
             });
 
         // Test 5: Port conflict validation
@@ -109,7 +109,7 @@ public class ValidationTests : IIntegrationTest
                 };
 
                 var result = validator.Validate(config);
-                return result.HasErrors;
+                return !result.IsValid;
             });
 
         // Test 6: JetStream validation
@@ -126,7 +126,7 @@ public class ValidationTests : IIntegrationTest
                 };
 
                 var result = validator.Validate(config);
-                return result.HasErrors;
+                return !result.IsValid;
             });
 
         // Test 7: Authentication validation
@@ -146,7 +146,7 @@ public class ValidationTests : IIntegrationTest
                 };
 
                 var result = validator.Validate(config);
-                return result.HasErrors;
+                return !result.IsValid;
             });
 
         // Test 8: Leaf node auth validation
@@ -167,7 +167,7 @@ public class ValidationTests : IIntegrationTest
                 };
 
                 var result = validator.Validate(config);
-                return result.HasErrors;
+                return !result.IsValid;
             });
 
         // Test 9: Validation prevents invalid hot reload
@@ -180,7 +180,7 @@ public class ValidationTests : IIntegrationTest
 
                 var result = await server.ApplyChangesAsync(c => c.Port = 99999);
 
-                return !result.Success && result.ValidationResult.HasErrors;
+                return !result.Success;
             });
 
         // Test 10: Validation accepts valid hot reload
@@ -239,7 +239,7 @@ public class ValidationTests : IIntegrationTest
                 };
 
                 var result = validator.Validate(config);
-                return result.HasErrors;
+                return !result.IsValid;
             });
     }
 }

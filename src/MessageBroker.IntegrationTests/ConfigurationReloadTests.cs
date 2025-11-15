@@ -20,7 +20,7 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 var result = await server.ApplyChangesAsync(c => c.Debug = true);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return result.Success && info.CurrentConfiguration.Debug == true;
@@ -47,7 +47,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                     c.MaxPayload = 2048;
                 });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return result.Success &&
@@ -64,12 +64,12 @@ public class ConfigurationReloadTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
 
-                var info1 = await server.GetServerInfoAsync();
+                var info1 = await server.GetInfoAsync();
                 var version1 = info1.CurrentVersion;
 
                 await server.ApplyChangesAsync(c => c.Debug = true);
 
-                var info2 = await server.GetServerInfoAsync();
+                var info2 = await server.GetInfoAsync();
                 var version2 = info2.CurrentVersion;
 
                 await server.ShutdownAsync();
@@ -89,7 +89,7 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 var rollbackResult = await server.RollbackAsync(toVersion: 1);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return rollbackResult.Success && info.CurrentConfiguration.Debug == false;
@@ -108,7 +108,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                     await server.ApplyChangesAsync(c => c.MaxPayload = 1024 * (i + 1));
                 }
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return info.CurrentConfiguration.MaxPayload == 1024 * 11;
@@ -124,7 +124,7 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 var result = await server.ApplyChangesAsync(c => c.MaxPayload = -1);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return !result.Success && info.CurrentConfiguration.MaxPayload == 1024;
@@ -148,7 +148,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                     c.JetstreamStoreDir = "./jetstream-test";
                 });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return info.CurrentConfiguration.Jetstream == true;
@@ -167,7 +167,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                     await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100));
                 }
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return info.VersionHistory.Count >= 6; // Initial + 5 changes
@@ -195,7 +195,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                     c.LeafNode.ImportSubjects.Add("test.>");
                 });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return result.Success &&
@@ -220,7 +220,7 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 await server.ApplyChangesAsync(c => c.Debug = true);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return info.CurrentConfiguration.Debug == true &&
@@ -240,7 +240,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                 await server.SetDebugAsync(true);
                 await server.SetMaxPayloadAsync(2048);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return info.CurrentConfiguration.Debug == true &&
@@ -257,7 +257,7 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 await server.SetAuthenticationAsync("user", "pass");
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return info.CurrentConfiguration.Auth.Username == "user" &&

@@ -62,8 +62,8 @@ public class MultiServerTests : IIntegrationTest
                     MaxPayload = 2048
                 });
 
-                var info1 = await server1.GetServerInfoAsync();
-                var info2 = await server2.GetServerInfoAsync();
+                var info1 = await server1.GetInfoAsync();
+                var info2 = await server2.GetInfoAsync();
 
                 var config1 = info1.CurrentConfiguration;
                 var config2 = info2.CurrentConfiguration;
@@ -173,7 +173,7 @@ public class MultiServerTests : IIntegrationTest
                     // Verify all are running
                     foreach (var server in servers)
                     {
-                        var info = await server.GetServerInfoAsync();
+                        var info = await server.GetInfoAsync();
                         if (!info.IsRunning)
                         {
                             throw new Exception($"Server failed to start");
