@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/nats-io/jwt/v2"
@@ -226,7 +227,22 @@ func ShutdownServer() {
 
 	if natsServer != nil {
 		natsServer.Shutdown()
-		natsServer.WaitForShutdown()
+
+		// Wait for shutdown with timeout to prevent hanging
+		shutdownComplete := make(chan struct{})
+		go func() {
+			natsServer.WaitForShutdown()
+			close(shutdownComplete)
+		}()
+
+		// Wait max 10 seconds for graceful shutdown
+		select {
+		case <-shutdownComplete:
+			// Shutdown completed gracefully
+		case <-time.After(10 * time.Second):
+			// Timeout - force cleanup anyway
+		}
+
 		natsServer = nil
 	}
 }

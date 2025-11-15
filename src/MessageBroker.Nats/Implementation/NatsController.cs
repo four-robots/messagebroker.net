@@ -516,7 +516,27 @@ public class NatsController : IBrokerController, IDisposable
             {
                 try
                 {
-                    ShutdownAsync().GetAwaiter().GetResult();
+                    // Use a timeout to prevent deadlock during disposal
+                    // Try to acquire semaphore with 5 second timeout
+                    if (_operationSemaphore.Wait(TimeSpan.FromSeconds(5)))
+                    {
+                        try
+                        {
+                            _bindings.ShutdownServer();
+                            IsRunning = false;
+                        }
+                        finally
+                        {
+                            _operationSemaphore.Release();
+                        }
+                    }
+                    else
+                    {
+                        // If we can't acquire the semaphore, force shutdown anyway
+                        // This prevents disposal from hanging forever
+                        _bindings.ShutdownServer();
+                        IsRunning = false;
+                    }
                 }
                 catch
                 {
