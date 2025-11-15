@@ -30,6 +30,25 @@ jobs:
       with:
         dotnet-version: '9.0.x'
 
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Build native bindings (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: native
+      run: |
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Build native bindings (Windows)
+      if: matrix.os == 'windows-latest'
+      working-directory: native
+      shell: pwsh
+      run: |
+        .\build.ps1
+
     - name: Restore dependencies
       run: dotnet restore MessageBroker.NET.sln
 
@@ -76,6 +95,17 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '9.0.x'
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+
+    - name: Build native bindings
+      working-directory: native
+      run: |
+        chmod +x build.sh
+        ./build.sh
 
     - name: Restore dependencies
       run: dotnet restore MessageBroker.NET.sln
