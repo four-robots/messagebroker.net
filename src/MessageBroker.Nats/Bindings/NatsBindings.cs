@@ -47,6 +47,10 @@ internal interface INatsBindings
     IntPtr IsServerRunning();
     IntPtr WaitForReadyState(int timeoutSeconds);
     IntPtr IsJetStreamEnabled();
+
+    // Advanced monitoring
+    IntPtr GetRaftz(string? accountFilter, string? groupFilter);
+    IntPtr SetSystemAccount(string accountName);
 }
 
 internal sealed class WindowsNatsBindings : INatsBindings
@@ -218,6 +222,17 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern IntPtr _isJetStreamEnabled();
 
     public IntPtr IsJetStreamEnabled() => _isJetStreamEnabled();
+
+    // Advanced monitoring declarations
+    [DllImport("nats-bindings.dll", EntryPoint = "GetRaftz")]
+    internal static extern IntPtr _getRaftz(string? accountFilter, string? groupFilter);
+
+    public IntPtr GetRaftz(string? accountFilter, string? groupFilter) => _getRaftz(accountFilter, groupFilter);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "SetSystemAccount")]
+    internal static extern IntPtr _setSystemAccount(string accountName);
+
+    public IntPtr SetSystemAccount(string accountName) => _setSystemAccount(accountName);
 }
 
 
@@ -390,4 +405,15 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern IntPtr _isJetStreamEnabled();
 
     public IntPtr IsJetStreamEnabled() => _isJetStreamEnabled();
+
+    // Advanced monitoring declarations
+    [DllImport("nats-bindings.so", EntryPoint = "GetRaftz")]
+    internal static extern IntPtr _getRaftz(string? accountFilter, string? groupFilter);
+
+    public IntPtr GetRaftz(string? accountFilter, string? groupFilter) => _getRaftz(accountFilter, groupFilter);
+
+    [DllImport("nats-bindings.so", EntryPoint = "SetSystemAccount")]
+    internal static extern IntPtr _setSystemAccount(string accountName);
+
+    public IntPtr SetSystemAccount(string accountName) => _setSystemAccount(accountName);
 }

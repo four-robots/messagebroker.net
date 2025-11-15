@@ -1126,6 +1126,79 @@ func IsJetStreamEnabled() *C.char {
 	return C.CString("false")
 }
 
+// GetRaftz returns Raft consensus state information.
+// Filters can be applied via accountFilter and groupFilter parameters.
+//
+//export GetRaftz
+func GetRaftz(accountFilter *C.char, groupFilter *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.RaftzOptions{}
+
+	// Apply account filter if provided
+	if accountFilter != nil {
+		acctStr := C.GoString(accountFilter)
+		if acctStr != "" {
+			opts.AccountFilter = acctStr
+		}
+	}
+
+	// Apply group filter if provided
+	if groupFilter != nil {
+		groupStr := C.GoString(groupFilter)
+		if groupStr != "" {
+			opts.GroupFilter = groupStr
+		}
+	}
+
+	raftz, err := srv.Raftz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get Raft status: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(raftz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal Raft status: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+// SetSystemAccount designates an account as the system account.
+//
+//export SetSystemAccount
+func SetSystemAccount(accountName *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	if accountName == nil {
+		return C.CString("ERROR: Account name cannot be null")
+	}
+
+	acctName := C.GoString(accountName)
+	if acctName == "" {
+		return C.CString("ERROR: Account name cannot be empty")
+	}
+
+	err := srv.SetSystemAccount(acctName)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to set system account: %v", err))
+	}
+
+	return C.CString("SUCCESS: System account set to " + acctName)
+}
+
 func main() {
 	// Required for c-shared library
 }

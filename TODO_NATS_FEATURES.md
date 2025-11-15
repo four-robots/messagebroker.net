@@ -136,14 +136,18 @@ This document tracks the implementation status of NATS server features that are 
 - **Priority**: MEDIUM
 - **Completed**: 2025-11-15
 
-#### ⏳ Raftz() - Raft Consensus State
-- **Purpose**: JetStream Raft clustering state
+#### ✅ Raftz() - Raft Consensus State
+- **Status**: **Implemented** in `GetRaftzAsync()`
+- **Location**: `native/nats-bindings.go:1133`, `NatsController.cs:1284`
+- **Purpose**: JetStream Raft clustering state monitoring
+- **Parameters**: Account filter (optional), Group filter (optional)
 - **Returns**:
   - Leader/follower status
   - Raft log state
   - Cluster health
-- **Use Case**: JetStream clustering debugging
+- **Use Case**: JetStream clustering debugging, monitoring consensus
 - **Priority**: LOW (advanced use case)
+- **Completed**: 2025-11-15
 
 #### ⏳ Ipqueuesz() - IP Queue Status
 - **Purpose**: IP-based queue monitoring
@@ -194,11 +198,15 @@ This document tracks the implementation status of NATS server features that are 
 - **Priority**: HIGH
 - **Completed**: 2025-11-15
 
-#### 🔴 SetSystemAccount() - System Account
+#### ✅ SetSystemAccount() - System Account
+- **Status**: **Implemented** in `SetSystemAccountAsync()`
+- **Location**: `native/nats-bindings.go:1176`, `NatsController.cs:1331`
 - **Purpose**: Designate a special system account for server events
-- **Parameters**: Account name
-- **Use Case**: NATS system events, monitoring
+- **Parameters**: Account name (string)
+- **Returns**: Success message
+- **Use Case**: NATS system events, monitoring, server operations
 - **Priority**: MEDIUM
+- **Completed**: 2025-11-15
 
 #### 🔴 UpdateAccountClaims() - Update Claims
 - **Purpose**: Update account JWT claims without restart
@@ -356,11 +364,13 @@ This document tracks the implementation status of NATS server features that are 
 **Status**: All available runtime control features complete
 **Completed**: 2025-11-15
 
-### Phase 5: Advanced Features (Sprint 5)
-1. ⏳ Implement Raftz() - Raft state
-2. ⏳ Implement SetSystemAccount()
-3. ⏳ Implement UpdateAccountClaims()
-4. ⏳ Add tests for advanced features
+### Phase 5: Advanced Features (Sprint 5) 🚧 **IN PROGRESS**
+1. ✅ Implement Raftz() - Raft state monitoring
+2. ✅ Implement SetSystemAccount() - System account designation
+3. ⏳ Implement UpdateAccountClaims() (complex - requires wrapper)
+4. ✅ Add tests for Raftz and SetSystemAccount (6 Go tests)
+**Status**: Raftz and SetSystemAccount complete
+**Completed**: 2025-11-15
 
 ## Testing Strategy
 
@@ -437,10 +447,14 @@ This document tracks the implementation status of NATS server features that are 
 - ✅ **WaitForReady** - Health check / readiness probe
 - ✅ **IsJetStreamEnabled** - Check JetStream status
 
+**Advanced Monitoring (2):**
+- ✅ **Raftz** - Raft consensus state monitoring
+- ✅ **SetSystemAccount** - System account designation
+
 ### Total Features
-- **Implemented**: 26/35 (74%)
+- **Implemented**: 28/35 (80%)
 - **Not Available in API**: 2/35 (6%) - EnableJetStream, DisableJetStream
-- **Planned**: 7/35 (20%)
+- **Planned**: 5/35 (14%)
 
 ---
 

@@ -1150,3 +1150,158 @@ func TestIsJetStreamEnabled_ServerNotRunning(t *testing.T) {
 		t.Errorf("Expected 'Server not running' error, got: %s", response)
 	}
 }
+
+// TestGetRaftz_Success tests Raftz retrieval when JetStream with clustering is enabled.
+func TestGetRaftz_Success(t *testing.T) {
+	port := 14253
+
+	// Create server with JetStream enabled (required for Raft)
+	opts := &server.Options{
+		Host:      "127.0.0.1",
+		Port:      port,
+		JetStream: true,
+	}
+
+	srv, err := server.NewServer(opts)
+	if err != nil {
+		t.Fatalf("Failed to create NATS server: %v", err)
+	}
+
+	go srv.Start()
+
+	if !srv.ReadyForConnections(5 * time.Second) {
+		t.Fatal("Server did not become ready in time")
+	}
+
+	serverMu.Lock()
+	natsServers[port] = srv
+	currentPort = port
+	serverMu.Unlock()
+
+	defer stopTestServer(t, srv, port)
+
+	result := GetRaftz(nil, nil)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	// Response should be valid JSON (may be empty if no Raft groups exist)
+	if isErrorResponse(response) {
+		t.Fatalf("Expected success or empty Raft status, got error: %s", response)
+	}
+
+	t.Logf("Raft status: %s", response)
+}
+
+// TestGetRaftz_ServerNotRunning tests Raftz when server is not running.
+func TestGetRaftz_ServerNotRunning(t *testing.T) {
+	// Don't start a server
+	currentPort = 14254
+
+	result := GetRaftz(nil, nil)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Errorf("Expected error response, got: %s", response)
+	}
+
+	if !strings.Contains(response, "Server not running") {
+		t.Errorf("Expected 'Server not running' error, got: %s", response)
+	}
+}
+
+// TestSetSystemAccount_Success tests setting a system account.
+func TestSetSystemAccount_Success(t *testing.T) {
+	port := 14255
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	// First register an account
+	accountName := C.CString("SYSTEM_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	registerResult := RegisterAccount(accountName)
+	registerResponse := C.GoString(registerResult)
+	C.free(unsafe.Pointer(registerResult))
+
+	if isErrorResponse(registerResponse) {
+		t.Fatalf("Failed to register account: %s", registerResponse)
+	}
+
+	// Now set it as system account
+	result := SetSystemAccount(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if isErrorResponse(response) {
+		t.Fatalf("Expected success, got error: %s", response)
+	}
+
+	if !strings.Contains(response, "SUCCESS") {
+		t.Errorf("Expected success message, got: %s", response)
+	}
+
+	t.Log("System account set successfully")
+}
+
+// TestSetSystemAccount_NullName tests setting system account with null name.
+func TestSetSystemAccount_NullName(t *testing.T) {
+	port := 14256
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	result := SetSystemAccount(nil)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Errorf("Expected error response, got: %s", response)
+	}
+
+	if !strings.Contains(response, "cannot be null") {
+		t.Errorf("Expected 'cannot be null' error, got: %s", response)
+	}
+}
+
+// TestSetSystemAccount_EmptyName tests setting system account with empty name.
+func TestSetSystemAccount_EmptyName(t *testing.T) {
+	port := 14257
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	emptyName := C.CString("")
+	defer C.free(unsafe.Pointer(emptyName))
+
+	result := SetSystemAccount(emptyName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Errorf("Expected error response, got: %s", response)
+	}
+
+	if !strings.Contains(response, "cannot be empty") {
+		t.Errorf("Expected 'cannot be empty' error, got: %s", response)
+	}
+}
+
+// TestSetSystemAccount_ServerNotRunning tests setting system account when server is not running.
+func TestSetSystemAccount_ServerNotRunning(t *testing.T) {
+	// Don't start a server
+	currentPort = 14258
+
+	accountName := C.CString("SYSTEM_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	result := SetSystemAccount(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Errorf("Expected error response, got: %s", response)
+	}
+
+	if !strings.Contains(response, "Server not running") {
+		t.Errorf("Expected 'Server not running' error, got: %s", response)
+	}
+}

@@ -1270,6 +1270,105 @@ public class NatsController : IBrokerController, IDisposable
     }
 
     /// <summary>
+    /// Gets Raft consensus state information for JetStream clustering.
+    /// </summary>
+    /// <param name="accountFilter">Optional account name filter.</param>
+    /// <param name="groupFilter">Optional Raft group filter.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing Raft status including leader/follower info and cluster state.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the broker is not running or query fails.</exception>
+    /// <remarks>
+    /// This method provides insight into JetStream Raft consensus state, useful for
+    /// monitoring cluster health and debugging replication issues.
+    /// </remarks>
+    public async Task<string> GetRaftzAsync(string? accountFilter = null, string? groupFilter = null, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.GetRaftz(accountFilter, groupFilter);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to get Raft status: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Designates an account as the system account.
+    /// </summary>
+    /// <param name="accountName">Name of the account to set as system account.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>Success message indicating the system account was set.</returns>
+    /// <exception cref="ArgumentException">Thrown if account name is null or empty.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the broker is not running or operation fails.</exception>
+    /// <remarks>
+    /// The system account is a special account used for internal NATS server operations.
+    /// This account has elevated privileges and should be carefully managed.
+    /// </remarks>
+    public async Task<string> SetSystemAccountAsync(string accountName, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            if (string.IsNullOrWhiteSpace(accountName))
+            {
+                throw new ArgumentException("Account name cannot be null or empty", nameof(accountName));
+            }
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.SetSystemAccount(accountName);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to set system account: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Ensures the broker is running, throwing an exception if not.
     /// </summary>
     private void EnsureRunning()
