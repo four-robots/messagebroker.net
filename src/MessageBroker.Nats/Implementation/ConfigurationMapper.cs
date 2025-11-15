@@ -50,7 +50,10 @@ public static class ConfigurationMapper
             Auth = MapToAuthConfig(config.Auth),
 
             // Leaf node configuration
-            LeafNode = MapToLeafNodeConfig(config.LeafNode)
+            LeafNode = MapToLeafNodeConfig(config.LeafNode),
+
+            // Cluster configuration
+            Cluster = MapToClusterConfig(config.Cluster)
         };
     }
 
@@ -95,7 +98,10 @@ public static class ConfigurationMapper
             Auth = MapToAuthConfiguration(config.Auth),
 
             // Leaf node configuration
-            LeafNode = MapToLeafNodeConfiguration(config.LeafNode)
+            LeafNode = MapToLeafNodeConfiguration(config.LeafNode),
+
+            // Cluster configuration
+            Cluster = MapToClusterConfiguration(config.Cluster)
         };
     }
 
@@ -192,6 +198,64 @@ public static class ConfigurationMapper
             TlsCaCert = leafNode.TLSCACert,
             ImportSubjects = new List<string>(leafNode.ImportSubjects),
             ExportSubjects = new List<string>(leafNode.ExportSubjects)
+        };
+    }
+
+    /// <summary>
+    /// Maps a ClusterConfiguration to a ClusterConfig.
+    /// </summary>
+    /// <param name="cluster">The ClusterConfiguration to map.</param>
+    /// <returns>A ClusterConfig instance with the same values.</returns>
+    private static ClusterConfig MapToClusterConfig(ClusterConfiguration cluster)
+    {
+        if (cluster == null)
+        {
+            return new ClusterConfig();
+        }
+
+        return new ClusterConfig
+        {
+            Name = cluster.Name,
+            Host = cluster.Host,
+            Port = cluster.Port,
+            Routes = new List<string>(cluster.Routes),
+            AuthUsername = cluster.AuthUsername,
+            AuthPassword = cluster.AuthPassword,
+            AuthToken = cluster.AuthToken,
+            ConnectTimeout = cluster.ConnectTimeout,
+            TLSCert = cluster.TlsCert,
+            TLSKey = cluster.TlsKey,
+            TLSCACert = cluster.TlsCaCert,
+            TLSVerify = cluster.TlsVerify
+        };
+    }
+
+    /// <summary>
+    /// Maps a ClusterConfig to a ClusterConfiguration.
+    /// </summary>
+    /// <param name="cluster">The ClusterConfig to map.</param>
+    /// <returns>A ClusterConfiguration instance with the same values.</returns>
+    private static ClusterConfiguration MapToClusterConfiguration(ClusterConfig cluster)
+    {
+        if (cluster == null)
+        {
+            return new ClusterConfiguration();
+        }
+
+        return new ClusterConfiguration
+        {
+            Name = cluster.Name,
+            Host = cluster.Host,
+            Port = cluster.Port,
+            Routes = new List<string>(cluster.Routes),
+            AuthUsername = cluster.AuthUsername,
+            AuthPassword = cluster.AuthPassword,
+            AuthToken = cluster.AuthToken,
+            ConnectTimeout = cluster.ConnectTimeout,
+            TlsCert = cluster.TLSCert,
+            TlsKey = cluster.TLSKey,
+            TlsCaCert = cluster.TLSCACert,
+            TlsVerify = cluster.TLSVerify
         };
     }
 }

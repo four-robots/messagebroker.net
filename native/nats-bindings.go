@@ -44,6 +44,7 @@ type ServerConfig struct {
 	HTTPSPort          int            `json:"https_port"`
 	Auth               AuthConfig     `json:"auth"`
 	LeafNode           LeafNodeConfig `json:"leaf_node"`
+	Cluster            ClusterConfig  `json:"cluster"`
 }
 
 type AuthConfig struct {
@@ -64,6 +65,21 @@ type LeafNodeConfig struct {
 	TLSCACert      string   `json:"tls_ca_cert"`
 	ImportSubjects []string `json:"import_subjects"`
 	ExportSubjects []string `json:"export_subjects"`
+}
+
+type ClusterConfig struct {
+	Name           string   `json:"name"`
+	Host           string   `json:"host"`
+	Port           int      `json:"port"`
+	Routes         []string `json:"routes"`
+	AuthUsername   string   `json:"auth_username"`
+	AuthPassword   string   `json:"auth_password"`
+	AuthToken      string   `json:"auth_token"`
+	ConnectTimeout int      `json:"connect_timeout"`
+	TLSCert        string   `json:"tls_cert"`
+	TLSKey         string   `json:"tls_key"`
+	TLSCACert      string   `json:"tls_ca_cert"`
+	TLSVerify      bool     `json:"tls_verify"`
 }
 
 type AccountConfig struct {
@@ -133,6 +149,48 @@ func convertToNatsOptions(config *ServerConfig) *server.Options {
 				}
 				opts.LeafNode.Remotes[i] = remote
 			}
+		}
+	}
+
+	// Configure Cluster if port is set
+	if config.Cluster.Port > 0 {
+		opts.Cluster.Name = config.Cluster.Name
+		opts.Cluster.Host = config.Cluster.Host
+		opts.Cluster.Port = config.Cluster.Port
+
+		// Configure cluster authentication
+		if config.Cluster.AuthUsername != "" && config.Cluster.AuthPassword != "" {
+			opts.Cluster.Username = config.Cluster.AuthUsername
+			opts.Cluster.Password = config.Cluster.AuthPassword
+		} else if config.Cluster.AuthToken != "" {
+			opts.Cluster.Authorization = config.Cluster.AuthToken
+		}
+
+		// Configure cluster routes
+		if len(config.Cluster.Routes) > 0 {
+			opts.Routes = make([]*url.URL, 0, len(config.Cluster.Routes))
+			for _, routeStr := range config.Cluster.Routes {
+				parsedURL, err := url.Parse(routeStr)
+				if err != nil {
+					continue // Skip invalid URLs
+				}
+				opts.Routes = append(opts.Routes, parsedURL)
+			}
+		}
+
+		// Configure cluster TLS if provided
+		if config.Cluster.TLSCert != "" && config.Cluster.TLSKey != "" {
+			opts.Cluster.TLSConfig = &server.TLSConfigOpts{
+				CertFile: config.Cluster.TLSCert,
+				KeyFile:  config.Cluster.TLSKey,
+				CaFile:   config.Cluster.TLSCACert,
+				Verify:   config.Cluster.TLSVerify,
+			}
+		}
+
+		// Configure cluster connection timeout
+		if config.Cluster.ConnectTimeout > 0 {
+			opts.Cluster.ConnectRetries = config.Cluster.ConnectTimeout
 		}
 	}
 

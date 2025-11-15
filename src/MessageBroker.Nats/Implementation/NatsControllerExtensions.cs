@@ -549,4 +549,273 @@ public static class NatsControllerExtensions
             }
         });
     }
+
+    // Cluster Configuration Extensions
+
+    /// <summary>
+    /// Enables clustering with the specified name and port.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="clusterName">The name of the cluster.</param>
+    /// <param name="clusterPort">The port for cluster connections.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller or clusterName is null.</exception>
+    public static Task<ConfigurationResult> EnableClusteringAsync(
+        this NatsController controller,
+        string clusterName,
+        int clusterPort,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        if (string.IsNullOrWhiteSpace(clusterName))
+        {
+            throw new ArgumentNullException(nameof(clusterName));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.Cluster.Name = clusterName;
+            config.Cluster.Port = clusterPort;
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Disables clustering.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> DisableClusteringAsync(
+        this NatsController controller,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.Cluster.Port = 0;
+            config.Cluster.Name = null;
+            config.Cluster.Routes.Clear();
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the cluster name.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="clusterName">The name of the cluster.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller or clusterName is null.</exception>
+    public static Task<ConfigurationResult> SetClusterNameAsync(
+        this NatsController controller,
+        string clusterName,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        if (string.IsNullOrWhiteSpace(clusterName))
+        {
+            throw new ArgumentNullException(nameof(clusterName));
+        }
+
+        return controller.ApplyChangesAsync(config => config.Cluster.Name = clusterName, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the cluster port.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="port">The port for cluster connections (1-65535).</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> SetClusterPortAsync(
+        this NatsController controller,
+        int port,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config => config.Cluster.Port = port, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the cluster routes (URLs to other cluster members).
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="routes">The list of route URLs (format: nats-route://host:port).</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> SetClusterRoutesAsync(
+        this NatsController controller,
+        IEnumerable<string> routes,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.Cluster.Routes = routes?.ToList() ?? new List<string>();
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adds routes to the cluster configuration.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="routes">The route URLs to add (format: nats-route://host:port).</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> AddClusterRoutesAsync(
+        this NatsController controller,
+        params string[] routes)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            foreach (var route in routes)
+            {
+                if (!config.Cluster.Routes.Contains(route))
+                {
+                    config.Cluster.Routes.Add(route);
+                }
+            }
+        });
+    }
+
+    /// <summary>
+    /// Removes routes from the cluster configuration.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="routes">The route URLs to remove.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> RemoveClusterRoutesAsync(
+        this NatsController controller,
+        params string[] routes)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            foreach (var route in routes)
+            {
+                config.Cluster.Routes.Remove(route);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Sets cluster authentication credentials.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="username">The username for cluster authentication.</param>
+    /// <param name="password">The password for cluster authentication.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> SetClusterAuthenticationAsync(
+        this NatsController controller,
+        string username,
+        string password,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.Cluster.AuthUsername = username;
+            config.Cluster.AuthPassword = password;
+            config.Cluster.AuthToken = null; // Clear token when using username/password
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets cluster token-based authentication.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="token">The authentication token for cluster connections.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> SetClusterAuthenticationTokenAsync(
+        this NatsController controller,
+        string token,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.Cluster.AuthToken = token;
+            config.Cluster.AuthUsername = null; // Clear username/password when using token
+            config.Cluster.AuthPassword = null;
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Configures cluster TLS settings.
+    /// </summary>
+    /// <param name="controller">The controller to configure.</param>
+    /// <param name="certFile">The path to the TLS certificate file.</param>
+    /// <param name="keyFile">The path to the TLS key file.</param>
+    /// <param name="caFile">The path to the CA certificate file (optional).</param>
+    /// <param name="verify">Whether to verify TLS certificates.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A result indicating success or failure of the configuration change.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller is null.</exception>
+    public static Task<ConfigurationResult> SetClusterTlsAsync(
+        this NatsController controller,
+        string certFile,
+        string keyFile,
+        string? caFile = null,
+        bool verify = true,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        return controller.ApplyChangesAsync(config =>
+        {
+            config.Cluster.TlsCert = certFile;
+            config.Cluster.TlsKey = keyFile;
+            config.Cluster.TlsCaCert = caFile;
+            config.Cluster.TlsVerify = verify;
+        }, cancellationToken);
+    }
 }

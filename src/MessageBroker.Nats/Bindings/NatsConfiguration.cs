@@ -60,6 +60,9 @@ public class ServerConfig
 
     [JsonPropertyName("leaf_node")]
     public LeafNodeConfig LeafNode { get; set; } = new LeafNodeConfig();
+
+    [JsonPropertyName("cluster")]
+    public ClusterConfig Cluster { get; set; } = new ClusterConfig();
 }
 
 /// <summary>
@@ -132,6 +135,48 @@ public class LeafNodeConfig
 
     [JsonPropertyName("export_subjects")]
     public List<string> ExportSubjects { get; set; } = new List<string>();
+}
+
+/// <summary>
+/// Cluster configuration for NATS server full mesh clustering.
+/// </summary>
+public class ClusterConfig
+{
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("host")]
+    public string Host { get; set; } = "0.0.0.0";
+
+    [JsonPropertyName("port")]
+    public int Port { get; set; } = 0;
+
+    [JsonPropertyName("routes")]
+    public List<string> Routes { get; set; } = new List<string>();
+
+    [JsonPropertyName("auth_username")]
+    public string? AuthUsername { get; set; }
+
+    [JsonPropertyName("auth_password")]
+    public string? AuthPassword { get; set; }
+
+    [JsonPropertyName("auth_token")]
+    public string? AuthToken { get; set; }
+
+    [JsonPropertyName("connect_timeout")]
+    public int ConnectTimeout { get; set; } = 2;
+
+    [JsonPropertyName("tls_cert")]
+    public string? TLSCert { get; set; }
+
+    [JsonPropertyName("tls_key")]
+    public string? TLSKey { get; set; }
+
+    [JsonPropertyName("tls_ca_cert")]
+    public string? TLSCACert { get; set; }
+
+    [JsonPropertyName("tls_verify")]
+    public bool TLSVerify { get; set; } = true;
 }
 
 /// <summary>
