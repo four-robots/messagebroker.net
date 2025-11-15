@@ -12,8 +12,7 @@ public class InMemoryConfigurationStoreTests
         var store = new InMemoryConfigurationStore();
         var version = new ConfigurationVersion
         {
-            Configuration = new BrokerConfiguration(),
-            Description = "Test version"
+            Configuration = new BrokerConfiguration { Description = "Test version" }
         };
 
         // Act
@@ -62,8 +61,7 @@ public class InMemoryConfigurationStoreTests
         var store = new InMemoryConfigurationStore();
         var version = new ConfigurationVersion
         {
-            Configuration = new BrokerConfiguration { Port = 4222 },
-            Description = "Test"
+            Configuration = new BrokerConfiguration { Port = 4222, Description = "Test" }
         };
         await store.SaveAsync(version);
 
@@ -73,7 +71,7 @@ public class InMemoryConfigurationStoreTests
         // Assert
         Assert.NotNull(retrieved);
         Assert.Equal(1, retrieved.Version);
-        Assert.Equal("Test", retrieved.Description);
+        Assert.Equal("Test", retrieved.Configuration.Description);
         Assert.Equal(4222, retrieved.Configuration.Port);
     }
 
@@ -108,9 +106,9 @@ public class InMemoryConfigurationStoreTests
     {
         // Arrange
         var store = new InMemoryConfigurationStore();
-        var version1 = new ConfigurationVersion { Configuration = new BrokerConfiguration(), Description = "V1" };
-        var version2 = new ConfigurationVersion { Configuration = new BrokerConfiguration(), Description = "V2" };
-        var version3 = new ConfigurationVersion { Configuration = new BrokerConfiguration(), Description = "V3" };
+        var version1 = new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V1" } };
+        var version2 = new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V2" } };
+        var version3 = new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V3" } };
 
         await store.SaveAsync(version1);
         await store.SaveAsync(version2);
@@ -122,7 +120,7 @@ public class InMemoryConfigurationStoreTests
         // Assert
         Assert.NotNull(latest);
         Assert.Equal(3, latest.Version);
-        Assert.Equal("V3", latest.Description);
+        Assert.Equal("V3", latest.Configuration.Description);
     }
 
     [Fact]
@@ -147,8 +145,7 @@ public class InMemoryConfigurationStoreTests
         {
             await store.SaveAsync(new ConfigurationVersion
             {
-                Configuration = new BrokerConfiguration(),
-                Description = $"V{i}"
+                Configuration = new BrokerConfiguration { Description = $"V{i}" }
             });
         }
 
@@ -217,9 +214,9 @@ public class InMemoryConfigurationStoreTests
     {
         // Arrange
         var store = new InMemoryConfigurationStore();
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration(), Description = "V1" });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration(), Description = "V2" });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration(), Description = "V3" });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V1" } });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V2" } });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V3" } });
 
         // Act
         var all = store.GetAll();

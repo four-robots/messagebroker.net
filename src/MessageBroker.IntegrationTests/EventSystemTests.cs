@@ -66,10 +66,10 @@ public class EventSystemTests : IIntegrationTest
 
                 var result = await server.ApplyChangesAsync(c => c.Debug = true);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return !result.Success && info.CurrentConfiguration.Debug == false;
+                return !result.Success && info.CurrentConfig.Debug == false;
             });
 
         // Test 4: Event provides correct diff information
@@ -186,11 +186,11 @@ public class EventSystemTests : IIntegrationTest
 
                 await server.SetLeafNodeImportSubjectsAsync(new[] { "modified.>" });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return info.CurrentConfiguration.LeafNode.ImportSubjects.Contains("original.>") &&
-                       !info.CurrentConfiguration.LeafNode.ImportSubjects.Contains("modified.>");
+                return info.CurrentConfig.LeafNode.ImportSubjects.Contains("original.>") &&
+                       !info.CurrentConfig.LeafNode.ImportSubjects.Contains("modified.>");
             });
 
         // Test 9: Events fire in correct order

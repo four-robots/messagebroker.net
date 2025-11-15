@@ -7,7 +7,7 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"net/url"
 	"sync"
 	"unsafe"
 
@@ -118,9 +118,13 @@ func convertToNatsOptions(config *ServerConfig) *server.Options {
 		// Configure remote leaf node connections
 		if len(config.LeafNode.RemoteURLs) > 0 {
 			opts.LeafNode.Remotes = make([]*server.RemoteLeafOpts, len(config.LeafNode.RemoteURLs))
-			for i, url := range config.LeafNode.RemoteURLs {
+			for i, urlStr := range config.LeafNode.RemoteURLs {
+				parsedURL, err := url.Parse(urlStr)
+				if err != nil {
+					continue // Skip invalid URLs
+				}
 				remote := &server.RemoteLeafOpts{
-					URLs: []*server.URL{{Value: url}},
+					URLs: []*url.URL{parsedURL},
 				}
 				if config.LeafNode.AuthUsername != "" {
 					remote.Credentials = config.LeafNode.AuthUsername + ":" + config.LeafNode.AuthPassword
@@ -249,6 +253,12 @@ func GetServerInfo() *C.char {
 		return C.CString("ERROR: Server not running")
 	}
 
+	// Get server information using Varz
+	varz, err := natsServer.Varz(nil)
+	if err != nil {
+		return C.CString("ERROR: Failed to get server info")
+	}
+
 	info := struct {
 		ID       string `json:"id"`
 		Version  string `json:"version"`
@@ -257,22 +267,22 @@ func GetServerInfo() *C.char {
 		GoVer    string `json:"go"`
 		Host     string `json:"host"`
 		Port     int    `json:"port"`
-		MaxPay   int32  `json:"max_payload"`
+		MaxPay   int    `json:"max_payload"`
 		AuthReq  bool   `json:"auth_required"`
 		TLS      bool   `json:"tls_required"`
 		JetStrem bool   `json:"jetstream"`
 	}{
-		ID:       natsServer.ID(),
-		Version:  natsServer.Info().Version,
-		Proto:    natsServer.Info().Proto,
-		GitHash:  natsServer.Info().GitCommit,
-		GoVer:    natsServer.Info().GoVersion,
-		Host:     natsServer.Info().Host,
-		Port:     natsServer.Info().Port,
-		MaxPay:   natsServer.Info().MaxPayload,
-		AuthReq:  natsServer.Info().AuthRequired,
-		TLS:      natsServer.Info().TLSRequired,
-		JetStrem: natsServer.Info().JetStream,
+		ID:       varz.ID,
+		Version:  varz.Version,
+		Proto:    varz.Proto,
+		GitHash:  varz.GitCommit,
+		GoVer:    varz.GoVersion,
+		Host:     varz.Host,
+		Port:     varz.Port,
+		MaxPay:   varz.MaxPayload,
+		AuthReq:  varz.AuthRequired,
+		TLS:      varz.TLSRequired,
+		JetStrem: varz.JetStream.Config.MaxMemory > 0 || varz.JetStream.Config.MaxStore > 0,
 	}
 
 	jsonBytes, err := json.Marshal(info)

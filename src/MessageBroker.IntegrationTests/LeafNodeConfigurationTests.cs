@@ -27,8 +27,8 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                     }
                 });
 
-                var info = await server.GetServerInfoAsync();
-                var leafNode = info.CurrentConfiguration.LeafNode;
+                var info = await server.GetInfoAsync();
+                var leafNode = info.CurrentConfig.LeafNode;
 
                 if (leafNode.ImportSubjects.Count != 2 ||
                     !leafNode.ImportSubjects.Contains("events.>") ||
@@ -71,8 +71,8 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                     throw new Exception("Failed to add import subjects");
                 }
 
-                var info = await server.GetServerInfoAsync();
-                var importSubjects = info.CurrentConfiguration.LeafNode.ImportSubjects;
+                var info = await server.GetInfoAsync();
+                var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
                 if (importSubjects.Count != 3 ||
                     !importSubjects.Contains("events.>") ||
@@ -109,8 +109,8 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                     throw new Exception("Failed to remove import subject");
                 }
 
-                var info = await server.GetServerInfoAsync();
-                var importSubjects = info.CurrentConfiguration.LeafNode.ImportSubjects;
+                var info = await server.GetInfoAsync();
+                var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
                 if (importSubjects.Count != 2 ||
                     !importSubjects.Contains("events.>") ||
@@ -146,8 +146,8 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                     throw new Exception("Failed to add export subjects");
                 }
 
-                var info = await server.GetServerInfoAsync();
-                var exportSubjects = info.CurrentConfiguration.LeafNode.ExportSubjects;
+                var info = await server.GetInfoAsync();
+                var exportSubjects = info.CurrentConfig.LeafNode.ExportSubjects;
 
                 if (exportSubjects.Count != 3)
                 {
@@ -180,8 +180,8 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                     throw new Exception("Failed to replace import subjects");
                 }
 
-                var info = await server.GetServerInfoAsync();
-                var importSubjects = info.CurrentConfiguration.LeafNode.ImportSubjects;
+                var info = await server.GetInfoAsync();
+                var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
                 if (importSubjects.Count != 2 ||
                     !importSubjects.Contains("new.>") ||
@@ -217,8 +217,8 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                     throw new Exception("Failed to replace export subjects");
                 }
 
-                var info = await server.GetServerInfoAsync();
-                var exportSubjects = info.CurrentConfiguration.LeafNode.ExportSubjects;
+                var info = await server.GetInfoAsync();
+                var exportSubjects = info.CurrentConfig.LeafNode.ExportSubjects;
 
                 if (exportSubjects.Count != 2 ||
                     !exportSubjects.Contains("new.>") ||
@@ -255,8 +255,8 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 // Third reload - remove one
                 await server.RemoveLeafNodeImportSubjectsAsync("v1.>");
 
-                var info = await server.GetServerInfoAsync();
-                var importSubjects = info.CurrentConfiguration.LeafNode.ImportSubjects;
+                var info = await server.GetInfoAsync();
+                var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
                 if (importSubjects.Count != 2 ||
                     !importSubjects.Contains("v2.>") ||
@@ -291,9 +291,9 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                     }
                 });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
 
-                if (info.CurrentConfiguration.LeafNode.ImportSubjects.Count != 4)
+                if (info.CurrentConfig.LeafNode.ImportSubjects.Count != 4)
                 {
                     throw new Exception("Wildcard patterns not configured correctly");
                 }

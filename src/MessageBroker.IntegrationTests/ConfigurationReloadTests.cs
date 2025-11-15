@@ -20,10 +20,10 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 var result = await server.ApplyChangesAsync(c => c.Debug = true);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return result.Success && info.CurrentConfiguration.Debug == true;
+                return result.Success && info.CurrentConfig.Debug == true;
             });
 
         // Test 2: Multiple property hot reload
@@ -47,13 +47,13 @@ public class ConfigurationReloadTests : IIntegrationTest
                     c.MaxPayload = 2048;
                 });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return result.Success &&
-                       info.CurrentConfiguration.Debug == true &&
-                       info.CurrentConfiguration.Trace == true &&
-                       info.CurrentConfiguration.MaxPayload == 2048;
+                       info.CurrentConfig.Debug == true &&
+                       info.CurrentConfig.Trace == true &&
+                       info.CurrentConfig.MaxPayload == 2048;
             });
 
         // Test 3: Version tracking during reloads
@@ -62,15 +62,11 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                var result1 = await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                var version1 = result1.Version?.Version ?? 0;
 
-                var info1 = await server.GetServerInfoAsync();
-                var version1 = info1.CurrentVersion;
-
-                await server.ApplyChangesAsync(c => c.Debug = true);
-
-                var info2 = await server.GetServerInfoAsync();
-                var version2 = info2.CurrentVersion;
+                var result2 = await server.ApplyChangesAsync(c => c.Debug = true);
+                var version2 = result2.Version?.Version ?? 0;
 
                 await server.ShutdownAsync();
 
@@ -89,10 +85,10 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 var rollbackResult = await server.RollbackAsync(toVersion: 1);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return rollbackResult.Success && info.CurrentConfiguration.Debug == false;
+                return rollbackResult.Success && info.CurrentConfig.Debug == false;
             });
 
         // Test 5: Multiple sequential reloads
@@ -108,10 +104,10 @@ public class ConfigurationReloadTests : IIntegrationTest
                     await server.ApplyChangesAsync(c => c.MaxPayload = 1024 * (i + 1));
                 }
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return info.CurrentConfiguration.MaxPayload == 1024 * 11;
+                return info.CurrentConfig.MaxPayload == 1024 * 11;
             });
 
         // Test 6: Hot reload with validation failure
@@ -124,10 +120,10 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 var result = await server.ApplyChangesAsync(c => c.MaxPayload = -1);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return !result.Success && info.CurrentConfiguration.MaxPayload == 1024;
+                return !result.Success && info.CurrentConfig.MaxPayload == 1024;
             });
 
         // Test 7: JetStream hot reload
@@ -148,29 +144,31 @@ public class ConfigurationReloadTests : IIntegrationTest
                     c.JetstreamStoreDir = "./jetstream-test";
                 });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return info.CurrentConfiguration.Jetstream == true;
+                return info.CurrentConfig.Jetstream == true;
             });
 
-        // Test 8: Hot reload version history
+        // Test 8: Hot reload version tracking
         await results.AssertAsync(
-            "Version history tracks all changes",
+            "Version number increments with each change",
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                var initialVersion = result.Version?.Version ?? 0;
 
+                ConfigurationResult? lastResult = null;
                 for (int i = 0; i < 5; i++)
                 {
-                    await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100));
+                    lastResult = await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100));
                 }
 
-                var info = await server.GetServerInfoAsync();
                 await server.ShutdownAsync();
 
-                return info.VersionHistory.Count >= 6; // Initial + 5 changes
+                // Verify that the last version is at least 6 (initial + 5 changes)
+                return lastResult != null && lastResult.Version != null && lastResult.Version.Version >= initialVersion + 5;
             });
 
         // Test 9: Complex nested configuration reload
@@ -195,12 +193,12 @@ public class ConfigurationReloadTests : IIntegrationTest
                     c.LeafNode.ImportSubjects.Add("test.>");
                 });
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
                 return result.Success &&
-                       info.CurrentConfiguration.LeafNode.Port == 7422 &&
-                       info.CurrentConfiguration.LeafNode.ImportSubjects.Contains("test.>");
+                       info.CurrentConfig.LeafNode.Port == 7422 &&
+                       info.CurrentConfig.LeafNode.ImportSubjects.Contains("test.>");
             });
 
         // Test 10: Hot reload preserves unmodified properties
@@ -220,13 +218,13 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 await server.ApplyChangesAsync(c => c.Debug = true);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return info.CurrentConfiguration.Debug == true &&
-                       info.CurrentConfiguration.Trace == false &&
-                       info.CurrentConfiguration.MaxPayload == 1024 &&
-                       info.CurrentConfiguration.MaxControlLine == 4096;
+                return info.CurrentConfig.Debug == true &&
+                       info.CurrentConfig.Trace == false &&
+                       info.CurrentConfig.MaxPayload == 1024 &&
+                       info.CurrentConfig.MaxControlLine == 4096;
             });
 
         // Test 11: Fluent API extensions hot reload
@@ -240,11 +238,11 @@ public class ConfigurationReloadTests : IIntegrationTest
                 await server.SetDebugAsync(true);
                 await server.SetMaxPayloadAsync(2048);
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return info.CurrentConfiguration.Debug == true &&
-                       info.CurrentConfiguration.MaxPayload == 2048;
+                return info.CurrentConfig.Debug == true &&
+                       info.CurrentConfig.MaxPayload == 2048;
             });
 
         // Test 12: Authentication hot reload
@@ -257,11 +255,11 @@ public class ConfigurationReloadTests : IIntegrationTest
 
                 await server.SetAuthenticationAsync("user", "pass");
 
-                var info = await server.GetServerInfoAsync();
+                var info = await server.GetInfoAsync();
                 await server.ShutdownAsync();
 
-                return info.CurrentConfiguration.Auth.Username == "user" &&
-                       info.CurrentConfiguration.Auth.Password == "pass";
+                return info.CurrentConfig.Auth.Username == "user" &&
+                       info.CurrentConfig.Auth.Password == "pass";
             });
     }
 }
