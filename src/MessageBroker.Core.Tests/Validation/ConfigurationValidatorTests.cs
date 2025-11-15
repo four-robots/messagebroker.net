@@ -470,4 +470,418 @@ public class ConfigurationValidatorTests
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "MaxPayload" && e.Severity == ValidationSeverity.Warning);
     }
+
+    // Cluster Configuration Tests
+
+    [Fact]
+    public void Validate_ClusterEnabled_WithoutName_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = null
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.Name"));
+    }
+
+    [Fact]
+    public void Validate_ClusterEnabled_WithName_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_ClusterPortSameAsMainPort_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Port = 4222,
+            Cluster = new ClusterConfiguration
+            {
+                Port = 4222,
+                Name = "my-cluster"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.Port") && e.ErrorMessage.Contains("main server port"));
+    }
+
+    [Fact]
+    public void Validate_ClusterPortSameAsHttpPort_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Port = 4222,
+            HttpPort = 8080,
+            Cluster = new ClusterConfiguration
+            {
+                Port = 8080,
+                Name = "my-cluster"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.Port") && e.ErrorMessage.Contains("HTTP monitoring port"));
+    }
+
+    [Fact]
+    public void Validate_ClusterPortSameAsLeafNodePort_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Port = 4222,
+            LeafNode = new LeafNodeConfiguration { Port = 7422 },
+            Cluster = new ClusterConfiguration
+            {
+                Port = 7422,
+                Name = "my-cluster"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.Port") && e.ErrorMessage.Contains("leaf node port"));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(65536)]
+    [InlineData(100000)]
+    public void Validate_ClusterInvalidPort_ReturnsError(int port)
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = port,
+                Name = "my-cluster"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.Port"));
+    }
+
+    [Fact]
+    public void Validate_ClusterCertWithoutKey_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                TlsCert = "/path/to/cert",
+                TlsKey = null
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.TlsCert"));
+    }
+
+    [Fact]
+    public void Validate_ClusterKeyWithoutCert_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                TlsCert = null,
+                TlsKey = "/path/to/key"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.TlsKey"));
+    }
+
+    [Fact]
+    public void Validate_ClusterUsernameWithoutPassword_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                AuthUsername = "user",
+                AuthPassword = null
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.AuthUsername"));
+    }
+
+    [Fact]
+    public void Validate_ClusterPasswordWithoutUsername_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                AuthUsername = null,
+                AuthPassword = "pass"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.AuthPassword"));
+    }
+
+    [Fact]
+    public void Validate_ClusterUsernamePasswordAndToken_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                AuthUsername = "user",
+                AuthPassword = "pass",
+                AuthToken = "token"
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.Auth"));
+    }
+
+    [Theory]
+    [InlineData("nats-route://localhost:6222")]
+    [InlineData("nats://server1:6222")]
+    [InlineData("nats-route://192.168.1.1:6222")]
+    public void Validate_ClusterValidRouteUrl_Succeeds(string routeUrl)
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                Routes = new List<string> { routeUrl }
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("http://localhost:6222")]
+    [InlineData("invalid-url")]
+    [InlineData("nats-route://localhost")]
+    public void Validate_ClusterInvalidRouteUrl_ReturnsError(string routeUrl)
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                Routes = new List<string> { routeUrl }
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.Routes"));
+    }
+
+    [Fact]
+    public void Validate_ClusterWithoutRoutes_ReturnsWarning()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                Routes = new List<string>()
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid); // Warnings don't make validation invalid
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName.Contains("Cluster.Routes") && e.Severity == ValidationSeverity.Warning);
+    }
+
+    [Fact]
+    public void Validate_ClusterNegativeConnectTimeout_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Port = 6222,
+                Name = "my-cluster",
+                ConnectTimeout = -1
+            }
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName.Contains("Cluster.ConnectTimeout"));
+    }
+
+    [Fact]
+    public void ValidateChanges_EnablingCluster_ReturnsWarning()
+    {
+        // Arrange
+        var current = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration { Port = 0 }
+        };
+        var proposed = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration { Port = 6222, Name = "my-cluster" }
+        };
+
+        // Act
+        var result = _validator.ValidateChanges(current, proposed);
+
+        // Assert
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName.Contains("Cluster.Port") && e.Severity == ValidationSeverity.Warning);
+    }
+
+    [Fact]
+    public void ValidateChanges_DisablingCluster_ReturnsWarning()
+    {
+        // Arrange
+        var current = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration { Port = 6222, Name = "my-cluster" }
+        };
+        var proposed = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration { Port = 0 }
+        };
+
+        // Act
+        var result = _validator.ValidateChanges(current, proposed);
+
+        // Assert
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName.Contains("Cluster.Port") &&
+            e.Severity == ValidationSeverity.Warning &&
+            e.ErrorMessage.Contains("disconnect"));
+    }
+
+    [Fact]
+    public void ValidateChanges_ChangingClusterName_ReturnsWarning()
+    {
+        // Arrange
+        var current = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration { Port = 6222, Name = "cluster-1" }
+        };
+        var proposed = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration { Port = 6222, Name = "cluster-2" }
+        };
+
+        // Act
+        var result = _validator.ValidateChanges(current, proposed);
+
+        // Assert
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName.Contains("Cluster.Name") &&
+            e.Severity == ValidationSeverity.Warning &&
+            e.ErrorMessage.Contains("restart"));
+    }
 }
