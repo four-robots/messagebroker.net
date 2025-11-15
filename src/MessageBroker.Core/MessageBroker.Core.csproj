@@ -1,9 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
+
+    <!-- NuGet Package Properties -->
+    <PackageId>MessageBroker.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>MessageBroker.NET Contributors</Authors>
+    <Company>MessageBroker.NET</Company>
+    <Description>Core abstractions and models for MessageBroker.NET - a .NET library providing programmatic control over NATS server instances with enhanced runtime reconfiguration capabilities.</Description>
+    <PackageTags>nats;messagebroker;messaging;pubsub;server-control;configuration;hot-reload</PackageTags>
+    <PackageProjectUrl>https://github.com/four-robots/messagebroker.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/four-robots/messagebroker.net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

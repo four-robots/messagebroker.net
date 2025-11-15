@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <!-- Shared Package Properties -->
+    <Version>1.0.0</Version>
+    <Authors>MessageBroker.NET Contributors</Authors>
+    <Company>MessageBroker.NET</Company>
+    <Copyright>Copyright (c) 2024 MessageBroker.NET Contributors</Copyright>
+    <PackageProjectUrl>https://github.com/four-robots/messagebroker.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/four-robots/messagebroker.net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <!-- Build Properties -->
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>

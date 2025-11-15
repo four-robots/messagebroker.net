@@ -11,7 +11,7 @@ MessageBroker.NET is a .NET library that provides programmatic control over NATS
 ## Architecture
 
 ### Technology Stack
-- **.NET 9.0** - Target framework
+- **.NET 8.0/9.0/10.0** - Multi-targeted framework support
 - **C# 12** - Language version with nullable reference types enabled
 - **Go bindings** - Native NATS server via P/Invoke
 - **NATS Server v2.11.0** - Embedded messaging server
@@ -151,6 +151,50 @@ The project uses a simple test framework in `MessageBroker.Examples/SimpleTest.c
 - 7 comprehensive test scenarios
 - All tests currently passing
 - Tests cover: basic config, hot reload, validation, rollback, events, info, shutdown
+
+### NuGet Packaging
+
+The project is configured for NuGet packaging with multi-targeting support.
+
+**Packages:**
+- `MessageBroker.Core` - Core abstractions (no dependencies)
+- `MessageBroker.Nats` - NATS implementation with native bindings
+
+**Multi-Targeting:**
+- Supports .NET 8.0, 9.0, and 10.0
+- Native bindings included for Windows (x64) and Linux (x64)
+
+**Creating Packages:**
+
+```bash
+# Quick method - use packaging scripts
+./pack-nuget.sh        # Linux/macOS
+.\pack-nuget.ps1       # Windows
+
+# Manual method
+cd native && ./build.sh && cd ..  # Build native bindings first
+dotnet pack src/MessageBroker.Core/MessageBroker.Core.csproj -c Release -o ./nupkg
+dotnet pack src/MessageBroker.Nats/MessageBroker.Nats.csproj -c Release -o ./nupkg
+```
+
+**Native Bindings Structure:**
+The NuGet packages use runtime-specific native library deployment:
+- `runtimes/win-x64/native/nats-bindings.dll` - Windows binding
+- `runtimes/linux-x64/native/nats-bindings.so` - Linux binding
+
+NuGet automatically deploys the correct native binary based on the target runtime.
+
+**Package Configuration:**
+- Shared properties: `src/Directory.Build.props`
+- Project-specific metadata: Individual `.csproj` files
+- Version: Centrally managed in `Directory.Build.props`
+
+**Testing Packages Locally:**
+```bash
+dotnet add package MessageBroker.Nats --version 1.0.0 --source ./nupkg
+```
+
+See **[NUGET_PACKAGING.md](NUGET_PACKAGING.md)** for comprehensive packaging documentation, including publishing, versioning, and CI/CD integration.
 
 ## Important Conventions
 

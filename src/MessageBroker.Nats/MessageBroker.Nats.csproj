@@ -1,22 +1,63 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
+
+    <!-- NuGet Package Properties -->
+    <PackageId>MessageBroker.Nats</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>MessageBroker.NET Contributors</Authors>
+    <Company>MessageBroker.NET</Company>
+    <Description>NATS implementation for MessageBroker.NET - provides programmatic control over NATS server instances with hot configuration reload, validation, versioning, and rollback. Includes native NATS server bindings for Windows and Linux.</Description>
+    <PackageTags>nats;messagebroker;messaging;pubsub;server-control;nats-server;hot-reload</PackageTags>
+    <PackageProjectUrl>https://github.com/four-robots/messagebroker.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/four-robots/messagebroker.net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\MessageBroker.Core\MessageBroker.Core.csproj" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
-
   <ItemGroup>
-    <Content Include="nats-bindings.dll">
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- Native bindings for local development (copy to output directory) -->
+  <ItemGroup>
+    <Content Include="nats-bindings.dll" Condition="Exists('nats-bindings.dll')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="nats-bindings.so" Condition="Exists('nats-bindings.so')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- Native bindings for NuGet package (runtime-specific structure) -->
+  <ItemGroup>
+    <!-- Windows x64 native binding -->
+    <None Include="nats-bindings.dll" Condition="Exists('nats-bindings.dll')" Pack="true" PackagePath="runtimes/win-x64/native/nats-bindings.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <!-- Linux x64 native binding -->
+    <None Include="nats-bindings.so" Condition="Exists('nats-bindings.so')" Pack="true" PackagePath="runtimes/linux-x64/native/nats-bindings.so">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <!-- Ensure native libraries are copied to output on restore/build -->
+  <Target Name="CopyNativeLibraries" AfterTargets="Build">
+    <Copy SourceFiles="nats-bindings.dll" DestinationFolder="$(OutputPath)" Condition="Exists('nats-bindings.dll')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="nats-bindings.so" DestinationFolder="$(OutputPath)" Condition="Exists('nats-bindings.so')" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
