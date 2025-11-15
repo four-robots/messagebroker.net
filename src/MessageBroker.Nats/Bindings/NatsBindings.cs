@@ -19,6 +19,17 @@ internal interface INatsBindings
     IntPtr UpdateAndReloadConfig(string configJson);
     IntPtr CreateAccount(string accountJson);
     IntPtr CreateAccountWithJWT(string operatorSeed, string accountConfig);
+
+    // Monitoring endpoints
+    IntPtr GetConnz(string? subsFilter);
+    IntPtr GetSubsz(string? subsFilter);
+    IntPtr GetJsz(string? accountName);
+    IntPtr GetRoutez();
+    IntPtr GetLeafz();
+
+    // Connection management
+    IntPtr DisconnectClientByID(ulong clientId);
+    IntPtr GetClientInfo(ulong clientId);
 }
 
 internal sealed class WindowsNatsBindings : INatsBindings
@@ -95,6 +106,43 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern IntPtr _createAccountWithJWT(string operatorSeed, string accountConfig);
 
     public IntPtr CreateAccountWithJWT(string operatorSeed, string accountConfig) => _createAccountWithJWT(operatorSeed, accountConfig);
+
+    // Monitoring endpoints
+    [DllImport("nats-bindings.dll", EntryPoint = "GetConnz")]
+    internal static extern IntPtr _getConnz(string? subsFilter);
+
+    public IntPtr GetConnz(string? subsFilter) => _getConnz(subsFilter);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetSubsz")]
+    internal static extern IntPtr _getSubsz(string? subsFilter);
+
+    public IntPtr GetSubsz(string? subsFilter) => _getSubsz(subsFilter);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetJsz")]
+    internal static extern IntPtr _getJsz(string? accountName);
+
+    public IntPtr GetJsz(string? accountName) => _getJsz(accountName);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetRoutez")]
+    internal static extern IntPtr _getRoutez();
+
+    public IntPtr GetRoutez() => _getRoutez();
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetLeafz")]
+    internal static extern IntPtr _getLeafz();
+
+    public IntPtr GetLeafz() => _getLeafz();
+
+    // Connection management
+    [DllImport("nats-bindings.dll", EntryPoint = "DisconnectClientByID")]
+    internal static extern IntPtr _disconnectClientByID(ulong clientId);
+
+    public IntPtr DisconnectClientByID(ulong clientId) => _disconnectClientByID(clientId);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetClientInfo")]
+    internal static extern IntPtr _getClientInfo(ulong clientId);
+
+    public IntPtr GetClientInfo(ulong clientId) => _getClientInfo(clientId);
 }
 
 
@@ -172,4 +220,41 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern IntPtr _createAccountWithJWT(string operatorSeed, string accountConfig);
 
     public IntPtr CreateAccountWithJWT(string operatorSeed, string accountConfig) => _createAccountWithJWT(operatorSeed, accountConfig);
+
+    // Monitoring endpoints
+    [DllImport("nats-bindings.so", EntryPoint = "GetConnz")]
+    internal static extern IntPtr _getConnz(string? subsFilter);
+
+    public IntPtr GetConnz(string? subsFilter) => _getConnz(subsFilter);
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetSubsz")]
+    internal static extern IntPtr _getSubsz(string? subsFilter);
+
+    public IntPtr GetSubsz(string? subsFilter) => _getSubsz(subsFilter);
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetJsz")]
+    internal static extern IntPtr _getJsz(string? accountName);
+
+    public IntPtr GetJsz(string? accountName) => _getJsz(accountName);
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetRoutez")]
+    internal static extern IntPtr _getRoutez();
+
+    public IntPtr GetRoutez() => _getRoutez();
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetLeafz")]
+    internal static extern IntPtr _getLeafz();
+
+    public IntPtr GetLeafz() => _getLeafz();
+
+    // Connection management
+    [DllImport("nats-bindings.so", EntryPoint = "DisconnectClientByID")]
+    internal static extern IntPtr _disconnectClientByID(ulong clientId);
+
+    public IntPtr DisconnectClientByID(ulong clientId) => _disconnectClientByID(clientId);
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetClientInfo")]
+    internal static extern IntPtr _getClientInfo(ulong clientId);
+
+    public IntPtr GetClientInfo(ulong clientId) => _getClientInfo(clientId);
 }

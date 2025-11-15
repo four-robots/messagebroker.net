@@ -582,6 +582,231 @@ func CreateAccountWithJWT(operatorSeed *C.char, accountConfig *C.char) *C.char {
 	return C.CString(string(jsonBytes))
 }
 
+// Monitoring endpoints
+
+//export GetConnz
+func GetConnz(subsFilter *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	// Create options for Connz
+	opts := &server.ConnzOptions{
+		Sort: server.ByCid, // Sort by connection ID
+	}
+
+	// Apply subscription filter if provided
+	if subsFilter != nil {
+		filterStr := C.GoString(subsFilter)
+		if filterStr != "" {
+			opts.Subscriptions = true
+			opts.SubscriptionsDetail = true
+		}
+	}
+
+	connz, err := srv.Connz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get connection info: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(connz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal connection info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export GetSubsz
+func GetSubsz(subsFilter *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.SubszOptions{}
+
+	// Apply subscription filter if provided
+	if subsFilter != nil {
+		filterStr := C.GoString(subsFilter)
+		if filterStr != "" {
+			opts.Subscriptions = true
+			opts.Test = filterStr
+		}
+	}
+
+	subsz, err := srv.Subsz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get subscription info: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(subsz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal subscription info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export GetJsz
+func GetJsz(accountName *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.JszOptions{
+		Streams:  true,
+		Consumer: true,
+		Config:   true,
+	}
+
+	// If account name provided, get account-specific JetStream info
+	if accountName != nil {
+		acctStr := C.GoString(accountName)
+		if acctStr != "" {
+			opts.Account = acctStr
+		}
+	}
+
+	jsz, err := srv.Jsz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get JetStream info: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(jsz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal JetStream info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export GetRoutez
+func GetRoutez() *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.RoutezOptions{
+		Subscriptions: true,
+	}
+
+	routez, err := srv.Routez(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get route info: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(routez)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal route info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export GetLeafz
+func GetLeafz() *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.LeafzOptions{
+		Subscriptions: true,
+	}
+
+	leafz, err := srv.Leafz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get leaf node info: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(leafz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal leaf node info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export DisconnectClientByID
+func DisconnectClientByID(clientID C.ulonglong) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	cid := uint64(clientID)
+	client := srv.GetClient(cid)
+	if client == nil {
+		return C.CString(fmt.Sprintf("ERROR: Client with ID %d not found", cid))
+	}
+
+	client.Close()
+	return C.CString("OK")
+}
+
+//export GetClientInfo
+func GetClientInfo(clientID C.ulonglong) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	cid := uint64(clientID)
+	client := srv.GetClient(cid)
+	if client == nil {
+		return C.CString(fmt.Sprintf("ERROR: Client with ID %d not found", cid))
+	}
+
+	// Get detailed client information using Connz with specific CID
+	opts := &server.ConnzOptions{
+		CID:                   cid,
+		Subscriptions:         true,
+		SubscriptionsDetail:   true,
+	}
+
+	connz, err := srv.Connz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get client info: %v", err))
+	}
+
+	if len(connz.Conns) == 0 {
+		return C.CString(fmt.Sprintf("ERROR: Client with ID %d not found in Connz", cid))
+	}
+
+	// Return the first (and should be only) connection
+	jsonBytes, err := json.Marshal(connz.Conns[0])
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal client info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
 func main() {
 	// Required for c-shared library
 }
