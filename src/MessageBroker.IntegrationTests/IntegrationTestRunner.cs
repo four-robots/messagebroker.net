@@ -18,6 +18,7 @@ public class IntegrationTestRunner
         _tests.Add(new ConcurrentOperationTests());
         _tests.Add(new ConfigurationReloadTests());
         _tests.Add(new MonitoringTestSuite());
+        _tests.Add(new AccountManagementTestSuite());
     }
 
     public async Task<TestResults> RunAllTestsAsync()

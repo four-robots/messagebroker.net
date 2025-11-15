@@ -897,6 +897,124 @@ func GetGatewayz(gatewayName *C.char) *C.char {
 	return C.CString(string(jsonBytes))
 }
 
+//export RegisterAccount
+func RegisterAccount(accountName *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	if accountName == nil {
+		return C.CString("ERROR: Account name cannot be null")
+	}
+
+	acctName := C.GoString(accountName)
+	if acctName == "" {
+		return C.CString("ERROR: Account name cannot be empty")
+	}
+
+	// Register the account
+	account, err := srv.RegisterAccount(acctName)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to register account: %v", err))
+	}
+
+	// Build response with account information
+	response := map[string]interface{}{
+		"account":        account.GetName(),
+		"connections":    account.NumConnections(),
+		"subscriptions":  account.RoutedSubs(),
+		"jetstream":      account.JetStreamEnabled(),
+		"system_account": account.IsSystemAccount(),
+	}
+
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal account info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export LookupAccount
+func LookupAccount(accountName *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	if accountName == nil {
+		return C.CString("ERROR: Account name cannot be null")
+	}
+
+	acctName := C.GoString(accountName)
+	if acctName == "" {
+		return C.CString("ERROR: Account name cannot be empty")
+	}
+
+	// Lookup the account
+	account, err := srv.LookupAccount(acctName)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Account not found: %v", err))
+	}
+
+	// Build response with account information
+	response := map[string]interface{}{
+		"account":        account.GetName(),
+		"connections":    account.NumConnections(),
+		"subscriptions":  account.RoutedSubs(),
+		"jetstream":      account.JetStreamEnabled(),
+		"system_account": account.IsSystemAccount(),
+		"total_subs":     account.TotalSubs(),
+	}
+
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal account info: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
+//export GetAccountStatz
+func GetAccountStatz(accountFilter *C.char) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	opts := &server.AccountStatzOptions{}
+
+	// If account filter provided, get specific account stats
+	if accountFilter != nil {
+		acctStr := C.GoString(accountFilter)
+		if acctStr != "" {
+			opts.Account = acctStr
+		}
+	}
+
+	statz, err := srv.AccountStatz(opts)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get account statistics: %v", err))
+	}
+
+	jsonBytes, err := json.Marshal(statz)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal account statistics: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
+}
+
 func main() {
 	// Required for c-shared library
 }

@@ -101,14 +101,19 @@ This document tracks the implementation status of NATS server features that are 
 - **Priority**: MEDIUM
 - **Completed**: 2025-11-15
 
-#### ⏳ AccountStatz() - Account Statistics
+#### ✅ AccountStatz() - Account Statistics
+- **Status**: **Implemented** in `GetAccountStatzAsync()`
+- **Location**: `native/nats-bindings.go:985`, `NatsController.cs:1017`
 - **Purpose**: Per-account usage statistics
 - **Returns**:
-  - Sent/received bytes per account
-  - Message counts
-  - Slow consumers
-- **Use Case**: Account billing, quota enforcement
+  - server_id, timestamp, accounts array
+  - Per-account: connections, leafnodes, total_conns, num_subscriptions
+  - Sent/received bytes and message counts
+  - Slow consumers count
+  - Inbound/outbound message and byte statistics
+- **Use Case**: Account billing, quota enforcement, performance monitoring
 - **Priority**: MEDIUM
+- **Completed**: 2025-11-15
 
 #### ⏳ JszAccount() - Account JetStream Info
 - **Purpose**: Account-specific JetStream statistics
@@ -169,18 +174,25 @@ This document tracks the implementation status of NATS server features that are 
 
 ### 3. Account Management (Runtime)
 
-#### 🔴 RegisterAccount() - Create Account
+#### ✅ RegisterAccount() - Create Account
+- **Status**: **Implemented** in `RegisterAccountAsync()`
+- **Location**: `native/nats-bindings.go:900`, `NatsController.cs:923`
 - **Purpose**: Programmatically register accounts at runtime
-- **Parameters**: Account name, configuration
+- **Parameters**: Account name
+- **Returns**: JSON with account info (name, connections, subscriptions, jetstream, system_account)
 - **Use Case**: Dynamic multi-tenancy
 - **Priority**: HIGH
+- **Completed**: 2025-11-15
 
-#### 🔴 LookupAccount() - Query Account
+#### ✅ LookupAccount() - Query Account
+- **Status**: **Implemented** in `LookupAccountAsync()`
+- **Location**: `native/nats-bindings.go:942`, `NatsController.cs:970`
 - **Purpose**: Retrieve account details by name
 - **Parameters**: Account name
-- **Returns**: Account object with limits and stats
+- **Returns**: JSON with account object (limits, stats, total_subs)
 - **Use Case**: Account management UI
 - **Priority**: HIGH
+- **Completed**: 2025-11-15
 
 #### 🔴 SetSystemAccount() - System Account
 - **Purpose**: Designate a special system account for server events
@@ -294,23 +306,25 @@ This document tracks the implementation status of NATS server features that are 
 5. ✅ Add comprehensive tests for all monitoring endpoints
 **Completed**: 2025-11-15
 
-### Phase 2: Connection & Account Management (Sprint 2) 🚧 **PARTIAL**
+### Phase 2: Connection & Account Management (Sprint 2) ✅ **COMPLETED**
 1. ✅ Implement DisconnectClientByID()
-2. ⏳ Implement RegisterAccount()
-3. ⏳ Implement LookupAccount()
+2. ✅ Implement RegisterAccount()
+3. ✅ Implement LookupAccount()
 4. ✅ Implement GetClientInfo() (was GetClient)
-5. ✅ Add tests for connection management (2/2 completed)
-**Status**: Connection management complete, account management pending
+5. ✅ Add tests for connection and account management (7/7 completed)
+**Status**: All connection and account management features complete
+**Completed**: 2025-11-15
 
-### Phase 3: Advanced Monitoring (Sprint 3) 🚧 **PARTIAL**
+### Phase 3: Advanced Monitoring (Sprint 3) ✅ **COMPLETED**
 1. ✅ Implement Routez() - cluster routes
 2. ✅ Implement Leafz() - leaf nodes
 3. ✅ Implement Accountz() - account monitoring
 4. ✅ Implement Varz() - full server variables
 5. ✅ Implement Gatewayz() - gateway monitoring
-6. ⏳ Implement AccountStatz() - account stats
+6. ✅ Implement AccountStatz() - account statistics
 7. ✅ Add tests for all monitoring endpoints (11/11 completed)
-**Status**: Most monitoring endpoints complete, AccountStatz pending
+**Status**: All monitoring endpoints complete
+**Completed**: 2025-11-15
 
 ### Phase 4: Runtime Control (Sprint 4)
 1. ⏳ Implement EnableJetStream() / DisableJetStream()
@@ -362,14 +376,17 @@ This document tracks the implementation status of NATS server features that are 
 ## Current Implementation Status
 
 ### Implemented Features
+
+**Server Lifecycle & Configuration:**
 - ✅ Basic server lifecycle (Start, Shutdown, LameDuckMode)
 - ✅ Configuration reload (hot reload support)
-- ✅ Full server info (Varz - complete)
 - ✅ JWT account creation
 - ✅ Multi-server support
 - ✅ Cluster configuration
 - ✅ Leaf node configuration
 - ✅ Authentication (username/password, token)
+
+**Monitoring Endpoints (11):**
 - ✅ **Varz** - Full server variables
 - ✅ **Connz** - Connection monitoring
 - ✅ **Subsz** - Subscription monitoring
@@ -378,13 +395,20 @@ This document tracks the implementation status of NATS server features that are 
 - ✅ **Leafz** - Leaf node monitoring
 - ✅ **Accountz** - Account monitoring
 - ✅ **Gatewayz** - Gateway monitoring
+- ✅ **AccountStatz** - Account statistics
+
+**Connection Management (2):**
 - ✅ **DisconnectClientByID** - Force disconnect clients
 - ✅ **GetClientInfo** - Detailed client information
 
+**Account Management (2):**
+- ✅ **RegisterAccount** - Runtime account creation
+- ✅ **LookupAccount** - Account queries
+
 ### Total Features
-- **Implemented**: 18/35 (51%)
+- **Implemented**: 21/35 (60%)
 - **In Progress**: 0/35 (0%)
-- **Planned**: 17/35 (49%)
+- **Planned**: 14/35 (40%)
 
 ---
 

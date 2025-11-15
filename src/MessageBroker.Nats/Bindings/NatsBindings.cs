@@ -35,6 +35,11 @@ internal interface INatsBindings
     IntPtr GetAccountz(string? accountName);
     IntPtr GetVarz();
     IntPtr GetGatewayz(string? gatewayName);
+
+    // Account management
+    IntPtr RegisterAccount(string accountName);
+    IntPtr LookupAccount(string accountName);
+    IntPtr GetAccountStatz(string? accountFilter);
 }
 
 internal sealed class WindowsNatsBindings : INatsBindings
@@ -164,6 +169,22 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern IntPtr _getGatewayz(string? gatewayName);
 
     public IntPtr GetGatewayz(string? gatewayName) => _getGatewayz(gatewayName);
+
+    // Account management function declarations
+    [DllImport("nats-bindings.dll", EntryPoint = "RegisterAccount")]
+    internal static extern IntPtr _registerAccount(string accountName);
+
+    public IntPtr RegisterAccount(string accountName) => _registerAccount(accountName);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "LookupAccount")]
+    internal static extern IntPtr _lookupAccount(string accountName);
+
+    public IntPtr LookupAccount(string accountName) => _lookupAccount(accountName);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetAccountStatz")]
+    internal static extern IntPtr _getAccountStatz(string? accountFilter);
+
+    public IntPtr GetAccountStatz(string? accountFilter) => _getAccountStatz(accountFilter);
 }
 
 
@@ -294,4 +315,20 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern IntPtr _getGatewayz(string? gatewayName);
 
     public IntPtr GetGatewayz(string? gatewayName) => _getGatewayz(gatewayName);
+
+    // Account management function declarations
+    [DllImport("nats-bindings.so", EntryPoint = "RegisterAccount")]
+    internal static extern IntPtr _registerAccount(string accountName);
+
+    public IntPtr RegisterAccount(string accountName) => _registerAccount(accountName);
+
+    [DllImport("nats-bindings.so", EntryPoint = "LookupAccount")]
+    internal static extern IntPtr _lookupAccount(string accountName);
+
+    public IntPtr LookupAccount(string accountName) => _lookupAccount(accountName);
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetAccountStatz")]
+    internal static extern IntPtr _getAccountStatz(string? accountFilter);
+
+    public IntPtr GetAccountStatz(string? accountFilter) => _getAccountStatz(accountFilter);
 }

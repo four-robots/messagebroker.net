@@ -914,6 +914,142 @@ public class NatsController : IBrokerController, IDisposable
     }
 
     /// <summary>
+    /// Registers a new account with the specified name.
+    /// </summary>
+    /// <param name="accountName">The unique name of the account to register.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing the registered account information.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the server is not running or account registration fails.</exception>
+    public async Task<string> RegisterAccountAsync(string accountName, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            if (string.IsNullOrWhiteSpace(accountName))
+            {
+                throw new ArgumentException("Account name cannot be null or empty", nameof(accountName));
+            }
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.RegisterAccount(accountName);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to register account: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Looks up an existing account by name.
+    /// </summary>
+    /// <param name="accountName">The name of the account to lookup.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing the account information.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the server is not running or account is not found.</exception>
+    public async Task<string> LookupAccountAsync(string accountName, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            if (string.IsNullOrWhiteSpace(accountName))
+            {
+                throw new ArgumentException("Account name cannot be null or empty", nameof(accountName));
+            }
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.LookupAccount(accountName);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to lookup account: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Gets account statistics for all accounts or a specific account.
+    /// </summary>
+    /// <param name="accountFilter">Optional account name to filter statistics for a specific account.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing account statistics.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the server is not running or statistics retrieval fails.</exception>
+    public async Task<string> GetAccountStatzAsync(string? accountFilter = null, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.GetAccountStatz(accountFilter);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to get account statistics: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Ensures the broker is running, throwing an exception if not.
     /// </summary>
     private void EnsureRunning()

@@ -639,4 +639,280 @@ public class NatsControllerMonitoringTests : IDisposable
     }
 
     #endregion
+
+    #region RegisterAccountAsync Tests
+
+    [Fact]
+    public async Task RegisterAccountAsync_Success_ReturnsValidJson()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var accountName = "TEST_ACCOUNT";
+        var accountJson = @"{
+            ""account"": ""TEST_ACCOUNT"",
+            ""connections"": 0,
+            ""subscriptions"": 0,
+            ""jetstream"": false,
+            ""system_account"": false
+        }";
+
+        _mockBindings.Setup(b => b.RegisterAccount(accountName))
+            .Returns(CreateManagedString(accountJson));
+
+        // Act
+        var result = await _controller.RegisterAccountAsync(accountName);
+
+        // Assert
+        var doc = JsonDocument.Parse(result);
+        Assert.Equal("TEST_ACCOUNT", doc.RootElement.GetProperty("account").GetString());
+        _mockBindings.Verify(b => b.FreeString(It.IsAny<IntPtr>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RegisterAccountAsync_EmptyName_ThrowsArgumentException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _controller.RegisterAccountAsync(""));
+    }
+
+    [Fact]
+    public async Task RegisterAccountAsync_NullName_ThrowsArgumentException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _controller.RegisterAccountAsync(null!));
+    }
+
+    [Fact]
+    public async Task RegisterAccountAsync_ErrorResponse_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var accountName = "DUPLICATE_ACCOUNT";
+        var errorPtr = CreateManagedString("ERROR: Account already exists");
+
+        _mockBindings.Setup(b => b.RegisterAccount(accountName))
+            .Returns(errorPtr);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.RegisterAccountAsync(accountName));
+
+        Assert.Contains("Account already exists", exception.Message);
+        _mockBindings.Verify(b => b.FreeString(errorPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task RegisterAccountAsync_ServerNotRunning_ThrowsInvalidOperationException()
+    {
+        // Arrange - Don't configure server
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.RegisterAccountAsync("TEST_ACCOUNT"));
+    }
+
+    #endregion
+
+    #region LookupAccountAsync Tests
+
+    [Fact]
+    public async Task LookupAccountAsync_Success_ReturnsValidJson()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var accountName = "EXISTING_ACCOUNT";
+        var accountJson = @"{
+            ""account"": ""EXISTING_ACCOUNT"",
+            ""connections"": 5,
+            ""subscriptions"": 10,
+            ""jetstream"": true,
+            ""system_account"": false,
+            ""total_subs"": 15
+        }";
+
+        _mockBindings.Setup(b => b.LookupAccount(accountName))
+            .Returns(CreateManagedString(accountJson));
+
+        // Act
+        var result = await _controller.LookupAccountAsync(accountName);
+
+        // Assert
+        var doc = JsonDocument.Parse(result);
+        Assert.Equal("EXISTING_ACCOUNT", doc.RootElement.GetProperty("account").GetString());
+        Assert.Equal(5, doc.RootElement.GetProperty("connections").GetInt32());
+        Assert.Equal(15, doc.RootElement.GetProperty("total_subs").GetInt32());
+        _mockBindings.Verify(b => b.FreeString(It.IsAny<IntPtr>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task LookupAccountAsync_EmptyName_ThrowsArgumentException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _controller.LookupAccountAsync(""));
+    }
+
+    [Fact]
+    public async Task LookupAccountAsync_NullName_ThrowsArgumentException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _controller.LookupAccountAsync(null!));
+    }
+
+    [Fact]
+    public async Task LookupAccountAsync_AccountNotFound_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var accountName = "NONEXISTENT_ACCOUNT";
+        var errorPtr = CreateManagedString("ERROR: Account not found");
+
+        _mockBindings.Setup(b => b.LookupAccount(accountName))
+            .Returns(errorPtr);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.LookupAccountAsync(accountName));
+
+        Assert.Contains("Account not found", exception.Message);
+        _mockBindings.Verify(b => b.FreeString(errorPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task LookupAccountAsync_ServerNotRunning_ThrowsInvalidOperationException()
+    {
+        // Arrange - Don't configure server
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.LookupAccountAsync("TEST_ACCOUNT"));
+    }
+
+    #endregion
+
+    #region GetAccountStatzAsync Tests
+
+    [Fact]
+    public async Task GetAccountStatzAsync_Success_ReturnsValidJson()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var statzJson = @"{
+            ""server_id"": ""NATS123"",
+            ""now"": ""2025-11-15T12:00:00Z"",
+            ""accounts"": [
+                {
+                    ""account"": ""ACCOUNT_001"",
+                    ""conns"": 3,
+                    ""num_subscriptions"": 10,
+                    ""sent"": { ""msgs"": 100, ""bytes"": 5000 },
+                    ""received"": { ""msgs"": 80, ""bytes"": 4000 }
+                }
+            ]
+        }";
+
+        _mockBindings.Setup(b => b.GetAccountStatz(null))
+            .Returns(CreateManagedString(statzJson));
+
+        // Act
+        var result = await _controller.GetAccountStatzAsync();
+
+        // Assert
+        var doc = JsonDocument.Parse(result);
+        Assert.Equal("NATS123", doc.RootElement.GetProperty("server_id").GetString());
+        Assert.True(doc.RootElement.GetProperty("accounts").GetArrayLength() > 0);
+        _mockBindings.Verify(b => b.FreeString(It.IsAny<IntPtr>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccountStatzAsync_WithFilter_PassesFilterToBinding()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var accountFilter = "SPECIFIC_ACCOUNT";
+        var statzJson = @"{
+            ""server_id"": ""NATS123"",
+            ""accounts"": [
+                { ""account"": ""SPECIFIC_ACCOUNT"", ""conns"": 1 }
+            ]
+        }";
+
+        _mockBindings.Setup(b => b.GetAccountStatz(accountFilter))
+            .Returns(CreateManagedString(statzJson));
+
+        // Act
+        await _controller.GetAccountStatzAsync(accountFilter);
+
+        // Assert
+        _mockBindings.Verify(b => b.GetAccountStatz(accountFilter), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccountStatzAsync_ErrorResponse_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var errorPtr = CreateManagedString("ERROR: Failed to get account statistics");
+
+        _mockBindings.Setup(b => b.GetAccountStatz(null))
+            .Returns(errorPtr);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.GetAccountStatzAsync());
+
+        Assert.Contains("Failed to get account statistics", exception.Message);
+        _mockBindings.Verify(b => b.FreeString(errorPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAccountStatzAsync_ServerNotRunning_ThrowsInvalidOperationException()
+    {
+        // Arrange - Don't configure server
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.GetAccountStatzAsync());
+    }
+
+    #endregion
+
+    #region Account Management Memory Tests
+
+    [Fact]
+    public async Task AccountManagementMethods_AlwaysCallFreeString()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("{\"account\": \"test\", \"connections\": 0}");
+
+        _mockBindings.Setup(b => b.RegisterAccount(It.IsAny<string>())).Returns(testPtr);
+        _mockBindings.Setup(b => b.LookupAccount(It.IsAny<string>())).Returns(testPtr);
+        _mockBindings.Setup(b => b.GetAccountStatz(null)).Returns(testPtr);
+
+        // Act
+        await _controller.RegisterAccountAsync("TEST1");
+        await _controller.LookupAccountAsync("TEST2");
+        await _controller.GetAccountStatzAsync();
+
+        // Assert - FreeString should be called 3 times
+        _mockBindings.Verify(b => b.FreeString(testPtr), Times.Exactly(3));
+    }
+
+    #endregion
 }

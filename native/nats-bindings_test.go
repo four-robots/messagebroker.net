@@ -617,3 +617,288 @@ func TestServerStateConsistency(t *testing.T) {
 	stopTestServer(t, srv1, port1)
 	stopTestServer(t, srv2, port2)
 }
+
+// Test RegisterAccount with server running
+func TestRegisterAccount_Success(t *testing.T) {
+	port := 14237
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	accountName := C.CString("TEST_ACCOUNT_001")
+	defer C.free(unsafe.Pointer(accountName))
+
+	result := RegisterAccount(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if isErrorResponse(response) {
+		t.Fatalf("Expected success, got error: %s", response)
+	}
+
+	var account map[string]interface{}
+	if err := json.Unmarshal([]byte(response), &account); err != nil {
+		t.Fatalf("Failed to parse account JSON: %v", err)
+	}
+
+	// Validate response structure
+	if name, ok := account["account"].(string); !ok || name != "TEST_ACCOUNT_001" {
+		t.Errorf("Expected account name 'TEST_ACCOUNT_001', got %v", account["account"])
+	}
+
+	if _, exists := account["connections"]; !exists {
+		t.Error("Expected 'connections' field in response")
+	}
+
+	if _, exists := account["subscriptions"]; !exists {
+		t.Error("Expected 'subscriptions' field in response")
+	}
+}
+
+// Test RegisterAccount with duplicate account
+func TestRegisterAccount_Duplicate(t *testing.T) {
+	port := 14238
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	accountName := C.CString("DUPLICATE_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	// Register account first time
+	result1 := RegisterAccount(accountName)
+	response1 := C.GoString(result1)
+	C.free(unsafe.Pointer(result1))
+
+	if isErrorResponse(response1) {
+		t.Fatalf("First registration should succeed, got error: %s", response1)
+	}
+
+	// Try to register same account again (should fail)
+	result2 := RegisterAccount(accountName)
+	response2 := C.GoString(result2)
+	C.free(unsafe.Pointer(result2))
+
+	if !isErrorResponse(response2) {
+		t.Fatal("Expected error for duplicate account registration")
+	}
+
+	if !strings.Contains(response2, "Failed to register account") {
+		t.Errorf("Expected 'Failed to register account' error, got: %s", response2)
+	}
+}
+
+// Test RegisterAccount without server
+func TestRegisterAccount_ServerNotRunning(t *testing.T) {
+	serverMu.Lock()
+	currentPort = 99999
+	serverMu.Unlock()
+
+	accountName := C.CString("TEST_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	result := RegisterAccount(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Fatal("Expected error when server not running")
+	}
+
+	if !strings.Contains(response, "Server not running") {
+		t.Errorf("Expected 'Server not running' error, got: %s", response)
+	}
+}
+
+// Test RegisterAccount with null name
+func TestRegisterAccount_NullName(t *testing.T) {
+	port := 14239
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	result := RegisterAccount(nil)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Fatal("Expected error for null account name")
+	}
+
+	if !strings.Contains(response, "cannot be null") {
+		t.Errorf("Expected 'cannot be null' error, got: %s", response)
+	}
+}
+
+// Test LookupAccount with server running
+func TestLookupAccount_Success(t *testing.T) {
+	port := 14240
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	// Register an account first
+	accountName := C.CString("LOOKUP_TEST_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	registerResult := RegisterAccount(accountName)
+	C.free(unsafe.Pointer(registerResult))
+
+	// Now lookup the account
+	result := LookupAccount(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if isErrorResponse(response) {
+		t.Fatalf("Expected success, got error: %s", response)
+	}
+
+	var account map[string]interface{}
+	if err := json.Unmarshal([]byte(response), &account); err != nil {
+		t.Fatalf("Failed to parse account JSON: %v", err)
+	}
+
+	// Validate response structure
+	if name, ok := account["account"].(string); !ok || name != "LOOKUP_TEST_ACCOUNT" {
+		t.Errorf("Expected account name 'LOOKUP_TEST_ACCOUNT', got %v", account["account"])
+	}
+
+	if _, exists := account["total_subs"]; !exists {
+		t.Error("Expected 'total_subs' field in lookup response")
+	}
+}
+
+// Test LookupAccount for non-existent account
+func TestLookupAccount_NotFound(t *testing.T) {
+	port := 14241
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	accountName := C.CString("NONEXISTENT_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	result := LookupAccount(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Fatal("Expected error for non-existent account")
+	}
+
+	if !strings.Contains(response, "Account not found") {
+		t.Errorf("Expected 'Account not found' error, got: %s", response)
+	}
+}
+
+// Test LookupAccount without server
+func TestLookupAccount_ServerNotRunning(t *testing.T) {
+	serverMu.Lock()
+	currentPort = 99999
+	serverMu.Unlock()
+
+	accountName := C.CString("TEST_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	result := LookupAccount(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Fatal("Expected error when server not running")
+	}
+}
+
+// Test GetAccountStatz with server running
+func TestGetAccountStatz_Success(t *testing.T) {
+	port := 14242
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	// Register some test accounts
+	account1 := C.CString("STATS_ACCOUNT_001")
+	account2 := C.CString("STATS_ACCOUNT_002")
+	defer C.free(unsafe.Pointer(account1))
+	defer C.free(unsafe.Pointer(account2))
+
+	reg1 := RegisterAccount(account1)
+	reg2 := RegisterAccount(account2)
+	C.free(unsafe.Pointer(reg1))
+	C.free(unsafe.Pointer(reg2))
+
+	// Get statistics for all accounts
+	result := GetAccountStatz(nil)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if isErrorResponse(response) {
+		t.Fatalf("Expected success, got error: %s", response)
+	}
+
+	var statz map[string]interface{}
+	if err := json.Unmarshal([]byte(response), &statz); err != nil {
+		t.Fatalf("Failed to parse AccountStatz JSON: %v", err)
+	}
+
+	// Validate response structure
+	if _, exists := statz["server_id"]; !exists {
+		t.Error("Expected 'server_id' field in response")
+	}
+
+	if _, exists := statz["now"]; !exists {
+		t.Error("Expected 'now' field in response")
+	}
+
+	if accounts, ok := statz["accounts"].([]interface{}); !ok {
+		t.Error("Expected 'accounts' array in response")
+	} else if len(accounts) == 0 {
+		t.Error("Expected at least one account in statistics")
+	}
+}
+
+// Test GetAccountStatz with account filter
+func TestGetAccountStatz_WithFilter(t *testing.T) {
+	port := 14243
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	// Register a test account
+	accountName := C.CString("FILTERED_ACCOUNT")
+	defer C.free(unsafe.Pointer(accountName))
+
+	reg := RegisterAccount(accountName)
+	C.free(unsafe.Pointer(reg))
+
+	// Get statistics for specific account
+	result := GetAccountStatz(accountName)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if isErrorResponse(response) {
+		t.Fatalf("Expected success, got error: %s", response)
+	}
+
+	var statz map[string]interface{}
+	if err := json.Unmarshal([]byte(response), &statz); err != nil {
+		t.Fatalf("Failed to parse filtered AccountStatz JSON: %v", err)
+	}
+
+	// Should have accounts array
+	if _, exists := statz["accounts"]; !exists {
+		t.Error("Expected 'accounts' field in filtered response")
+	}
+}
+
+// Test GetAccountStatz without server
+func TestGetAccountStatz_ServerNotRunning(t *testing.T) {
+	serverMu.Lock()
+	currentPort = 99999
+	serverMu.Unlock()
+
+	result := GetAccountStatz(nil)
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Fatal("Expected error when server not running")
+	}
+
+	if !strings.Contains(response, "Server not running") {
+		t.Errorf("Expected 'Server not running' error, got: %s", response)
+	}
+}
