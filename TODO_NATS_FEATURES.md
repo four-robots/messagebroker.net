@@ -18,7 +18,9 @@ This document tracks the implementation status of NATS server features that are 
 - Returns basic server variables and statistics
 - **Enhancement Needed**: Return full Varz data structure
 
-#### ⏳ Connz() - Connection Monitoring
+#### ✅ Connz() - Connection Monitoring
+- **Status**: FULLY IMPLEMENTED
+- **Location**: `native/nats-bindings.go:587`, `NatsController.cs:506`
 - **Purpose**: List active connections with client details
 - **Returns**:
   - Number of connections
@@ -27,8 +29,12 @@ This document tracks the implementation status of NATS server features that are 
   - Bytes in/out per connection
 - **Use Case**: Monitor client connections, debug connection issues
 - **Priority**: HIGH
+- **Tests**: `MonitoringTests.cs:30-91`
+- **Examples**: `MonitoringExample.cs`, option 9
 
-#### ⏳ Subsz() - Subscription Information
+#### ✅ Subsz() - Subscription Information
+- **Status**: FULLY IMPLEMENTED
+- **Location**: `native/nats-bindings.go:624`, `NatsController.cs:547`
 - **Purpose**: Detailed view of all subscriptions
 - **Returns**:
   - Total subscription count
@@ -36,8 +42,12 @@ This document tracks the implementation status of NATS server features that are 
   - Queue groups
 - **Use Case**: Debug subscription issues, monitor subject usage
 - **Priority**: HIGH
+- **Tests**: `MonitoringTests.cs:93-147`
+- **Examples**: `MonitoringExample.cs`, option 9
 
-#### ⏳ Jsz() - JetStream Statistics
+#### ✅ Jsz() - JetStream Statistics
+- **Status**: FULLY IMPLEMENTED
+- **Location**: `native/nats-bindings.go:658`, `NatsController.cs:588`
 - **Purpose**: JetStream monitoring and statistics
 - **Returns**:
   - Stream count and details
@@ -46,8 +56,12 @@ This document tracks the implementation status of NATS server features that are 
   - Account-level JetStream stats
 - **Use Case**: Essential for JetStream operations monitoring
 - **Priority**: HIGH
+- **Tests**: `MonitoringTests.cs:149-231`, `MonitoringTests.cs:477-535`
+- **Examples**: `MonitoringExample.cs`, option 9
 
-#### ⏳ Routez() - Cluster Routing
+#### ✅ Routez() - Cluster Routing
+- **Status**: FULLY IMPLEMENTED
+- **Location**: `native/nats-bindings.go:695`, `NatsController.cs:628`
 - **Purpose**: Cluster routing information
 - **Returns**:
   - Routes between servers
@@ -55,8 +69,12 @@ This document tracks the implementation status of NATS server features that are 
   - Number of subscriptions per route
 - **Use Case**: Debug cluster connectivity
 - **Priority**: MEDIUM
+- **Tests**: `MonitoringTests.cs:233-293`
+- **Examples**: `ClusterMonitoringExample.cs`, option A
 
-#### ⏳ Leafz() - Leaf Node Information
+#### ✅ Leafz() - Leaf Node Information
+- **Status**: FULLY IMPLEMENTED
+- **Location**: `native/nats-bindings.go:722`, `NatsController.cs:668`
 - **Purpose**: Leaf node connection details
 - **Returns**:
   - Connected leaf nodes
@@ -64,6 +82,8 @@ This document tracks the implementation status of NATS server features that are 
   - Account information
 - **Use Case**: Monitor leaf node topology
 - **Priority**: MEDIUM
+- **Tests**: `MonitoringTests.cs:295-354`
+- **Examples**: `ClusterMonitoringExample.cs`, option A
 
 #### ⏳ Accountz() - Account Monitoring
 - **Purpose**: Account-level monitoring
@@ -116,18 +136,26 @@ This document tracks the implementation status of NATS server features that are 
 
 ### 2. Connection Management
 
-#### ⏳ DisconnectClientByID() - Force Disconnect
+#### ✅ DisconnectClientByID() - Force Disconnect
+- **Status**: FULLY IMPLEMENTED
+- **Location**: `native/nats-bindings.go:749`, `NatsController.cs:709`
 - **Purpose**: Forcefully disconnect a specific client
 - **Parameters**: Client ID (from Connz)
 - **Use Case**: Remove misbehaving clients, enforce policies
 - **Priority**: HIGH
+- **Tests**: `MonitoringTests.cs:356-426`
+- **Examples**: `ClientManagementExample.cs`, option B
 
-#### ⏳ GetClient() - Get Client Info
+#### ✅ GetClientInfo() - Get Client Info
+- **Status**: FULLY IMPLEMENTED
+- **Location**: `native/nats-bindings.go:769`, `NatsController.cs:750`
 - **Purpose**: Retrieve detailed information about a specific client
 - **Parameters**: Client ID
 - **Returns**: Full client connection details
 - **Use Case**: Client debugging
 - **Priority**: MEDIUM
+- **Tests**: `MonitoringTests.cs:356-426`
+- **Examples**: `ClientManagementExample.cs`, option B
 
 ### 3. Account Management (Runtime)
 
@@ -248,26 +276,32 @@ This document tracks the implementation status of NATS server features that are 
 
 ## Implementation Roadmap
 
-### Phase 1: Essential Monitoring (Sprint 1)
+### Phase 1: Essential Monitoring (Sprint 1) - ✅ COMPLETE
 1. ✅ Enhance Varz() to return full data structure
-2. ⏳ Implement Connz() - connection monitoring
-3. ⏳ Implement Subsz() - subscription monitoring
-4. ⏳ Implement Jsz() - JetStream stats
-5. ⏳ Add comprehensive tests for all monitoring endpoints
+2. ✅ Implement Connz() - connection monitoring
+3. ✅ Implement Subsz() - subscription monitoring
+4. ✅ Implement Jsz() - JetStream stats
+5. ✅ Implement Routez() - cluster routing
+6. ✅ Implement Leafz() - leaf node monitoring
+7. ✅ Implement DisconnectClientByID() - client management
+8. ✅ Implement GetClientInfo() - client information
+9. ✅ Add comprehensive tests for all monitoring endpoints (8 test scenarios)
+10. ✅ Add interactive examples (3 examples with menu integration)
 
 ### Phase 2: Connection & Account Management (Sprint 2)
-1. ⏳ Implement DisconnectClientByID()
-2. ⏳ Implement RegisterAccount()
-3. ⏳ Implement LookupAccount()
-4. ⏳ Implement GetClient()
-5. ⏳ Add tests for connection and account management
+1. ✅ Implement DisconnectClientByID() - COMPLETED IN PHASE 1
+2. ✅ Implement GetClientInfo() - COMPLETED IN PHASE 1
+3. ⏳ Implement RegisterAccount()
+4. ⏳ Implement LookupAccount()
+5. ⏳ Add tests for account management
 
-### Phase 3: Advanced Monitoring (Sprint 3)
-1. ⏳ Implement Routez() - cluster routes
-2. ⏳ Implement Leafz() - leaf nodes
+### Phase 3: Advanced Monitoring (Sprint 3) - PARTIALLY COMPLETE
+1. ✅ Implement Routez() - cluster routes - COMPLETED IN PHASE 1
+2. ✅ Implement Leafz() - leaf nodes - COMPLETED IN PHASE 1
 3. ⏳ Implement Accountz() - account monitoring
 4. ⏳ Implement AccountStatz() - account stats
-5. ⏳ Add tests for advanced monitoring
+5. ⏳ Implement JszAccount() - account-specific JetStream stats
+6. ⏳ Add tests for additional monitoring endpoints
 
 ### Phase 4: Runtime Control (Sprint 4)
 1. ⏳ Implement EnableJetStream() / DisableJetStream()
@@ -321,17 +355,28 @@ After implementation:
 - ✅ Cluster configuration
 - ✅ Leaf node configuration
 - ✅ Authentication (username/password, token)
+- ✅ **Connection monitoring (Connz)** - PHASE 1
+- ✅ **Subscription monitoring (Subsz)** - PHASE 1
+- ✅ **JetStream monitoring (Jsz)** - PHASE 1
+- ✅ **Cluster routing monitoring (Routez)** - PHASE 1
+- ✅ **Leaf node monitoring (Leafz)** - PHASE 1
+- ✅ **Client disconnection (DisconnectClientByID)** - PHASE 1
+- ✅ **Client information (GetClientInfo)** - PHASE 1
+
+### Completed Phases
+- ✅ **Phase 1: Essential Monitoring** - 100% COMPLETE (10/10 items)
 
 ### In Progress
-- 🚧 Full monitoring endpoint implementation
+- None (Phase 1 complete, ready for Phase 2)
 
 ### Total Features
-- **Implemented**: 8/35 (23%)
-- **In Progress**: 1/35 (3%)
-- **Planned**: 26/35 (74%)
+- **Implemented**: 15/35 (43%)
+- **In Progress**: 0/35 (0%)
+- **Planned**: 20/35 (57%)
 
 ---
 
 **Last Updated**: 2025-11-15
-**Current Sprint**: Phase 1 - Essential Monitoring
-**Target Completion**: TBD
+**Current Sprint**: ✅ Phase 1 Complete - Ready for Phase 2 (Account Management)
+**Phase 1 Completion Date**: 2025-11-15 (verified all implementations exist)
+**Next Phase**: Phase 2 - Connection & Account Management
