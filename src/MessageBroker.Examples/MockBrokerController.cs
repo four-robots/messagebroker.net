@@ -184,6 +184,18 @@ internal class MockBrokerController : IBrokerController, IDisposable
         };
     }
 
+    public async Task EnterLameDuckModeAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_isRunning)
+        {
+            throw new InvalidOperationException("Cannot enter lame duck mode - server is not running");
+        }
+
+        // Simulate entering lame duck mode
+        await Task.Delay(50, cancellationToken);
+        // In a real implementation, this would signal the server to stop accepting new connections
+    }
+
     public async Task ShutdownAsync(CancellationToken cancellationToken = default)
     {
         _isRunning = false;

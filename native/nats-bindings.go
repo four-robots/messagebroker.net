@@ -19,31 +19,31 @@ import (
 
 var (
 	// Map of server instances by port (supports multiple servers per process)
-	natsServers   = make(map[int]*server.Server)
-	currentPort   int // Most recently started server port (for GetServerInfo/GetClientURL)
-	serverMu      sync.Mutex
+	natsServers = make(map[int]*server.Server)
+	currentPort int // Most recently started server port (for GetServerInfo/GetClientURL)
+	serverMu    sync.Mutex
 )
 
 // ServerConfig represents the configuration for the NATS server
 type ServerConfig struct {
-	Host                string         `json:"host"`
-	Port                int            `json:"port"`
-	MaxPayload          int            `json:"max_payload"`
-	MaxControlLine      int            `json:"max_control_line"`
-	PingInterval        int            `json:"ping_interval"`
-	MaxPingsOut         int            `json:"max_pings_out"`
-	WriteDeadline       int            `json:"write_deadline"`
-	Debug               bool           `json:"debug"`
-	Trace               bool           `json:"trace"`
-	Jetstream           bool           `json:"jetstream"`
-	JetstreamStoreDir   string         `json:"jetstream_store_dir"`
-	JetstreamMaxMemory  int64          `json:"jetstream_max_memory"`
-	JetstreamMaxStore   int64          `json:"jetstream_max_store"`
-	HTTPPort            int            `json:"http_port"`
-	HTTPHost            string         `json:"http_host"`
-	HTTPSPort           int            `json:"https_port"`
-	Auth                AuthConfig     `json:"auth"`
-	LeafNode            LeafNodeConfig `json:"leaf_node"`
+	Host               string         `json:"host"`
+	Port               int            `json:"port"`
+	MaxPayload         int            `json:"max_payload"`
+	MaxControlLine     int            `json:"max_control_line"`
+	PingInterval       int            `json:"ping_interval"`
+	MaxPingsOut        int            `json:"max_pings_out"`
+	WriteDeadline      int            `json:"write_deadline"`
+	Debug              bool           `json:"debug"`
+	Trace              bool           `json:"trace"`
+	Jetstream          bool           `json:"jetstream"`
+	JetstreamStoreDir  string         `json:"jetstream_store_dir"`
+	JetstreamMaxMemory int64          `json:"jetstream_max_memory"`
+	JetstreamMaxStore  int64          `json:"jetstream_max_store"`
+	HTTPPort           int            `json:"http_port"`
+	HTTPHost           string         `json:"http_host"`
+	HTTPSPort          int            `json:"https_port"`
+	Auth               AuthConfig     `json:"auth"`
+	LeafNode           LeafNodeConfig `json:"leaf_node"`
 }
 
 type AuthConfig struct {
@@ -270,6 +270,24 @@ func ShutdownServer() {
 			currentPort = 0
 		}
 	}
+}
+
+//export EnterLameDuckMode
+func EnterLameDuckMode() *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	// Enter lame duck mode for the current server
+	if currentPort > 0 {
+		if srv, exists := natsServers[currentPort]; exists {
+			// LameDuckMode signals the server to enter lame duck mode
+			// This stops accepting new connections and allows existing connections to drain
+			srv.LameDuckMode()
+			return C.CString("OK")
+		}
+		return C.CString("ERROR: Server not found for current port")
+	}
+	return C.CString("ERROR: No server running")
 }
 
 //export SetCurrentPort

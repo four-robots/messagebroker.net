@@ -9,6 +9,7 @@ internal interface INatsBindings
     IntPtr StartServerWithJetStream(string host, int port, string storeDir);
     IntPtr StartServerFromConfigFile(string configFilePath);
     void ShutdownServer();
+    IntPtr EnterLameDuckMode();
     void SetCurrentPort(int port);
     IntPtr GetClientURL();
     IntPtr GetServerInfo();
@@ -42,6 +43,11 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern void _shutdownServer();
 
     public void ShutdownServer() => _shutdownServer();
+
+    [DllImport("nats-bindings.dll", EntryPoint = "EnterLameDuckMode")]
+    internal static extern IntPtr _enterLameDuckMode();
+
+    public IntPtr EnterLameDuckMode() => _enterLameDuckMode();
 
     [DllImport("nats-bindings.dll", EntryPoint = "SetCurrentPort")]
     internal static extern void _setCurrentPort(int port);
@@ -114,6 +120,11 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern void _shutdownServer();
 
     public void ShutdownServer() => _shutdownServer();
+
+    [DllImport("nats-bindings.so", EntryPoint = "EnterLameDuckMode")]
+    internal static extern IntPtr _enterLameDuckMode();
+
+    public IntPtr EnterLameDuckMode() => _enterLameDuckMode();
 
     [DllImport("nats-bindings.so", EntryPoint = "SetCurrentPort")]
     internal static extern void _setCurrentPort(int port);

@@ -61,6 +61,10 @@ class Program
                     break;
 
                 case '8':
+                    await LameDuckModeExample.RunAsync();
+                    break;
+
+                case '9':
                 case 'q':
                 case 'Q':
                     running = false;
@@ -69,7 +73,7 @@ class Program
 
                 default:
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\nInvalid choice. Please select 1-8.");
+                    Console.WriteLine("\nInvalid choice. Please select 1-9.");
                     Console.ResetColor();
                     Console.WriteLine("\nPress any key to continue...");
                     Console.ReadKey(true);
@@ -133,18 +137,20 @@ class Program
         Console.WriteLine("     └─ Chainable configuration methods");
         Console.WriteLine("  7. Complete Workflow");
         Console.WriteLine("     └─ Production-ready end-to-end example");
+        Console.WriteLine("  8. Lame Duck Mode");
+        Console.WriteLine("     └─ Graceful shutdown with connection draining");
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine("  OTHER");
         Console.ResetColor();
-        Console.WriteLine("  8. Exit");
+        Console.WriteLine("  9. Exit");
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
         Console.ResetColor();
-        Console.Write("\nSelect an option (1-8): ");
+        Console.Write("\nSelect an option (1-9): ");
     }
 
     static void ShowGoodbye()
@@ -166,6 +172,7 @@ class Program
         Console.WriteLine("  ✓ Version history and rollback capabilities");
         Console.WriteLine("  ✓ Event-driven change notifications");
         Console.WriteLine("  ✓ Fluent API for clean, readable code");
+        Console.WriteLine("  ✓ Lame duck mode for graceful shutdowns");
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("For more information, see ComparisonWithNatsSharp.md");

@@ -427,6 +427,50 @@ public class NatsController : IBrokerController, IDisposable
     }
 
     /// <summary>
+    /// Enters lame duck mode, which stops accepting new connections while allowing existing connections to drain gracefully.
+    /// This is useful for performing zero-downtime deployments and graceful shutdowns.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task that completes when lame duck mode has been entered.</returns>
+    public async Task EnterLameDuckModeAsync(CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            if (!IsRunning)
+            {
+                throw new InvalidOperationException("Cannot enter lame duck mode - broker is not running. Call ConfigureAsync first.");
+            }
+
+            // Set the current port to ensure we operate on the correct server instance
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.EnterLameDuckMode();
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to enter lame duck mode: {response}");
+                }
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Gracefully shuts down the broker instance.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation.</param>

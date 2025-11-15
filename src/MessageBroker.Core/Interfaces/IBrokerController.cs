@@ -46,6 +46,14 @@ public interface IBrokerController
     Task<BrokerInfo> GetInfoAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Enters lame duck mode, which stops accepting new connections while allowing existing connections to drain gracefully.
+    /// This is useful for performing zero-downtime deployments and graceful shutdowns.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task that completes when lame duck mode has been entered.</returns>
+    Task EnterLameDuckModeAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gracefully shuts down the broker instance.
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation.</param>

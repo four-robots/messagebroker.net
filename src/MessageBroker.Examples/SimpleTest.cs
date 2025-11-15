@@ -109,8 +109,22 @@ public static class SimpleTest
         Console.WriteLine($"  JetStream Enabled: {info.JetstreamEnabled}");
         Console.WriteLine();
 
-        // Test 7: Shutdown
-        Console.WriteLine("[TEST 7] Graceful Shutdown");
+        // Test 7: Lame Duck Mode
+        Console.WriteLine("[TEST 7] Lame Duck Mode");
+        try
+        {
+            await controller.EnterLameDuckModeAsync();
+            Console.WriteLine("  Successfully entered lame duck mode");
+            Console.WriteLine("  Server is now draining connections");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"  Error: {ex.Message}");
+        }
+        Console.WriteLine();
+
+        // Test 8: Shutdown
+        Console.WriteLine("[TEST 8] Graceful Shutdown");
         await controller.ShutdownAsync();
         Console.WriteLine("  Shutdown complete");
         Console.WriteLine();
