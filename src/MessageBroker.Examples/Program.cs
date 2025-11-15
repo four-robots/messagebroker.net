@@ -1,6 +1,7 @@
 using MessageBroker.Examples.BasicUsage;
 using MessageBroker.Examples.HotReload;
 using MessageBroker.Examples.Advanced;
+using MessageBroker.Examples.Monitoring;
 
 namespace MessageBroker.Examples;
 
@@ -65,15 +66,29 @@ class Program
                     break;
 
                 case '9':
+                    await MonitoringExample.RunAsync();
+                    break;
+
+                case 'a':
+                case 'A':
+                    await ClusterMonitoringExample.RunAsync();
+                    break;
+
+                case 'b':
+                case 'B':
+                    await ClientManagementExample.RunAsync();
+                    break;
+
                 case 'q':
                 case 'Q':
+                case '0':
                     running = false;
                     ShowGoodbye();
                     break;
 
                 default:
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\nInvalid choice. Please select 1-9.");
+                    Console.WriteLine("\nInvalid choice. Please select 1-9, A-B, or Q to quit.");
                     Console.ResetColor();
                     Console.WriteLine("\nPress any key to continue...");
                     Console.ReadKey(true);
@@ -142,15 +157,26 @@ class Program
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("  MONITORING & OBSERVABILITY");
+        Console.ResetColor();
+        Console.WriteLine("  9. Server Monitoring");
+        Console.WriteLine("     └─ Connz, Subsz, Jsz endpoints");
+        Console.WriteLine("  A. Cluster Monitoring");
+        Console.WriteLine("     └─ Routez and Leafz endpoints");
+        Console.WriteLine("  B. Client Management");
+        Console.WriteLine("     └─ Connection tracking and disconnection");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine("  OTHER");
         Console.ResetColor();
-        Console.WriteLine("  9. Exit");
+        Console.WriteLine("  Q. Exit");
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
         Console.ResetColor();
-        Console.Write("\nSelect an option (1-9): ");
+        Console.Write("\nSelect an option (1-9, A-B, Q): ");
     }
 
     static void ShowGoodbye()
@@ -173,6 +199,9 @@ class Program
         Console.WriteLine("  ✓ Event-driven change notifications");
         Console.WriteLine("  ✓ Fluent API for clean, readable code");
         Console.WriteLine("  ✓ Lame duck mode for graceful shutdowns");
+        Console.WriteLine("  ✓ Server monitoring (Connz, Subsz, Jsz)");
+        Console.WriteLine("  ✓ Cluster and leaf node monitoring");
+        Console.WriteLine("  ✓ Client connection management");
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Green;
         Console.WriteLine("For more information, see ComparisonWithNatsSharp.md");
