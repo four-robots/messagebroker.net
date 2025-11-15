@@ -137,6 +137,9 @@ public class ConfigurationValidator : IConfigurationValidator
         // Validate leaf node configuration
         ValidateLeafNode(config.LeafNode, config.Port, result);
 
+        // Validate cluster configuration
+        ValidateCluster(config.Cluster, config.Port, config.HttpPort, config.HttpsPort, config.LeafNode, result);
+
         // Check for trace without debug
         if (config.Trace && !config.Debug)
         {
@@ -214,6 +217,30 @@ public class ConfigurationValidator : IConfigurationValidator
                     $"MaxPayload is changing by {changePercent:F0}%, which may affect existing clients",
                     ValidationSeverity.Warning);
             }
+        }
+
+        // Check for cluster changes
+        if (current.Cluster.Port != proposed.Cluster.Port)
+        {
+            if (proposed.Cluster.Port > 0)
+            {
+                result.AddError("Cluster.Port",
+                    "Enabling or changing the cluster port requires a restart and may affect cluster connectivity",
+                    ValidationSeverity.Warning);
+            }
+            else
+            {
+                result.AddError("Cluster.Port",
+                    "Disabling clustering will disconnect from all cluster peers",
+                    ValidationSeverity.Warning);
+            }
+        }
+
+        if (current.Cluster.Name != proposed.Cluster.Name && !string.IsNullOrWhiteSpace(proposed.Cluster.Name))
+        {
+            result.AddError("Cluster.Name",
+                "Changing the cluster name requires a restart and will disconnect from cluster peers",
+                ValidationSeverity.Warning);
         }
 
         return result;
@@ -319,6 +346,127 @@ public class ConfigurationValidator : IConfigurationValidator
                     result.AddError($"LeafNode.ExportSubjects[{i}]", $"Invalid subject pattern: {subject}");
                 }
             }
+        }
+    }
+
+    private void ValidateCluster(ClusterConfiguration cluster, int mainPort, int httpPort, int httpsPort, LeafNodeConfiguration leafNode, ValidationResult result)
+    {
+        if (cluster == null || cluster.Port == 0)
+            return;
+
+        if (cluster.Port < MinPort || cluster.Port > MaxPort)
+        {
+            result.AddError("Cluster.Port", $"Cluster port must be between {MinPort} and {MaxPort} or 0 to disable");
+        }
+
+        if (cluster.Port == mainPort)
+        {
+            result.AddError("Cluster.Port", "Cluster port cannot be the same as the main server port");
+        }
+
+        if (httpPort != 0 && cluster.Port == httpPort)
+        {
+            result.AddError("Cluster.Port", "Cluster port cannot be the same as HTTP monitoring port");
+        }
+
+        if (httpsPort != 0 && cluster.Port == httpsPort)
+        {
+            result.AddError("Cluster.Port", "Cluster port cannot be the same as HTTPS monitoring port");
+        }
+
+        if (leafNode != null && leafNode.Port != 0 && cluster.Port == leafNode.Port)
+        {
+            result.AddError("Cluster.Port", "Cluster port cannot be the same as leaf node port");
+        }
+
+        // Validate cluster name
+        if (string.IsNullOrWhiteSpace(cluster.Name))
+        {
+            result.AddError("Cluster.Name", "Cluster name must be specified when clustering is enabled");
+        }
+
+        // Check for TLS certificate consistency
+        var hasCert = !string.IsNullOrWhiteSpace(cluster.TlsCert);
+        var hasKey = !string.IsNullOrWhiteSpace(cluster.TlsKey);
+
+        if (hasCert && !hasKey)
+        {
+            result.AddError("Cluster.TlsCert", "TLS certificate is specified but key is not");
+        }
+
+        if (!hasCert && hasKey)
+        {
+            result.AddError("Cluster.TlsKey", "TLS key is specified but certificate is not");
+        }
+
+        // Check for auth consistency
+        var hasUsername = !string.IsNullOrWhiteSpace(cluster.AuthUsername);
+        var hasPassword = !string.IsNullOrWhiteSpace(cluster.AuthPassword);
+        var hasToken = !string.IsNullOrWhiteSpace(cluster.AuthToken);
+
+        if (hasUsername && !hasPassword)
+        {
+            result.AddError("Cluster.AuthUsername", "Cluster username is set but password is not");
+        }
+
+        if (!hasUsername && hasPassword)
+        {
+            result.AddError("Cluster.AuthPassword", "Cluster password is set but username is not");
+        }
+
+        if ((hasUsername || hasPassword) && hasToken)
+        {
+            result.AddError("Cluster.Auth", "Cannot use both username/password and token authentication for cluster");
+        }
+
+        // Validate routes
+        if (cluster.Routes != null && cluster.Routes.Any())
+        {
+            for (int i = 0; i < cluster.Routes.Count; i++)
+            {
+                var route = cluster.Routes[i];
+                if (string.IsNullOrWhiteSpace(route))
+                {
+                    result.AddError($"Cluster.Routes[{i}]", "Route URL cannot be empty");
+                }
+                else if (!IsValidRouteUrl(route))
+                {
+                    result.AddError($"Cluster.Routes[{i}]", $"Invalid route URL: {route}. Expected format: nats-route://host:port");
+                }
+            }
+        }
+        else
+        {
+            result.AddError("Cluster.Routes",
+                "At least one route should be specified when clustering is enabled",
+                ValidationSeverity.Warning);
+        }
+
+        // Validate connect timeout
+        if (cluster.ConnectTimeout < 0)
+        {
+            result.AddError("Cluster.ConnectTimeout", "Connect timeout cannot be negative");
+        }
+    }
+
+    /// <summary>
+    /// Validates a cluster route URL.
+    /// Route URLs should be in the format: nats-route://host:port
+    /// </summary>
+    private static bool IsValidRouteUrl(string routeUrl)
+    {
+        if (string.IsNullOrWhiteSpace(routeUrl))
+            return false;
+
+        try
+        {
+            var uri = new Uri(routeUrl);
+            // Accept nats-route:// or nats:// schemes
+            return (uri.Scheme == "nats-route" || uri.Scheme == "nats") && !string.IsNullOrWhiteSpace(uri.Host) && uri.Port > 0;
+        }
+        catch
+        {
+            return false;
         }
     }
 

@@ -380,4 +380,135 @@ public class ConfigurationMapperTests
         // Assert
         Assert.NotNull(serverConfig.LeafNode);
     }
+
+    // Cluster Configuration Tests
+
+    [Fact]
+    public void MapToServerConfig_ClusterConfiguration_MapsCorrectly()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Name = "test-cluster",
+                Host = "clusterhost",
+                Port = 6222,
+                Routes = new List<string> { "nats-route://server1:6222", "nats-route://server2:6222" },
+                AuthUsername = "clusteruser",
+                AuthPassword = "clusterpass",
+                AuthToken = "clustertoken",
+                ConnectTimeout = 5,
+                TlsCert = "/path/to/cluster-cert",
+                TlsKey = "/path/to/cluster-key",
+                TlsCaCert = "/path/to/cluster-ca",
+                TlsVerify = false
+            }
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.NotNull(serverConfig.Cluster);
+        Assert.Equal("test-cluster", serverConfig.Cluster.Name);
+        Assert.Equal("clusterhost", serverConfig.Cluster.Host);
+        Assert.Equal(6222, serverConfig.Cluster.Port);
+        Assert.Equal(2, serverConfig.Cluster.Routes.Count);
+        Assert.Contains("nats-route://server1:6222", serverConfig.Cluster.Routes);
+        Assert.Contains("nats-route://server2:6222", serverConfig.Cluster.Routes);
+        Assert.Equal("clusteruser", serverConfig.Cluster.AuthUsername);
+        Assert.Equal("clusterpass", serverConfig.Cluster.AuthPassword);
+        Assert.Equal("clustertoken", serverConfig.Cluster.AuthToken);
+        Assert.Equal(5, serverConfig.Cluster.ConnectTimeout);
+        Assert.Equal("/path/to/cluster-cert", serverConfig.Cluster.TLSCert);
+        Assert.Equal("/path/to/cluster-key", serverConfig.Cluster.TLSKey);
+        Assert.Equal("/path/to/cluster-ca", serverConfig.Cluster.TLSCACert);
+        Assert.False(serverConfig.Cluster.TLSVerify);
+    }
+
+    [Fact]
+    public void MapToBrokerConfiguration_ClusterConfiguration_MapsCorrectly()
+    {
+        // Arrange
+        var serverConfig = new ServerConfig
+        {
+            Cluster = new ClusterConfig
+            {
+                Name = "test-cluster",
+                Host = "clusterhost",
+                Port = 6222,
+                Routes = new List<string> { "nats-route://server1:6222", "nats-route://server2:6222" },
+                AuthUsername = "clusteruser",
+                AuthPassword = "clusterpass",
+                AuthToken = "clustertoken",
+                ConnectTimeout = 5,
+                TLSCert = "/path/to/cluster-cert",
+                TLSKey = "/path/to/cluster-key",
+                TLSCACert = "/path/to/cluster-ca",
+                TLSVerify = false
+            }
+        };
+
+        // Act
+        var brokerConfig = ConfigurationMapper.MapToBrokerConfiguration(serverConfig);
+
+        // Assert
+        Assert.NotNull(brokerConfig.Cluster);
+        Assert.Equal("test-cluster", brokerConfig.Cluster.Name);
+        Assert.Equal("clusterhost", brokerConfig.Cluster.Host);
+        Assert.Equal(6222, brokerConfig.Cluster.Port);
+        Assert.Equal(2, brokerConfig.Cluster.Routes.Count);
+        Assert.Contains("nats-route://server1:6222", brokerConfig.Cluster.Routes);
+        Assert.Contains("nats-route://server2:6222", brokerConfig.Cluster.Routes);
+        Assert.Equal("clusteruser", brokerConfig.Cluster.AuthUsername);
+        Assert.Equal("clusterpass", brokerConfig.Cluster.AuthPassword);
+        Assert.Equal("clustertoken", brokerConfig.Cluster.AuthToken);
+        Assert.Equal(5, brokerConfig.Cluster.ConnectTimeout);
+        Assert.Equal("/path/to/cluster-cert", brokerConfig.Cluster.TlsCert);
+        Assert.Equal("/path/to/cluster-key", brokerConfig.Cluster.TlsKey);
+        Assert.Equal("/path/to/cluster-ca", brokerConfig.Cluster.TlsCaCert);
+        Assert.False(brokerConfig.Cluster.TlsVerify);
+    }
+
+    [Fact]
+    public void MapToServerConfig_WithNullCluster_CreatesDefaultCluster()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration();
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.NotNull(serverConfig.Cluster);
+    }
+
+    [Fact]
+    public void RoundTrip_ClusterConfiguration_PreservesValues()
+    {
+        // Arrange
+        var original = new BrokerConfiguration
+        {
+            Cluster = new ClusterConfiguration
+            {
+                Name = "production-cluster",
+                Port = 6222,
+                Routes = new List<string> { "nats-route://server1:6222" },
+                AuthUsername = "admin",
+                AuthPassword = "secret"
+            }
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(original);
+        var roundTripped = ConfigurationMapper.MapToBrokerConfiguration(serverConfig);
+
+        // Assert
+        Assert.Equal(original.Cluster.Name, roundTripped.Cluster.Name);
+        Assert.Equal(original.Cluster.Port, roundTripped.Cluster.Port);
+        Assert.Equal(original.Cluster.Routes[0], roundTripped.Cluster.Routes[0]);
+        Assert.Equal(original.Cluster.AuthUsername, roundTripped.Cluster.AuthUsername);
+        Assert.Equal(original.Cluster.AuthPassword, roundTripped.Cluster.AuthPassword);
+    }
 }

@@ -144,6 +144,14 @@ public class BrokerConfiguration : ICloneable
     [JsonPropertyName("leafNode")]
     public LeafNodeConfiguration LeafNode { get; set; } = new();
 
+    // Cluster Configuration
+
+    /// <summary>
+    /// Gets or sets the cluster configuration for full mesh clustering.
+    /// </summary>
+    [JsonPropertyName("cluster")]
+    public ClusterConfiguration Cluster { get; set; } = new();
+
     /// <summary>
     /// Creates a deep copy of this configuration instance.
     /// </summary>
@@ -172,7 +180,8 @@ public class BrokerConfiguration : ICloneable
             HttpHost = HttpHost,
             HttpsPort = HttpsPort,
             Auth = (AuthConfiguration)Auth.Clone(),
-            LeafNode = (LeafNodeConfiguration)LeafNode.Clone()
+            LeafNode = (LeafNodeConfiguration)LeafNode.Clone(),
+            Cluster = (ClusterConfiguration)Cluster.Clone()
         };
     }
 }
@@ -305,6 +314,108 @@ public class LeafNodeConfiguration : ICloneable
             TlsCaCert = TlsCaCert,
             ImportSubjects = new List<string>(ImportSubjects),
             ExportSubjects = new List<string>(ExportSubjects)
+        };
+    }
+}
+
+/// <summary>
+/// Represents cluster configuration for full mesh clustering.
+/// </summary>
+public class ClusterConfiguration : ICloneable
+{
+    /// <summary>
+    /// Gets or sets the name of the cluster this server belongs to.
+    /// All servers in the same cluster must have the same name.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the hostname or IP address for the cluster interface.
+    /// </summary>
+    [JsonPropertyName("host")]
+    public string Host { get; set; } = "0.0.0.0";
+
+    /// <summary>
+    /// Gets or sets the port for the cluster interface. 0 means clustering is disabled.
+    /// </summary>
+    [JsonPropertyName("port")]
+    public int Port { get; set; } = 0;
+
+    /// <summary>
+    /// Gets or sets the list of routes (URLs) to other cluster members.
+    /// Format: nats-route://host:port
+    /// </summary>
+    [JsonPropertyName("routes")]
+    public List<string> Routes { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the username for cluster authentication.
+    /// </summary>
+    [JsonPropertyName("authUsername")]
+    public string? AuthUsername { get; set; }
+
+    /// <summary>
+    /// Gets or sets the password for cluster authentication.
+    /// </summary>
+    [JsonPropertyName("authPassword")]
+    public string? AuthPassword { get; set; }
+
+    /// <summary>
+    /// Gets or sets the authentication token for cluster connections.
+    /// </summary>
+    [JsonPropertyName("authToken")]
+    public string? AuthToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timeout in seconds for establishing cluster connections.
+    /// </summary>
+    [JsonPropertyName("connectTimeout")]
+    public int ConnectTimeout { get; set; } = 2;
+
+    /// <summary>
+    /// Gets or sets the TLS certificate file path for cluster connections.
+    /// </summary>
+    [JsonPropertyName("tlsCert")]
+    public string? TlsCert { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TLS key file path for cluster connections.
+    /// </summary>
+    [JsonPropertyName("tlsKey")]
+    public string? TlsKey { get; set; }
+
+    /// <summary>
+    /// Gets or sets the TLS CA certificate file path for cluster connections.
+    /// </summary>
+    [JsonPropertyName("tlsCaCert")]
+    public string? TlsCaCert { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to verify TLS certificates for cluster connections.
+    /// </summary>
+    [JsonPropertyName("tlsVerify")]
+    public bool TlsVerify { get; set; } = true;
+
+    /// <summary>
+    /// Creates a deep copy of this cluster configuration.
+    /// </summary>
+    public object Clone()
+    {
+        return new ClusterConfiguration
+        {
+            Name = Name,
+            Host = Host,
+            Port = Port,
+            Routes = new List<string>(Routes),
+            AuthUsername = AuthUsername,
+            AuthPassword = AuthPassword,
+            AuthToken = AuthToken,
+            ConnectTimeout = ConnectTimeout,
+            TlsCert = TlsCert,
+            TlsKey = TlsKey,
+            TlsCaCert = TlsCaCert,
+            TlsVerify = TlsVerify
         };
     }
 }
