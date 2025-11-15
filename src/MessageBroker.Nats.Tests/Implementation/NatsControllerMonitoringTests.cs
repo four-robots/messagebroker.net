@@ -1120,4 +1120,171 @@ public class NatsControllerMonitoringTests : IDisposable
     }
 
     #endregion
+
+    #region Health Check and JetStream Tests
+
+    [Fact]
+    public async Task WaitForReadyAsync_ReturnsTrue_WhenServerIsReady()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("true");
+
+        _mockBindings.Setup(b => b.WaitForReadyState(5)).Returns(testPtr);
+
+        // Act
+        var result = await _controller.WaitForReadyAsync(timeoutSeconds: 5);
+
+        // Assert
+        Assert.True(result);
+        _mockBindings.Verify(b => b.WaitForReadyState(5), Times.Once);
+        _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task WaitForReadyAsync_ReturnsFalse_WhenTimeout()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("false");
+
+        _mockBindings.Setup(b => b.WaitForReadyState(1)).Returns(testPtr);
+
+        // Act
+        var result = await _controller.WaitForReadyAsync(timeoutSeconds: 1);
+
+        // Assert
+        Assert.False(result);
+        _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task WaitForReadyAsync_ErrorResponse_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("ERROR: Server not running");
+
+        _mockBindings.Setup(b => b.WaitForReadyState(It.IsAny<int>())).Returns(testPtr);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.WaitForReadyAsync());
+
+        _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task WaitForReadyAsync_ServerNotRunning_ThrowsInvalidOperationException()
+    {
+        // Arrange - No configuration
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.WaitForReadyAsync());
+
+        _mockBindings.Verify(b => b.WaitForReadyState(It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task WaitForReadyAsync_UsesDefaultTimeout()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("true");
+
+        _mockBindings.Setup(b => b.WaitForReadyState(5)).Returns(testPtr);
+
+        // Act - Call without specifying timeout (should use default 5)
+        var result = await _controller.WaitForReadyAsync();
+
+        // Assert
+        Assert.True(result);
+        _mockBindings.Verify(b => b.WaitForReadyState(5), Times.Once);
+    }
+
+    [Fact]
+    public async Task IsJetStreamEnabledAsync_ReturnsTrue_WhenEnabled()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("true");
+
+        _mockBindings.Setup(b => b.IsJetStreamEnabled()).Returns(testPtr);
+
+        // Act
+        var result = await _controller.IsJetStreamEnabledAsync();
+
+        // Assert
+        Assert.True(result);
+        _mockBindings.Verify(b => b.IsJetStreamEnabled(), Times.Once);
+        _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task IsJetStreamEnabledAsync_ReturnsFalse_WhenNotEnabled()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("false");
+
+        _mockBindings.Setup(b => b.IsJetStreamEnabled()).Returns(testPtr);
+
+        // Act
+        var result = await _controller.IsJetStreamEnabledAsync();
+
+        // Assert
+        Assert.False(result);
+        _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task IsJetStreamEnabledAsync_ErrorResponse_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var testPtr = CreateManagedString("ERROR: Failed to get server info");
+
+        _mockBindings.Setup(b => b.IsJetStreamEnabled()).Returns(testPtr);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.IsJetStreamEnabledAsync());
+
+        _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
+    }
+
+    [Fact]
+    public async Task IsJetStreamEnabledAsync_ServerNotRunning_ThrowsInvalidOperationException()
+    {
+        // Arrange - No configuration
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _controller.IsJetStreamEnabledAsync());
+
+        _mockBindings.Verify(b => b.IsJetStreamEnabled(), Times.Never);
+    }
+
+    [Fact]
+    public async Task HealthCheckMethods_AlwaysCallFreeString()
+    {
+        // Arrange
+        SetupSuccessfulConfiguration();
+        var readyPtr = CreateManagedString("true");
+        var jsPtr = CreateManagedString("false");
+
+        _mockBindings.Setup(b => b.WaitForReadyState(It.IsAny<int>())).Returns(readyPtr);
+        _mockBindings.Setup(b => b.IsJetStreamEnabled()).Returns(jsPtr);
+
+        // Act
+        await _controller.WaitForReadyAsync();
+        await _controller.IsJetStreamEnabledAsync();
+
+        // Assert - FreeString should be called for each method
+        _mockBindings.Verify(b => b.FreeString(readyPtr), Times.Once);
+        _mockBindings.Verify(b => b.FreeString(jsPtr), Times.Once);
+    }
+
+    #endregion
 }

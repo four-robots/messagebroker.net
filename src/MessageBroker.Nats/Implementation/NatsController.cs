@@ -1177,6 +1177,99 @@ public class NatsController : IBrokerController, IDisposable
     }
 
     /// <summary>
+    /// Waits for the server to be ready to accept connections.
+    /// </summary>
+    /// <param name="timeoutSeconds">Timeout in seconds to wait for readiness.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>True if server is ready within timeout, false otherwise.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the broker is not running.</exception>
+    /// <remarks>
+    /// This method blocks until the server is ready or the timeout expires.
+    /// Useful for health checks and ensuring the server is fully initialized before use.
+    /// </remarks>
+    public async Task<bool> WaitForReadyAsync(int timeoutSeconds = 5, CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.WaitForReadyState(timeoutSeconds);
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to check ready state: {response}");
+                }
+
+                // Response should be "true" or "false"
+                return response.Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Checks if JetStream is enabled at the server level.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>True if JetStream is enabled, false otherwise.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the broker is not running or check fails.</exception>
+    /// <remarks>
+    /// This checks server-level JetStream configuration, not account-level.
+    /// JetStream must be configured when the server is created; it cannot be toggled at runtime.
+    /// </remarks>
+    public async Task<bool> IsJetStreamEnabledAsync(CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.IsJetStreamEnabled();
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to check JetStream status: {response}");
+                }
+
+                // Response should be "true" or "false"
+                return response.Equals("true", StringComparison.OrdinalIgnoreCase);
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Ensures the broker is running, throwing an exception if not.
     /// </summary>
     private void EnsureRunning()

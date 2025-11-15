@@ -14,6 +14,9 @@ public class RuntimeControlTestSuite : IIntegrationTest
         await results.AssertAsync("Get Server Name", RuntimeControlTests.TestGetServerName);
         await results.AssertAsync("Is Server Running - True", RuntimeControlTests.TestIsServerRunning_True);
         await results.AssertAsync("Is Server Running - False", RuntimeControlTests.TestIsServerRunning_False);
+        await results.AssertAsync("Wait For Ready", RuntimeControlTests.TestWaitForReady);
+        await results.AssertAsync("Is JetStream Enabled - False", RuntimeControlTests.TestIsJetStreamEnabled_False);
+        await results.AssertAsync("Is JetStream Enabled - True", RuntimeControlTests.TestIsJetStreamEnabled_True);
     }
 }
 
@@ -223,6 +226,164 @@ public static class RuntimeControlTests
         {
             Console.WriteLine($"❌ IsServerRunning (false) test failed: {ex.Message}");
             return false;
+        }
+    }
+
+    public static async Task<bool> TestWaitForReady()
+    {
+        Console.WriteLine("\n=== Testing WaitForReady (Health Check) ===");
+
+        using var controller = new NatsController();
+
+        var config = new BrokerConfiguration
+        {
+            Host = "127.0.0.1",
+            Port = 4242,
+            Description = "Wait for ready test"
+        };
+
+        var result = await controller.ConfigureAsync(config);
+        if (!result.Success)
+        {
+            Console.WriteLine($"❌ Failed to start server: {result.ErrorMessage}");
+            return false;
+        }
+
+        try
+        {
+            // Wait for server to be ready with a 5 second timeout
+            var isReady = await controller.WaitForReadyAsync(timeoutSeconds: 5);
+            Console.WriteLine($"✓ Server ready status: {isReady}");
+
+            if (!isReady)
+            {
+                Console.WriteLine("❌ Expected server to be ready within timeout");
+                return false;
+            }
+
+            Console.WriteLine("✓ WaitForReady test passed");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ WaitForReady test failed: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            await controller.ShutdownAsync();
+        }
+    }
+
+    public static async Task<bool> TestIsJetStreamEnabled_False()
+    {
+        Console.WriteLine("\n=== Testing IsJetStreamEnabled (Not Enabled) ===");
+
+        using var controller = new NatsController();
+
+        var config = new BrokerConfiguration
+        {
+            Host = "127.0.0.1",
+            Port = 4243,
+            Jetstream = false, // Explicitly disable JetStream
+            Description = "JetStream disabled test"
+        };
+
+        var result = await controller.ConfigureAsync(config);
+        if (!result.Success)
+        {
+            Console.WriteLine($"❌ Failed to start server: {result.ErrorMessage}");
+            return false;
+        }
+
+        await Task.Delay(500);
+
+        try
+        {
+            // Check if JetStream is enabled
+            var isEnabled = await controller.IsJetStreamEnabledAsync();
+            Console.WriteLine($"✓ JetStream enabled status: {isEnabled}");
+
+            if (isEnabled)
+            {
+                Console.WriteLine("❌ Expected JetStream to be disabled");
+                return false;
+            }
+
+            Console.WriteLine("✓ IsJetStreamEnabled (false) test passed");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ IsJetStreamEnabled test failed: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            await controller.ShutdownAsync();
+        }
+    }
+
+    public static async Task<bool> TestIsJetStreamEnabled_True()
+    {
+        Console.WriteLine("\n=== Testing IsJetStreamEnabled (Enabled) ===");
+
+        using var controller = new NatsController();
+
+        var config = new BrokerConfiguration
+        {
+            Host = "127.0.0.1",
+            Port = 4244,
+            Jetstream = true, // Enable JetStream
+            JetstreamStoreDir = Path.Combine(Path.GetTempPath(), "nats-js-test"),
+            Description = "JetStream enabled test"
+        };
+
+        var result = await controller.ConfigureAsync(config);
+        if (!result.Success)
+        {
+            Console.WriteLine($"❌ Failed to start server: {result.ErrorMessage}");
+            return false;
+        }
+
+        await Task.Delay(500);
+
+        try
+        {
+            // Check if JetStream is enabled
+            var isEnabled = await controller.IsJetStreamEnabledAsync();
+            Console.WriteLine($"✓ JetStream enabled status: {isEnabled}");
+
+            if (!isEnabled)
+            {
+                Console.WriteLine("❌ Expected JetStream to be enabled");
+                return false;
+            }
+
+            Console.WriteLine("✓ IsJetStreamEnabled (true) test passed");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ IsJetStreamEnabled test failed: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            await controller.ShutdownAsync();
+
+            // Clean up JetStream store directory
+            try
+            {
+                if (Directory.Exists(config.JetstreamStoreDir))
+                {
+                    Directory.Delete(config.JetstreamStoreDir, recursive: true);
+                }
+            }
+            catch
+            {
+                // Ignore cleanup errors
+            }
         }
     }
 }

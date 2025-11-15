@@ -45,6 +45,8 @@ internal interface INatsBindings
     IntPtr GetServerID();
     IntPtr GetServerName();
     IntPtr IsServerRunning();
+    IntPtr WaitForReadyState(int timeoutSeconds);
+    IntPtr IsJetStreamEnabled();
 }
 
 internal sealed class WindowsNatsBindings : INatsBindings
@@ -206,6 +208,16 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern IntPtr _isServerRunning();
 
     public IntPtr IsServerRunning() => _isServerRunning();
+
+    [DllImport("nats-bindings.dll", EntryPoint = "WaitForReadyState")]
+    internal static extern IntPtr _waitForReadyState(int timeoutSeconds);
+
+    public IntPtr WaitForReadyState(int timeoutSeconds) => _waitForReadyState(timeoutSeconds);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "IsJetStreamEnabled")]
+    internal static extern IntPtr _isJetStreamEnabled();
+
+    public IntPtr IsJetStreamEnabled() => _isJetStreamEnabled();
 }
 
 
@@ -368,4 +380,14 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern IntPtr _isServerRunning();
 
     public IntPtr IsServerRunning() => _isServerRunning();
+
+    [DllImport("nats-bindings.so", EntryPoint = "WaitForReadyState")]
+    internal static extern IntPtr _waitForReadyState(int timeoutSeconds);
+
+    public IntPtr WaitForReadyState(int timeoutSeconds) => _waitForReadyState(timeoutSeconds);
+
+    [DllImport("nats-bindings.so", EntryPoint = "IsJetStreamEnabled")]
+    internal static extern IntPtr _isJetStreamEnabled();
+
+    public IntPtr IsJetStreamEnabled() => _isJetStreamEnabled();
 }

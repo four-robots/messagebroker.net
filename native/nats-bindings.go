@@ -1073,6 +1073,59 @@ func IsServerRunning() *C.char {
 	return C.CString("false")
 }
 
+// WaitForReadyState blocks until the server is ready to accept connections,
+// with a timeout specified in seconds.
+// Returns "true" if ready, "false" if timeout expires.
+//
+//export WaitForReadyState
+func WaitForReadyState(timeoutSeconds C.int) *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	timeout := time.Duration(timeoutSeconds) * time.Second
+	ready := srv.ReadyForConnections(timeout)
+
+	if ready {
+		return C.CString("true")
+	}
+	return C.CString("false")
+}
+
+// IsJetStreamEnabled checks if JetStream is enabled at the server level.
+// Returns "true", "false", or an error message.
+//
+//export IsJetStreamEnabled
+func IsJetStreamEnabled() *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	// Get server variables to check JetStream configuration
+	varz, err := srv.Varz(nil)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get server info: %v", err))
+	}
+
+	// Check if JetStream is configured
+	if varz.JetStream != nil && varz.JetStream.Config != nil {
+		// JetStream is enabled if max memory or max store is configured
+		if varz.JetStream.Config.MaxMemory > 0 || varz.JetStream.Config.MaxStore > 0 {
+			return C.CString("true")
+		}
+	}
+
+	return C.CString("false")
+}
+
 func main() {
 	// Required for c-shared library
 }

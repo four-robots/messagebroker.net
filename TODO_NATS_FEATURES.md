@@ -213,22 +213,27 @@ This document tracks the implementation status of NATS server features that are 
 
 ### 4. JetStream Runtime Control
 
-#### ⏳ EnableJetStream() - Enable at Runtime
-- **Purpose**: Enable JetStream after server start
-- **Parameters**: JetStream configuration
-- **Use Case**: Dynamic JetStream activation
-- **Priority**: MEDIUM
+#### ❌ EnableJetStream() - Enable at Runtime
+- **Status**: **Not Available in NATS Server API**
+- **Reason**: JetStream can only be enabled during server creation via `Options.JetStream = true`
+- **Workaround**: Restart server with JetStream configuration
+- **Priority**: N/A
 
-#### ⏳ DisableJetStream() - Disable at Runtime
-- **Purpose**: Disable JetStream without restart
-- **Use Case**: Resource management
-- **Priority**: MEDIUM
+#### ❌ DisableJetStream() - Disable at Runtime
+- **Status**: **Not Available in NATS Server API**
+- **Reason**: JetStream cannot be disabled after server start
+- **Workaround**: Restart server without JetStream
+- **Priority**: N/A
 
-#### ⏳ JetStreamEnabled() - Check Status
-- **Purpose**: Query if JetStream is currently enabled
-- **Returns**: Boolean
-- **Use Case**: Feature detection
+#### ✅ JetStreamEnabled() - Check Status
+- **Status**: **Implemented** in `IsJetStreamEnabledAsync()`
+- **Location**: `native/nats-bindings.go:1103`, `NatsController.cs:1236`
+- **Purpose**: Query if JetStream is currently enabled at server level
+- **Returns**: Boolean (true if enabled, false otherwise)
+- **Implementation**: Checks Varz() endpoint for JetStream configuration
+- **Use Case**: Feature detection, conditional logic
 - **Priority**: MEDIUM
+- **Completed**: 2025-11-15
 
 #### ⏳ JetStreamStepdownStream() - Leader Election
 - **Purpose**: Force Raft leader election for a stream
@@ -238,12 +243,15 @@ This document tracks the implementation status of NATS server features that are 
 
 ### 5. Server State & Health
 
-#### ⏳ ReadyForConnections() - Health Check
-- **Purpose**: Check if server is ready to accept connections
-- **Currently**: Used internally, not exposed
-- **Returns**: Boolean
-- **Use Case**: Load balancer health checks
+#### ✅ ReadyForConnections() - Health Check
+- **Status**: **Implemented** in `WaitForReadyAsync()`
+- **Location**: `native/nats-bindings.go:1081`, `NatsController.cs:1190`
+- **Purpose**: Wait for server to be ready to accept connections
+- **Returns**: Boolean (true if ready, false if timeout)
+- **Parameters**: Timeout in seconds (default: 5)
+- **Use Case**: Health checks, ensuring server initialization before use
 - **Priority**: MEDIUM
+- **Completed**: 2025-11-15
 
 #### ✅ ID() - Server Unique Identifier
 - **Status**: **Implemented** in `GetServerIdAsync()`
@@ -335,13 +343,18 @@ This document tracks the implementation status of NATS server features that are 
 **Status**: All monitoring endpoints complete
 **Completed**: 2025-11-15
 
-### Phase 4: Runtime Control (Sprint 4) 🚧 **IN PROGRESS**
-1. ⏳ Implement EnableJetStream() / DisableJetStream()
-2. ⏳ Implement JetStreamEnabled()
-3. ⏳ Implement ReadyForConnections() exposure
+### Phase 4: Runtime Control (Sprint 4) ✅ **COMPLETED**
+1. ❌ EnableJetStream() / DisableJetStream() - Not available in NATS API
+2. ✅ Implement JetStreamEnabled() - IsJetStreamEnabledAsync
+3. ✅ Implement ReadyForConnections() exposure - WaitForReadyAsync
 4. ✅ Implement ID(), Name(), Running() status methods
-5. ✅ Add tests for server state methods (7 Go + 12 C# + 4 integration = 23 tests)
-**Status**: Server state methods complete (ID, Name, Running)
+5. ✅ Add comprehensive tests:
+   - 5 Go unit tests for health check & JetStream
+   - 10 C# unit tests for health check & JetStream
+   - 3 integration tests for health check & JetStream
+   - Total: 41 tests for Phase 4 (23 server state + 18 health/JetStream)
+**Status**: All available runtime control features complete
+**Completed**: 2025-11-15
 
 ### Phase 5: Advanced Features (Sprint 5)
 1. ⏳ Implement Raftz() - Raft state
@@ -420,10 +433,14 @@ This document tracks the implementation status of NATS server features that are 
 - ✅ **Name** - Get server name
 - ✅ **Running** - Check server running status
 
+**Runtime Control & Health (2):**
+- ✅ **WaitForReady** - Health check / readiness probe
+- ✅ **IsJetStreamEnabled** - Check JetStream status
+
 ### Total Features
-- **Implemented**: 24/35 (69%)
-- **In Progress**: 0/35 (0%)
-- **Planned**: 11/35 (31%)
+- **Implemented**: 26/35 (74%)
+- **Not Available in API**: 2/35 (6%) - EnableJetStream, DisableJetStream
+- **Planned**: 7/35 (20%)
 
 ---
 

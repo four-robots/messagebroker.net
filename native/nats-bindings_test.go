@@ -1040,3 +1040,113 @@ func TestIsServerRunning_AfterShutdown(t *testing.T) {
 
 	t.Log("Server correctly reports not running after shutdown")
 }
+
+// TestWaitForReadyState_Success tests waiting for server to be ready.
+func TestWaitForReadyState_Success(t *testing.T) {
+	port := 14248
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	result := WaitForReadyState(C.int(5))
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if response != "true" {
+		t.Errorf("Expected 'true' (ready), got: %s", response)
+	}
+
+	t.Log("Server is ready: true")
+}
+
+// TestWaitForReadyState_Timeout tests timeout behavior.
+func TestWaitForReadyState_ServerNotRunning(t *testing.T) {
+	// Don't start a server
+	currentPort = 14249
+
+	result := WaitForReadyState(C.int(1))
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Errorf("Expected error response, got: %s", response)
+	}
+
+	if !strings.Contains(response, "Server not running") {
+		t.Errorf("Expected 'Server not running' error, got: %s", response)
+	}
+}
+
+// TestIsJetStreamEnabled_WithoutJetStream tests when JetStream is not enabled.
+func TestIsJetStreamEnabled_WithoutJetStream(t *testing.T) {
+	port := 14250
+	srv := startTestServer(t, port)
+	defer stopTestServer(t, srv, port)
+
+	result := IsJetStreamEnabled()
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if response != "false" {
+		t.Errorf("Expected 'false' (JetStream not enabled), got: %s", response)
+	}
+
+	t.Log("JetStream enabled: false")
+}
+
+// TestIsJetStreamEnabled_WithJetStream tests when JetStream is enabled.
+func TestIsJetStreamEnabled_WithJetStream(t *testing.T) {
+	port := 14251
+
+	// Create server with JetStream enabled
+	opts := &server.Options{
+		Host:      "127.0.0.1",
+		Port:      port,
+		JetStream: true,
+	}
+
+	srv, err := server.NewServer(opts)
+	if err != nil {
+		t.Fatalf("Failed to create NATS server: %v", err)
+	}
+
+	go srv.Start()
+
+	if !srv.ReadyForConnections(5 * time.Second) {
+		t.Fatal("Server did not become ready in time")
+	}
+
+	serverMu.Lock()
+	natsServers[port] = srv
+	currentPort = port
+	serverMu.Unlock()
+
+	defer stopTestServer(t, srv, port)
+
+	result := IsJetStreamEnabled()
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if response != "true" {
+		t.Errorf("Expected 'true' (JetStream enabled), got: %s", response)
+	}
+
+	t.Log("JetStream enabled: true")
+}
+
+// TestIsJetStreamEnabled_ServerNotRunning tests when server is not running.
+func TestIsJetStreamEnabled_ServerNotRunning(t *testing.T) {
+	// Don't start a server
+	currentPort = 14252
+
+	result := IsJetStreamEnabled()
+	response := C.GoString(result)
+	C.free(unsafe.Pointer(result))
+
+	if !isErrorResponse(response) {
+		t.Errorf("Expected error response, got: %s", response)
+	}
+
+	if !strings.Contains(response, "Server not running") {
+		t.Errorf("Expected 'Server not running' error, got: %s", response)
+	}
+}
