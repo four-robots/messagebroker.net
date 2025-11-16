@@ -42,10 +42,12 @@ DotGnatly/
 │   │   ├── Configuration/           # Config models with versioning
 │   │   ├── Validation/              # Pre-apply validation system
 │   │   └── Events/                  # Change notification events
+│   ├── DotGnatly.Natives/       # Native bindings package
+│   │   ├── nats-bindings.dll/.so    # Native Go library (copied from native/)
+│   │   └── README.md                # Natives package documentation
 │   ├── DotGnatly.Nats/          # NATS-specific implementation
 │   │   ├── Bindings/                # P/Invoke layer (Windows/Linux)
-│   │   ├── Implementation/          # NatsController
-│   │   └── nats-bindings.dll/.so    # Native Go library (copied from native/)
+│   │   └── Implementation/          # NatsController
 │   └── DotGnatly.Examples/      # Interactive examples and tests
 ├── native/                          # Go source code for native bindings
 │   ├── nats-bindings.go             # cgo bindings implementation
@@ -158,7 +160,8 @@ The project is configured for NuGet packaging with multi-targeting support.
 
 **Packages:**
 - `DotGnatly.Core` - Core abstractions (no dependencies)
-- `DotGnatly.Nats` - NATS implementation with native bindings
+- `DotGnatly.Natives` - Native NATS server bindings (platform-specific libraries)
+- `DotGnatly.Nats` - NATS implementation (depends on DotGnatly.Core and DotGnatly.Natives)
 
 **Multi-Targeting:**
 - Supports .NET 8.0, 9.0, and 10.0
@@ -173,16 +176,23 @@ The project is configured for NuGet packaging with multi-targeting support.
 
 # Manual method
 cd native && ./build.sh && cd ..  # Build native bindings first
+dotnet pack src/DotGnatly.Natives/DotGnatly.Natives.csproj -c Release -o ./nupkg
 dotnet pack src/DotGnatly.Core/DotGnatly.Core.csproj -c Release -o ./nupkg
 dotnet pack src/DotGnatly.Nats/DotGnatly.Nats.csproj -c Release -o ./nupkg
 ```
 
 **Native Bindings Structure:**
-The NuGet packages use runtime-specific native library deployment:
+The `DotGnatly.Natives` package uses runtime-specific native library deployment:
 - `runtimes/win-x64/native/nats-bindings.dll` - Windows binding
 - `runtimes/linux-x64/native/nats-bindings.so` - Linux binding
 
 NuGet automatically deploys the correct native binary based on the target runtime.
+
+**Independent Versioning:**
+The `DotGnatly.Natives` package can be versioned and updated independently, allowing for:
+- Hotfixes for native binding issues without releasing a new version of the main library
+- Platform updates to add support for new architectures
+- NATS server upgrades without changing the API surface
 
 **Package Configuration:**
 - Shared properties: `src/Directory.Build.props`

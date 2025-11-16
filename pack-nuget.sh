@@ -23,7 +23,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwin"* ]]; then
     ./build.sh
     if [ -f "nats-bindings.so" ]; then
         echo "✓ Linux bindings built successfully"
-        cp nats-bindings.so ../src/DotGnatly.Nats/
+        cp nats-bindings.so ../src/DotGnatly.Natives/
     else
         echo "⚠ Warning: Linux bindings build failed"
     fi
@@ -35,7 +35,7 @@ if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
     ./build.ps1
     if [ -f "nats-bindings.dll" ]; then
         echo "✓ Windows bindings built successfully"
-        cp nats-bindings.dll ../src/DotGnatly.Nats/
+        cp nats-bindings.dll ../src/DotGnatly.Natives/
     else
         echo "⚠ Warning: Windows bindings build failed"
     fi
@@ -61,14 +61,19 @@ dotnet build DotGnatly.sln -c Release --no-restore
 # Create output directory for packages
 mkdir -p ./nupkg
 
+# Pack DotGnatly.Natives first (dependency)
+echo ""
+echo "Step 5: Creating DotGnatly.Natives NuGet package..."
+dotnet pack src/DotGnatly.Natives/DotGnatly.Natives.csproj -c Release --no-build --output ./nupkg
+
 # Pack DotGnatly.Core
 echo ""
-echo "Step 5: Creating DotGnatly.Core NuGet package..."
+echo "Step 6: Creating DotGnatly.Core NuGet package..."
 dotnet pack src/DotGnatly.Core/DotGnatly.Core.csproj -c Release --no-build --output ./nupkg
 
 # Pack DotGnatly.Nats
 echo ""
-echo "Step 6: Creating DotGnatly.Nats NuGet package..."
+echo "Step 7: Creating DotGnatly.Nats NuGet package..."
 dotnet pack src/DotGnatly.Nats/DotGnatly.Nats.csproj -c Release --no-build --output ./nupkg
 
 # List created packages
@@ -81,7 +86,8 @@ echo "Packages created in ./nupkg/:"
 ls -lh ./nupkg/*.nupkg
 
 echo ""
-echo "To publish to NuGet.org:"
+echo "To publish to NuGet.org (in order):"
+echo "  dotnet nuget push ./nupkg/DotGnatly.Natives.1.0.0.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json"
 echo "  dotnet nuget push ./nupkg/DotGnatly.Core.1.0.0.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json"
 echo "  dotnet nuget push ./nupkg/DotGnatly.Nats.1.0.0.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json"
 echo ""

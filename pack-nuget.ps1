@@ -25,7 +25,7 @@ if (-not $SkipNativeBuild) {
 
     if (Test-Path "nats-bindings.dll") {
         Write-Host "✓ Windows bindings built successfully" -ForegroundColor Green
-        Copy-Item nats-bindings.dll ..\src\DotGnatly.Nats\ -Force
+        Copy-Item nats-bindings.dll ..\src\DotGnatly.Natives\ -Force
     } else {
         Write-Host "⚠ Warning: Windows bindings build failed" -ForegroundColor Yellow
     }
@@ -58,14 +58,19 @@ if ($LASTEXITCODE -ne 0) {
 # Create output directory for packages
 New-Item -ItemType Directory -Force -Path .\nupkg | Out-Null
 
+# Pack DotGnatly.Natives first (dependency)
+Write-Host ""
+Write-Host "Step 5: Creating DotGnatly.Natives NuGet package..." -ForegroundColor Yellow
+dotnet pack src\DotGnatly.Natives\DotGnatly.Natives.csproj -c Release --no-build --output .\nupkg
+
 # Pack DotGnatly.Core
 Write-Host ""
-Write-Host "Step 5: Creating DotGnatly.Core NuGet package..." -ForegroundColor Yellow
+Write-Host "Step 6: Creating DotGnatly.Core NuGet package..." -ForegroundColor Yellow
 dotnet pack src\DotGnatly.Core\DotGnatly.Core.csproj -c Release --no-build --output .\nupkg
 
 # Pack DotGnatly.Nats
 Write-Host ""
-Write-Host "Step 6: Creating DotGnatly.Nats NuGet package..." -ForegroundColor Yellow
+Write-Host "Step 7: Creating DotGnatly.Nats NuGet package..." -ForegroundColor Yellow
 dotnet pack src\DotGnatly.Nats\DotGnatly.Nats.csproj -c Release --no-build --output .\nupkg
 
 # List created packages
@@ -80,7 +85,8 @@ Get-ChildItem .\nupkg\*.nupkg | ForEach-Object {
 }
 
 Write-Host ""
-Write-Host "To publish to NuGet.org:" -ForegroundColor Yellow
+Write-Host "To publish to NuGet.org (in order):" -ForegroundColor Yellow
+Write-Host "  dotnet nuget push .\nupkg\DotGnatly.Natives.1.0.0.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json" -ForegroundColor Gray
 Write-Host "  dotnet nuget push .\nupkg\DotGnatly.Core.1.0.0.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json" -ForegroundColor Gray
 Write-Host "  dotnet nuget push .\nupkg\DotGnatly.Nats.1.0.0.nupkg --api-key YOUR_API_KEY --source https://api.nuget.org/v3/index.json" -ForegroundColor Gray
 Write-Host ""

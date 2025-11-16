@@ -4,10 +4,11 @@ This document explains the NuGet packaging setup for DotGnatly and how to create
 
 ## Overview
 
-DotGnatly is packaged as two NuGet packages:
+DotGnatly is packaged as three NuGet packages:
 
 1. **DotGnatly.Core** - Core abstractions and models (no dependencies)
-2. **DotGnatly.Nats** - NATS implementation with native bindings (depends on DotGnatly.Core)
+2. **DotGnatly.Natives** - Native NATS server bindings (platform-specific libraries)
+3. **DotGnatly.Nats** - NATS implementation (depends on DotGnatly.Core and DotGnatly.Natives)
 
 ## Multi-Targeting Support
 
@@ -33,16 +34,9 @@ DotGnatly.Core.1.0.0.nupkg
 └── README.md
 ```
 
-### DotGnatly.Nats
+### DotGnatly.Natives (NEW)
 ```
-DotGnatly.Nats.1.0.0.nupkg
-├── lib/
-│   ├── net8.0/
-│   │   └── DotGnatly.Nats.dll
-│   ├── net9.0/
-│   │   └── DotGnatly.Nats.dll
-│   └── net10.0/
-│       └── DotGnatly.Nats.dll
+DotGnatly.Natives.1.0.0.nupkg
 ├── runtimes/
 │   ├── win-x64/
 │   │   └── native/
@@ -53,9 +47,29 @@ DotGnatly.Nats.1.0.0.nupkg
 └── README.md
 ```
 
+This package contains only the native bindings and can be versioned independently from the main library.
+
+### DotGnatly.Nats
+```
+DotGnatly.Nats.1.0.0.nupkg
+├── lib/
+│   ├── net8.0/
+│   │   └── DotGnatly.Nats.dll
+│   ├── net9.0/
+│   │   └── DotGnatly.Nats.dll
+│   └── net10.0/
+│       └── DotGnatly.Nats.dll
+├── dependencies/
+│   ├── DotGnatly.Core (>= 1.0.0)
+│   └── DotGnatly.Natives (>= 1.0.0)
+└── README.md
+```
+
+Note: Native bindings are now provided by the DotGnatly.Natives package dependency.
+
 ## Native Bindings
 
-The native NATS server bindings are included using the **runtime-specific package structure**:
+The native NATS server bindings are packaged in the **DotGnatly.Natives** package using the **runtime-specific package structure**:
 
 - **Windows (x64)**: `runtimes/win-x64/native/nats-bindings.dll`
 - **Linux (x64)**: `runtimes/linux-x64/native/nats-bindings.so`
@@ -66,11 +80,21 @@ NuGet automatically deploys the correct native library based on the target runti
 
 When you reference `DotGnatly.Nats` in your project, NuGet will:
 
-1. Copy the appropriate assembly from `lib/netX.0/` based on your target framework
-2. Copy the appropriate native binary from `runtimes/{rid}/native/` based on your runtime (Windows/Linux)
-3. Place the native binary in your output directory alongside your executable
+1. Restore the `DotGnatly.Natives` package dependency
+2. Copy the appropriate assembly from `lib/netX.0/` based on your target framework
+3. Copy the appropriate native binary from `runtimes/{rid}/native/` (from DotGnatly.Natives) based on your runtime (Windows/Linux)
+4. Place the native binary in your output directory alongside your executable
 
 This happens automatically - no manual configuration required!
+
+### Independent Versioning Benefits
+
+The separate `DotGnatly.Natives` package enables:
+
+- **Hotfixes**: Quickly patch native binding issues without releasing a new version of the main library
+- **Platform Updates**: Add support for new platforms (macOS, ARM architectures) independently
+- **NATS Upgrades**: Update to newer NATS server versions without changing the API surface
+- **Selective Updates**: Users can pin specific native binding versions if needed
 
 ## Building Native Binaries
 
@@ -83,7 +107,7 @@ cd native
 ./build.sh
 ```
 
-This creates `nats-bindings.so` which is then copied to `src/DotGnatly.Nats/`
+This creates `nats-bindings.so` which is then copied to `src/DotGnatly.Natives/`
 
 ### Windows (requires Go 1.21+, TDM-GCC or MinGW-w64)
 
@@ -92,7 +116,7 @@ cd native
 .\build.ps1
 ```
 
-This creates `nats-bindings.dll` which is then copied to `src/DotGnatly.Nats/`
+This creates `nats-bindings.dll` which is then copied to `src/DotGnatly.Natives/`
 
 ### Cross-Platform Build
 
@@ -134,15 +158,16 @@ If you prefer to do it manually:
 # 1. Build native bindings
 cd native && ./build.sh && cd ..
 
-# 2. Copy bindings to DotGnatly.Nats
-cp native/nats-bindings.dll src/DotGnatly.Nats/  # Windows
-cp native/nats-bindings.so src/DotGnatly.Nats/   # Linux
+# 2. Copy bindings to DotGnatly.Natives
+cp native/nats-bindings.dll src/DotGnatly.Natives/  # Windows
+cp native/nats-bindings.so src/DotGnatly.Natives/   # Linux
 
 # 3. Build solution
 dotnet build DotGnatly.sln -c Release
 
-# 4. Create packages
+# 4. Create packages (in dependency order)
 mkdir -p nupkg
+dotnet pack src/DotGnatly.Natives/DotGnatly.Natives.csproj -c Release -o ./nupkg
 dotnet pack src/DotGnatly.Core/DotGnatly.Core.csproj -c Release -o ./nupkg
 dotnet pack src/DotGnatly.Nats/DotGnatly.Nats.csproj -c Release -o ./nupkg
 ```
@@ -152,17 +177,29 @@ dotnet pack src/DotGnatly.Nats/DotGnatly.Nats.csproj -c Release -o ./nupkg
 After creating packages, verify they contain the correct files:
 
 ```bash
-# Extract package contents
+# Verify DotGnatly.Natives package
+unzip -l nupkg/DotGnatly.Natives.1.0.0.nupkg
+
+# Verify DotGnatly.Nats package
 unzip -l nupkg/DotGnatly.Nats.1.0.0.nupkg
 
 # Or use NuGet Package Explorer (Windows GUI tool)
 # Download from: https://github.com/NuGetPackageExplorer/NuGetPackageExplorer
 ```
 
-**What to check:**
+**DotGnatly.Natives - What to check:**
+
+✅ Native bindings in `runtimes/win-x64/native/nats-bindings.dll`
+✅ Native bindings in `runtimes/linux-x64/native/nats-bindings.so`
+✅ README.md in package root
+✅ Correct version number
+✅ Package metadata (authors, description, tags, license)
+
+**DotGnatly.Nats - What to check:**
 
 ✅ All three target frameworks present (`lib/net8.0`, `lib/net9.0`, `lib/net10.0`)
-✅ Native bindings in `runtimes/win-x64/native/` and `runtimes/linux-x64/native/`
+✅ Dependency on DotGnatly.Core
+✅ Dependency on DotGnatly.Natives
 ✅ README.md in package root
 ✅ Correct version number (1.0.0)
 ✅ Package metadata (authors, description, tags, license)
@@ -212,17 +249,27 @@ if (result.Success)
 ### Publishing
 
 ```bash
-# Set API key (one-time setup)
+# Publish in dependency order
+# 1. Publish DotGnatly.Natives first (no dependencies)
+dotnet nuget push nupkg/DotGnatly.Natives.1.0.0.nupkg \
+  --api-key YOUR_API_KEY \
+  --source https://api.nuget.org/v3/index.json
+
+# 2. Publish DotGnatly.Core (no dependencies)
 dotnet nuget push nupkg/DotGnatly.Core.1.0.0.nupkg \
   --api-key YOUR_API_KEY \
   --source https://api.nuget.org/v3/index.json
 
+# 3. Publish DotGnatly.Nats last (depends on Core and Natives)
 dotnet nuget push nupkg/DotGnatly.Nats.1.0.0.nupkg \
   --api-key YOUR_API_KEY \
   --source https://api.nuget.org/v3/index.json
 ```
 
-**Important:** Publish `DotGnatly.Core` first, then `DotGnatly.Nats` (due to dependency).
+**Important:** Publish packages in dependency order:
+1. `DotGnatly.Natives` (no dependencies)
+2. `DotGnatly.Core` (no dependencies)
+3. `DotGnatly.Nats` (depends on both Core and Natives)
 
 ### Publishing Symbols
 
