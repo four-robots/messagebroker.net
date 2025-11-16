@@ -1,5 +1,7 @@
 # NATS Server Monitoring Guide
 
+⚠️ **Developer Reference**: This is a technical reference document for platform engineers and DevOps teams.
+
 This guide covers the comprehensive monitoring capabilities available in DotGnatly for observing and managing NATS server instances.
 
 ## Table of Contents

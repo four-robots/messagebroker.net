@@ -9,10 +9,10 @@ dotnet add package DotGnatly
 ## 30-Second Quick Start
 
 ```csharp
-using NatsSharp;
+using DotGnatly.Nats;
 
-using var server = new NatsServer();
-string url = server.Start();
+using var controller = new NatsController();
+string url = controller.Start();
 Console.WriteLine($"Server: {url}");
 Console.ReadKey();
 ```
@@ -24,8 +24,8 @@ Console.ReadKey();
 ### Basic Server
 
 ```csharp
-using var server = new NatsServer();
-server.Start(new ServerConfig
+using var controller = new NatsController();
+controller.Start(new BrokerConfiguration
 {
     Host = "0.0.0.0",
     Port = 4222
@@ -35,7 +35,7 @@ server.Start(new ServerConfig
 ### JetStream Enabled
 
 ```csharp
-server.Start(new ServerConfig
+controller.Start(new BrokerConfiguration
 {
     Jetstream = true,
     JetstreamStoreDir = "./data/jetstream",
@@ -47,7 +47,7 @@ server.Start(new ServerConfig
 ### With Authentication
 
 ```csharp
-server.Start(new ServerConfig
+controller.Start(new BrokerConfiguration
 {
     Auth = new AuthConfig
     {
@@ -60,7 +60,7 @@ server.Start(new ServerConfig
 ### With Monitoring
 
 ```csharp
-server.Start(new ServerConfig
+controller.Start(new BrokerConfiguration
 {
     HTTPPort = 8222,
     HTTPHost = "0.0.0.0"
@@ -72,19 +72,19 @@ server.Start(new ServerConfig
 
 ```csharp
 // Start
-server.Start(new ServerConfig { Debug = true });
+controller.Start(new BrokerConfiguration { Debug = true });
 
 // Later: Update without restart
-server.UpdateConfig(new ServerConfig { Debug = false });
+controller.UpdateConfig(new BrokerConfiguration { Debug = false });
 // ZERO DOWNTIME
 ```
 
 ### Multi-Tenant Accounts
 
 ```csharp
-server.Start();
+controller.Start();
 
-var account = server.CreateAccount(new AccountConfig
+var account = controller.CreateAccount(new AccountConfig
 {
     Name = "tenant1",
     MaxConnections = 100,
@@ -96,10 +96,10 @@ var account = server.CreateAccount(new AccountConfig
 
 ## Configuration Reference
 
-### ServerConfig Properties
+### BrokerConfiguration Properties
 
 ```csharp
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     // Network
     Host = "0.0.0.0",              // Bind address
@@ -152,33 +152,33 @@ var config = new ServerConfig
 
 ```csharp
 // Start server
-string url = server.Start(config);
-string url = server.Start("localhost", 4222);
-string url = server.StartWithJetStream("localhost", 4222, "./js");
-string url = server.StartFromConfigFile("./nats.conf");
+string url = controller.Start(config);
+string url = controller.Start("localhost", 4222);
+string url = controller.StartWithJetStream("localhost", 4222, "./js");
+string url = controller.StartFromConfigFile("./nats.conf");
 
 // Shutdown
-server.Shutdown();
-server.Dispose();  // Also calls Shutdown()
+controller.Shutdown();
+controller.Dispose();  // Also calls Shutdown()
 ```
 
 ### Configuration Management
 
 ```csharp
 // Hot reload
-string result = server.Reload();
-string result = server.ReloadFromFile("./nats.conf");
-string result = server.UpdateConfig(newConfig);
+string result = controller.Reload();
+string result = controller.ReloadFromFile("./nats.conf");
+string result = controller.UpdateConfig(newConfig);
 ```
 
 ### Monitoring
 
 ```csharp
 // Get URL
-string url = server.GetUrl();
+string url = controller.GetUrl();
 
 // Get server info
-ServerInfo info = server.GetInfo();
+ServerInfo info = controller.GetInfo();
 Console.WriteLine($"ID: {info.Id}");
 Console.WriteLine($"Version: {info.Version}");
 Console.WriteLine($"Connections: {info.Connections}");
@@ -189,14 +189,14 @@ Console.WriteLine($"JetStream: {info.JetstreamEnabled}");
 
 ```csharp
 // Create account
-AccountInfo acc = server.CreateAccount(new AccountConfig
+AccountInfo acc = controller.CreateAccount(new AccountConfig
 {
     Name = "myaccount",
     MaxConnections = 100
 });
 
 // Create JWT account
-JWTAccountResult jwt = server.CreateAccountWithJWT(
+JWTAccountResult jwt = controller.CreateAccountWithJWT(
     operatorSeed,
     accountConfig
 );
@@ -229,7 +229,7 @@ When `HTTPPort` is configured:
 ## Environment Variables Pattern
 
 ```csharp
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Host = Environment.GetEnvironmentVariable("NATS_HOST") ?? "0.0.0.0",
     Port = int.Parse(Environment.GetEnvironmentVariable("NATS_PORT") ?? "4222"),
@@ -255,7 +255,7 @@ var config = new ServerConfig
 ```csharp
 try
 {
-    string result = server.Start(config);
+    string result = controller.Start(config);
 
     if (result.Contains("failed") || result.Contains("error"))
     {
@@ -278,26 +278,26 @@ catch (Exception ex)
 ```csharp
 public class MyTests
 {
-    private NatsServer _server;
+    private NatsController _controller;
 
     [SetUp]
     public void Setup()
     {
-        _server = new NatsServer();
-        _server.Start();
+        _server = new NatsController();
+        _controller.Start();
     }
 
     [TearDown]
     public void TearDown()
     {
-        _server?.Dispose();
+        _controller?.Dispose();
     }
 
     [Test]
     public void TestMessaging()
     {
         var conn = new ConnectionFactory()
-            .CreateConnection(_server.GetUrl());
+            .CreateConnection(_controller.GetUrl());
 
         // Test logic
         conn.Publish("test", Encoding.UTF8.GetBytes("hello"));
@@ -312,7 +312,7 @@ public class MyTests
 ## Production Configuration Template
 
 ```csharp
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     // Network
     Host = "0.0.0.0",
@@ -346,7 +346,7 @@ var config = new ServerConfig
     Trace = false
 };
 
-server.Start(config);
+controller.Start(config);
 ```
 
 ---
@@ -444,9 +444,9 @@ stringData:
 ```csharp
 public class HealthCheck : IHealthCheck
 {
-    private readonly NatsServer _server;
+    private readonly NatsController _controller;
 
-    public HealthCheck(NatsServer server)
+    public HealthCheck(NatsController controller)
     {
         _server = server;
     }
@@ -457,7 +457,7 @@ public class HealthCheck : IHealthCheck
     {
         try
         {
-            var info = _server.GetInfo();
+            var info = _controller.GetInfo();
 
             if (string.IsNullOrEmpty(info.ClientUrl))
             {
@@ -487,13 +487,13 @@ public class HealthCheck : IHealthCheck
 ```csharp
 class Program
 {
-    private static NatsServer _server;
+    private static NatsController _controller;
     private static readonly ManualResetEvent _shutdownEvent = new(false);
 
     static void Main()
     {
-        _server = new NatsServer();
-        _server.Start();
+        _server = new NatsController();
+        _controller.Start();
 
         Console.CancelKeyPress += OnCancelKeyPress;
         AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
@@ -516,7 +516,7 @@ class Program
     static void Shutdown()
     {
         Console.WriteLine("Shutting down gracefully...");
-        _server?.Shutdown();
+        _controller?.Shutdown();
         _shutdownEvent.Set();
     }
 }
@@ -529,11 +529,11 @@ class Program
 ```csharp
 public class NatsMetrics
 {
-    private readonly NatsServer _server;
+    private readonly NatsController _controller;
     private readonly IMetricsCollector _metrics;
     private Timer _timer;
 
-    public NatsMetrics(NatsServer server, IMetricsCollector metrics)
+    public NatsMetrics(NatsController controller, IMetricsCollector metrics)
     {
         _server = server;
         _metrics = metrics;
@@ -543,7 +543,7 @@ public class NatsMetrics
     {
         _timer = new Timer(_ =>
         {
-            var info = _server.GetInfo();
+            var info = _controller.GetInfo();
 
             _metrics.Gauge("nats.connections", info.Connections);
             _metrics.Gauge("nats.jetstream_enabled", info.JetstreamEnabled ? 1 : 0);

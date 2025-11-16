@@ -2,7 +2,7 @@
 
 ## Overview
 
-DotGnatly provides a fluent, type-safe C# API for controlling NATS servers via Go bindings. The key enhancement over standard nats-csharp client libraries is **runtime reconfiguration** with validation, versioning, and change notifications while maintaining full control over the embedded NATS server.
+DotGnatly provides a fluent, type-safe C# API for controlling NATS servers via Go bindings. The key enhancement over standard nats-csharp client libraries is **runtime reconfiguration** with validation, versioning, and change notifications while maintaining full control over the embedded NATS controller.
 
 ## Table of Contents
 
@@ -43,11 +43,11 @@ DotGnatly manages the complete lifecycle of a NATS server instance:
 **Minimal Example:**
 
 ```csharp
-using NatsSharp;
+using DotGnatly.Nats;
 
 // Create and start server with defaults (localhost:4222)
-using var server = new NatsServer();
-string url = server.Start();
+using var controller = new NatsController();
+string url = controller.Start();
 
 Console.WriteLine($"Server running at: {url}");
 // Output: Server running at: nats://localhost:4222
@@ -56,9 +56,9 @@ Console.WriteLine($"Server running at: {url}");
 **Custom Configuration:**
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Host = "0.0.0.0",
     Port = 4222,
@@ -69,16 +69,16 @@ var config = new ServerConfig
     MaxPingsOut = 2
 };
 
-string url = server.Start(config);
+string url = controller.Start(config);
 Console.WriteLine($"Server started: {url}");
 ```
 
 ### JetStream-Enabled Server
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Host = "localhost",
     Port = 4222,
@@ -88,8 +88,8 @@ var config = new ServerConfig
     JetstreamMaxStore = 10 * 1024 * 1024 * 1024  // 10GB
 };
 
-string url = server.Start(config);
-var info = server.GetInfo();
+string url = controller.Start(config);
+var info = controller.GetInfo();
 
 Console.WriteLine($"JetStream Enabled: {info.JetstreamEnabled}");
 // Output: JetStream Enabled: True
@@ -98,9 +98,9 @@ Console.WriteLine($"JetStream Enabled: {info.JetstreamEnabled}");
 ### Server with Authentication
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Host = "localhost",
     Port = 4222,
@@ -111,16 +111,16 @@ var config = new ServerConfig
     }
 };
 
-string url = server.Start(config);
+string url = controller.Start(config);
 Console.WriteLine($"Secure server started: {url}");
 ```
 
 ### Server with HTTP Monitoring
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Host = "localhost",
     Port = 4222,
@@ -128,7 +128,7 @@ var config = new ServerConfig
     HTTPHost = "0.0.0.0"
 };
 
-string url = server.Start(config);
+string url = controller.Start(config);
 Console.WriteLine($"Server: {url}");
 Console.WriteLine($"Monitoring: http://localhost:8222");
 // Access monitoring at http://localhost:8222/varz
@@ -145,28 +145,28 @@ Console.WriteLine($"Monitoring: http://localhost:8222");
 #### Basic Reload
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
 // Start with initial configuration
-var initialConfig = new ServerConfig
+var initialConfig = new BrokerConfiguration
 {
     Port = 4222,
     Debug = true,
     HTTPPort = 8222
 };
 
-server.Start(initialConfig);
+controller.Start(initialConfig);
 
 // Application runs...
 
 // Later: Update configuration at runtime
-var updatedConfig = new ServerConfig
+var updatedConfig = new BrokerConfiguration
 {
     Debug = false,      // Disable debug logging
     HTTPPort = 8223     // Change monitoring port
 };
 
-string result = server.UpdateConfig(updatedConfig);
+string result = controller.UpdateConfig(updatedConfig);
 Console.WriteLine($"Update result: {result}");
 // Output: Configuration updated and reloaded successfully
 ```
@@ -174,26 +174,26 @@ Console.WriteLine($"Update result: {result}");
 #### Reload from Configuration File
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
 // Start from initial config file
-server.StartFromConfigFile("./config/nats-initial.conf");
+controller.StartFromConfigFile("./config/nats-initial.conf");
 
 // Application runs...
 
 // Later: Hot reload from updated config file
-string result = server.ReloadFromFile("./config/nats-updated.conf");
+string result = controller.ReloadFromFile("./config/nats-updated.conf");
 Console.WriteLine($"Reload result: {result}");
 ```
 
 ### Configuration Validation Example
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
 try
 {
-    var config = new ServerConfig
+    var config = new BrokerConfiguration
     {
         Port = 4222,
         MaxPayload = 10 * 1024 * 1024,  // 10MB
@@ -201,16 +201,16 @@ try
         MaxPingsOut = 3
     };
 
-    server.Start(config);
+    controller.Start(config);
 
     // Validate before updating
-    var newConfig = new ServerConfig
+    var newConfig = new BrokerConfiguration
     {
         MaxPayload = 5 * 1024 * 1024  // Reduce to 5MB
     };
 
     // Update will fail if invalid
-    string result = server.UpdateConfig(newConfig);
+    string result = controller.UpdateConfig(newConfig);
 
     if (result.Contains("success"))
     {
@@ -230,32 +230,32 @@ catch (Exception ex)
 ### Monitoring Configuration Changes
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
 // Initial configuration
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Port = 4222,
     Debug = true,
     HTTPPort = 8222
 };
 
-server.Start(config);
+controller.Start(config);
 
 // Get initial state
-var info1 = server.GetInfo();
+var info1 = controller.GetInfo();
 Console.WriteLine($"Initial - Debug mode, Port: {info1.Port}");
 
 // Update configuration
-var updatedConfig = new ServerConfig
+var updatedConfig = new BrokerConfiguration
 {
     Debug = false
 };
 
-server.UpdateConfig(updatedConfig);
+controller.UpdateConfig(updatedConfig);
 
 // Verify changes
-var info2 = server.GetInfo();
+var info2 = controller.GetInfo();
 Console.WriteLine($"Updated - Production mode, Port: {info2.Port}");
 ```
 
@@ -266,15 +266,15 @@ Console.WriteLine($"Updated - Production mode, Port: {info2.Port}");
 ### Multi-Account Management
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Port = 4222,
     HTTPPort = 8222
 };
 
-server.Start(config);
+controller.Start(config);
 
 // Create enterprise account
 var enterpriseAccount = new AccountConfig
@@ -285,7 +285,7 @@ var enterpriseAccount = new AccountConfig
     MaxSubscriptions = 10000
 };
 
-var accountInfo = server.CreateAccount(enterpriseAccount);
+var accountInfo = controller.CreateAccount(enterpriseAccount);
 Console.WriteLine($"Created account: {accountInfo.Name} (ID: {accountInfo.Id})");
 
 // Create development account
@@ -297,16 +297,16 @@ var devAccount = new AccountConfig
     MaxSubscriptions = 500
 };
 
-var devInfo = server.CreateAccount(devAccount);
+var devInfo = controller.CreateAccount(devAccount);
 Console.WriteLine($"Created account: {devInfo.Name} (ID: {devInfo.Id})");
 ```
 
 ### JWT-Based Account Creation
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
-server.Start();
+controller.Start();
 
 // Operator seed (in production, store securely)
 string operatorSeed = "SOALU7LPGJK2BDF7IHD7UZT6ZM23UMKYLGJLNN35QJSUI5BNR4DJRFH4R4";
@@ -318,7 +318,7 @@ var accountConfig = new AccountConfig
     MaxConnections = 100
 };
 
-var jwtResult = server.CreateAccountWithJWT(operatorSeed, accountConfig);
+var jwtResult = controller.CreateAccountWithJWT(operatorSeed, accountConfig);
 
 Console.WriteLine($"Account Public Key: {jwtResult.PublicKey}");
 Console.WriteLine($"Account JWT: {jwtResult.JWT.Substring(0, 50)}...");
@@ -330,9 +330,9 @@ Console.WriteLine($"Account Seed: {jwtResult.Seed}");
 ### Leaf Node Configuration
 
 ```csharp
-using var server = new NatsServer();
+using var controller = new NatsController();
 
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Port = 4222,
     LeafNode = new LeafNodeConfig
@@ -348,7 +348,7 @@ var config = new ServerConfig
     }
 };
 
-server.Start(config);
+controller.Start(config);
 Console.WriteLine("Leaf node connected to hub server");
 ```
 
@@ -358,18 +358,18 @@ Console.WriteLine("Leaf node connected to hub server");
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NatsSharp;
+using DotGnatly.Nats;
 
 class ProductionServer
 {
     static async Task Main(string[] args)
     {
-        using var server = new NatsServer();
+        using var controller = new NatsController();
 
         try
         {
             // Production configuration
-            var config = new ServerConfig
+            var config = new BrokerConfiguration
             {
                 Host = "0.0.0.0",
                 Port = 4222,
@@ -404,11 +404,11 @@ class ProductionServer
             };
 
             // Start server
-            string url = server.Start(config);
+            string url = controller.Start(config);
             Console.WriteLine($"Production server started: {url}");
 
             // Display server info
-            var info = server.GetInfo();
+            var info = controller.GetInfo();
             Console.WriteLine($"Server ID: {info.Id}");
             Console.WriteLine($"Version: {info.Version}");
             Console.WriteLine($"JetStream: {info.JetstreamEnabled}");
@@ -419,17 +419,17 @@ class ProductionServer
             var reloadTask = Task.Run(async () =>
             {
                 var watcher = new FileSystemWatcher("/etc/nats");
-                watcher.Filter = "server.conf";
+                watcher.Filter = "controller.conf";
                 watcher.Changed += (s, e) =>
                 {
                     Console.WriteLine("Configuration file changed, reloading...");
                     try
                     {
-                        string result = server.ReloadFromFile(e.FullPath);
+                        string result = controller.ReloadFromFile(e.FullPath);
                         Console.WriteLine($"Reload result: {result}");
 
                         // Log configuration change
-                        var newInfo = server.GetInfo();
+                        var newInfo = controller.GetInfo();
                         Console.WriteLine($"Updated server info - Connections: {newInfo.Connections}");
                     }
                     catch (Exception ex)
@@ -449,7 +449,7 @@ class ProductionServer
                 {
                     await Task.Delay(TimeSpan.FromMinutes(5), cts.Token);
 
-                    var currentInfo = server.GetInfo();
+                    var currentInfo = controller.GetInfo();
                     Console.WriteLine($"Health Check - Connections: {currentInfo.Connections}, " +
                                     $"JetStream: {currentInfo.JetstreamEnabled}");
                 }
@@ -472,8 +472,8 @@ class ProductionServer
         }
 
         // Graceful shutdown
-        Console.WriteLine("Shutting down server...");
-        server.Shutdown();
+        Console.WriteLine("Shutting down controller...");
+        controller.Shutdown();
     }
 }
 ```
@@ -525,40 +525,40 @@ DotGnatly provides **full server control** via Go bindings:
 // DotGnatly - SERVER CONTROL
 // Embedded NATS server with full lifecycle management
 
-using NatsSharp;
+using DotGnatly.Nats;
 
-using var server = new NatsServer();
+using var controller = new NatsController();
 
 // Start server with configuration
-var config = new ServerConfig
+var config = new BrokerConfiguration
 {
     Port = 4222,
     Jetstream = true,
     Debug = true
 };
 
-server.Start(config);
+controller.Start(config);
 
 // Hot-reload configuration (NO RESTART NEEDED)
-server.UpdateConfig(new ServerConfig
+controller.UpdateConfig(new BrokerConfiguration
 {
     Debug = false,
     HTTPPort = 8222
 });
 
 // Create accounts
-server.CreateAccount(new AccountConfig
+controller.CreateAccount(new AccountConfig
 {
     Name = "enterprise",
     MaxConnections = 1000
 });
 
 // Get server metrics
-var info = server.GetInfo();
+var info = controller.GetInfo();
 Console.WriteLine($"Connections: {info.Connections}");
 
 // Full control over server lifecycle
-server.Shutdown();
+controller.Shutdown();
 ```
 
 **Capabilities:**
@@ -608,15 +608,15 @@ conn.SubscribeAsync("orders.*", (sender, args) =>
 **With DotGnatly:**
 ```csharp
 // Step 1: Start embedded server
-using NatsSharp;
+using DotGnatly.Nats;
 
-var server = new NatsServer();
-server.Start();
+var controller = new NatsController();
+controller.Start();
 
 // Step 2: Connect using nats-csharp client
 using NATS.Client;
 
-var conn = new ConnectionFactory().CreateConnection(server.GetUrl());
+var conn = new ConnectionFactory().CreateConnection(controller.GetUrl());
 conn.SubscribeAsync("orders.*", (sender, args) =>
 {
     Console.WriteLine($"Received: {Encoding.UTF8.GetString(args.Message.Data)}");
@@ -630,7 +630,7 @@ conn.SubscribeAsync("orders.*", (sender, args) =>
 **With nats-csharp:**
 ```csharp
 // Step 1: Stop NATS server
-// Step 2: Edit nats-server.conf file
+// Step 2: Edit nats-controller.conf file
 // Step 3: Restart NATS server
 // Step 4: Reconnect all clients
 
@@ -639,11 +639,11 @@ conn.SubscribeAsync("orders.*", (sender, args) =>
 
 **With DotGnatly:**
 ```csharp
-using var server = new NatsServer();
-server.Start();
+using var controller = new NatsController();
+controller.Start();
 
 // No downtime - hot reload
-server.UpdateConfig(new ServerConfig
+controller.UpdateConfig(new BrokerConfiguration
 {
     Debug = false,
     MaxPayload = 10 * 1024 * 1024
@@ -664,15 +664,15 @@ server.UpdateConfig(new ServerConfig
 
 **With DotGnatly:**
 ```csharp
-using var server = new NatsServer();
-server.Start();
+using var controller = new NatsController();
+controller.Start();
 
 // Programmatic account creation
 var tenants = new[] { "acme-corp", "globex", "initech" };
 
 foreach (var tenant in tenants)
 {
-    var account = server.CreateAccount(new AccountConfig
+    var account = controller.CreateAccount(new AccountConfig
     {
         Name = tenant,
         MaxConnections = 100
@@ -688,31 +688,31 @@ foreach (var tenant in tenants)
 
 ## Complete API Reference
 
-### NatsServer Class
+### NatsController Class
 
 #### Constructors
 
 ```csharp
-public NatsServer()
+public NatsController()
 ```
-Creates a new NatsServer instance. Automatically detects OS and loads appropriate bindings.
+Creates a new NatsController instance. Automatically detects OS and loads appropriate bindings.
 
 #### Server Control Methods
 
 ```csharp
-public string Start(ServerConfig config)
+public string Start(BrokerConfiguration config)
 ```
 Starts the NATS server with the specified configuration.
 
 **Parameters:**
-- `config`: ServerConfig object with server settings
+- `config`: BrokerConfiguration object with server settings
 
 **Returns:** Client URL string (e.g., "nats://localhost:4222") or error message
 
 **Example:**
 ```csharp
-var config = new ServerConfig { Port = 4222 };
-string url = server.Start(config);
+var config = new BrokerConfiguration { Port = 4222 };
+string url = controller.Start(config);
 ```
 
 ---
@@ -730,7 +730,7 @@ Convenience method to start server with minimal configuration.
 
 **Example:**
 ```csharp
-string url = server.Start("0.0.0.0", 4222);
+string url = controller.Start("0.0.0.0", 4222);
 ```
 
 ---
@@ -765,7 +765,7 @@ Starts server from a NATS configuration file.
 ```csharp
 public void Shutdown()
 ```
-Gracefully shuts down the NATS server. Called automatically by Dispose().
+Gracefully shuts down the NATS controller. Called automatically by Dispose().
 
 #### Configuration Methods
 
@@ -791,19 +791,19 @@ Reloads server configuration from a file.
 ---
 
 ```csharp
-public string UpdateConfig(ServerConfig config)
+public string UpdateConfig(BrokerConfiguration config)
 ```
 Updates and reloads server configuration without restart.
 
 **Parameters:**
-- `config`: New ServerConfig object (only specify changed fields)
+- `config`: New BrokerConfiguration object (only specify changed fields)
 
 **Returns:** Success or error message
 
 **Example:**
 ```csharp
-var updated = new ServerConfig { Debug = false };
-string result = server.UpdateConfig(updated);
+var updated = new BrokerConfiguration { Debug = false };
+string result = controller.UpdateConfig(updated);
 ```
 
 #### Monitoring Methods
@@ -826,7 +826,7 @@ Gets detailed server information and metrics.
 
 **Example:**
 ```csharp
-var info = server.GetInfo();
+var info = controller.GetInfo();
 Console.WriteLine($"Connections: {info.Connections}");
 Console.WriteLine($"Version: {info.Version}");
 ```
@@ -836,7 +836,7 @@ Console.WriteLine($"Version: {info.Version}");
 ```csharp
 public AccountInfo CreateAccount(AccountConfig config)
 ```
-Creates a new account on the server.
+Creates a new account on the controller.
 
 **Parameters:**
 - `config`: Account configuration
@@ -858,10 +858,10 @@ Creates a JWT-secured account.
 
 ### Configuration Classes
 
-#### ServerConfig
+#### BrokerConfiguration
 
 ```csharp
-public class ServerConfig
+public class BrokerConfiguration
 {
     public string Host { get; set; } = "localhost";
     public int Port { get; set; } = 4222;
@@ -981,8 +981,8 @@ public class JWTAccountResult
 Always use `using` statement for proper disposal:
 
 ```csharp
-using var server = new NatsServer();
-server.Start();
+using var controller = new NatsController();
+controller.Start();
 // Server automatically shut down when disposed
 ```
 
@@ -993,8 +993,8 @@ Validate configuration before applying:
 ```csharp
 try
 {
-    var config = new ServerConfig { Port = 4222 };
-    string result = server.UpdateConfig(config);
+    var config = new BrokerConfiguration { Port = 4222 };
+    string result = controller.UpdateConfig(config);
 
     if (!result.Contains("success"))
     {
@@ -1015,7 +1015,7 @@ Implement health checks:
 ```csharp
 var healthTimer = new Timer(_ =>
 {
-    var info = server.GetInfo();
+    var info = controller.GetInfo();
     if (info.Connections < 0)
     {
         Console.WriteLine("Server health check failed");
@@ -1033,7 +1033,7 @@ Console.CancelKeyPress += (s, e) =>
 {
     e.Cancel = true;
     Console.WriteLine("Shutting down gracefully...");
-    server.Shutdown();
+    controller.Shutdown();
 };
 ```
 
@@ -1042,7 +1042,7 @@ Console.CancelKeyPress += (s, e) =>
 Check return values for errors:
 
 ```csharp
-string result = server.Start(config);
+string result = controller.Start(config);
 if (result.Contains("failed") || result.Contains("error"))
 {
     Console.WriteLine($"Startup failed: {result}");
