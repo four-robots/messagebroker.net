@@ -307,10 +307,9 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString("OK"));
 
         // Act
-        var result = await _controller.DisconnectClientAsync(clientId);
+        await _controller.DisconnectClientAsync(clientId);
 
-        // Assert
-        Assert.True(result);
+        // Assert - no exception thrown means success
         _mockBindings.Verify(b => b.DisconnectClientByID(clientId), Times.Once);
     }
 

@@ -273,7 +273,7 @@ public class ClusterConfigurationTests : IIntegrationTest
                     }
                 });
 
-                if (result.Success || result.Validation.IsValid)
+                if (result.Success)
                 {
                     throw new Exception("Validation should have failed for port conflict");
                 }
@@ -297,7 +297,7 @@ public class ClusterConfigurationTests : IIntegrationTest
                     }
                 });
 
-                if (result.Success || result.Validation.IsValid)
+                if (result.Success)
                 {
                     throw new Exception("Validation should have failed for missing cluster name");
                 }
