@@ -285,7 +285,8 @@ public static class AccountManagementTests
                 Console.WriteLine($"  Timestamp: {now.GetString()}");
             }
 
-            if (root.TryGetProperty("accounts", out var accounts))
+            // In NATS 2.12+, the field is named "account_statz" (not "accounts")
+            if (root.TryGetProperty("account_statz", out var accounts))
             {
                 var accountsArray = accounts.EnumerateArray().ToList();
                 Console.WriteLine($"  Number of accounts: {accountsArray.Count}");
@@ -325,7 +326,7 @@ public static class AccountManagementTests
             }
             else
             {
-                Console.WriteLine("❌ Missing 'accounts' array in statistics response");
+                Console.WriteLine("❌ Missing 'account_statz' array in statistics response");
                 return false;
             }
 
@@ -379,7 +380,8 @@ public static class AccountManagementTests
             using var doc = JsonDocument.Parse(statzJson);
             var root = doc.RootElement;
 
-            if (root.TryGetProperty("accounts", out var accounts))
+            // In NATS 2.12+, the field is named "account_statz" (not "accounts")
+            if (root.TryGetProperty("account_statz", out var accounts))
             {
                 var accountsArray = accounts.EnumerateArray().ToList();
                 Console.WriteLine($"  Number of accounts in filtered response: {accountsArray.Count}");

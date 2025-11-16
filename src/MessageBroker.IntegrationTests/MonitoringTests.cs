@@ -452,7 +452,7 @@ public static class MonitoringTests
 
         try
         {
-            // Test Connz with subscription filter
+            // Test Connz with subscription filter (wildcards allowed)
             var connzWithSubs = await controller.GetConnzAsync("test.*");
             Console.WriteLine($"✓ Retrieved Connz with subscription filter");
 
@@ -460,7 +460,8 @@ public static class MonitoringTests
             Console.WriteLine($"  Response contains valid JSON");
 
             // Test Subsz with filter
-            var subszFiltered = await controller.GetSubszAsync("test.>");
+            // Note: In NATS 2.12+, the Test field must be a valid publish subject (no wildcards)
+            var subszFiltered = await controller.GetSubszAsync("test.example");
             Console.WriteLine($"✓ Retrieved Subsz with filter");
 
             Console.WriteLine("✓ Subscription filter test passed");
@@ -733,14 +734,23 @@ public static class MonitoringTests
                 Console.WriteLine($"  Gateway name: {name.GetString()}");
             }
 
+            // In NATS 2.12+, outbound_gateways and inbound_gateways are maps, not arrays
             if (root.TryGetProperty("outbound_gateways", out var outbound))
             {
-                Console.WriteLine($"  Outbound gateways: {outbound.GetArrayLength()}");
+                if (outbound.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    var count = outbound.EnumerateObject().Count();
+                    Console.WriteLine($"  Outbound gateways: {count}");
+                }
             }
 
             if (root.TryGetProperty("inbound_gateways", out var inbound))
             {
-                Console.WriteLine($"  Inbound gateways: {inbound.GetArrayLength()}");
+                if (inbound.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    var count = inbound.EnumerateObject().Count();
+                    Console.WriteLine($"  Inbound gateways: {count}");
+                }
             }
 
             Console.WriteLine("✓ Gatewayz test passed");
