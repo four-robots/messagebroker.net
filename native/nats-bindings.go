@@ -1002,7 +1002,10 @@ func GetAccountStatz(accountFilter *C.char) *C.char {
 		return C.CString("ERROR: Server not running")
 	}
 
-	opts := &server.AccountStatzOptions{}
+	opts := &server.AccountStatzOptions{
+		// Include accounts with no connections (NATS 2.12+ default is to exclude them)
+		IncludeUnused: true,
+	}
 
 	// If account filter provided, set it
 	if accountFilter != nil {
