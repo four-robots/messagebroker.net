@@ -1,0 +1,235 @@
+name: NuGet Package
+
+on:
+  release:
+    types: [published, created]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to NuGet.org'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-native-bindings:
+    name: Build Native Bindings on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact-name: linux-bindings
+            binary-name: nats-bindings.so
+          - os: windows-latest
+            artifact-name: windows-bindings
+            binary-name: nats-bindings.dll
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
+
+    - name: Build native bindings (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      working-directory: native
+      run: |
+        chmod +x build.sh
+        ./build.sh
+
+    - name: Build native bindings (Windows)
+      if: matrix.os == 'windows-latest'
+      working-directory: native
+      shell: pwsh
+      run: |
+        .\build.ps1
+
+    - name: Upload native bindings artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: native/${{ matrix.binary-name }}
+        if-no-files-found: error
+        retention-days: 1
+
+  package:
+    name: Package NuGet
+    runs-on: ubuntu-latest
+    needs: build-native-bindings
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+          10.0.x
+
+    - name: Download Linux bindings
+      uses: actions/download-artifact@v4
+      with:
+        name: linux-bindings
+        path: src/DotGnatly.Natives/
+
+    - name: Download Windows bindings
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-bindings
+        path: src/DotGnatly.Natives/
+
+    - name: Verify native bindings
+      run: |
+        echo "Verifying native bindings are present..."
+        ls -la src/DotGnatly.Natives/
+        if [ ! -f "src/DotGnatly.Natives/nats-bindings.so" ]; then
+          echo "Error: nats-bindings.so not found"
+          exit 1
+        fi
+        if [ ! -f "src/DotGnatly.Natives/nats-bindings.dll" ]; then
+          echo "Error: nats-bindings.dll not found"
+          exit 1
+        fi
+        echo "✓ Both native bindings found"
+
+    - name: Restore dependencies
+      run: dotnet restore DotGnatly.sln
+
+    - name: Build solution
+      run: dotnet build DotGnatly.sln --configuration Release --no-restore
+
+    - name: Create NuGet packages directory
+      run: mkdir -p ./nupkg
+
+    - name: Pack DotGnatly.Natives
+      run: dotnet pack src/DotGnatly.Natives/DotGnatly.Natives.csproj -c Release --no-build --output ./nupkg
+
+    - name: Pack DotGnatly.Core
+      run: dotnet pack src/DotGnatly.Core/DotGnatly.Core.csproj -c Release --no-build --output ./nupkg
+
+    - name: Pack DotGnatly.Nats
+      run: dotnet pack src/DotGnatly.Nats/DotGnatly.Nats.csproj -c Release --no-build --output ./nupkg
+
+    - name: List created packages
+      run: |
+        echo "NuGet packages created:"
+        ls -lh ./nupkg/*.nupkg
+
+    - name: Upload NuGet packages as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages
+        path: ./nupkg/*.nupkg
+        if-no-files-found: error
+        retention-days: 30
+
+    - name: Publish to NuGet.org (Full Release Only)
+      if: github.event_name == 'release' && !github.event.release.prerelease
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        echo "Publishing to NuGet.org (Full Release)..."
+
+        # Publish DotGnatly.Natives first (dependency)
+        echo "Publishing DotGnatly.Natives..."
+        dotnet nuget push ./nupkg/DotGnatly.Natives.*.nupkg \
+          --api-key $NUGET_API_KEY \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+        # Wait a bit for NuGet to process
+        sleep 10
+
+        # Publish DotGnatly.Core
+        echo "Publishing DotGnatly.Core..."
+        dotnet nuget push ./nupkg/DotGnatly.Core.*.nupkg \
+          --api-key $NUGET_API_KEY \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+        # Wait a bit for NuGet to process
+        sleep 10
+
+        # Publish DotGnatly.Nats (depends on both above)
+        echo "Publishing DotGnatly.Nats..."
+        dotnet nuget push ./nupkg/DotGnatly.Nats.*.nupkg \
+          --api-key $NUGET_API_KEY \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+        echo "✓ All packages published to NuGet.org"
+
+    - name: Publish to NuGet.org (Manual Trigger)
+      if: github.event_name == 'workflow_dispatch' && inputs.publish
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        echo "Publishing to NuGet.org (Manual Trigger)..."
+
+        # Publish DotGnatly.Natives first (dependency)
+        echo "Publishing DotGnatly.Natives..."
+        dotnet nuget push ./nupkg/DotGnatly.Natives.*.nupkg \
+          --api-key $NUGET_API_KEY \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+        # Wait a bit for NuGet to process
+        sleep 10
+
+        # Publish DotGnatly.Core
+        echo "Publishing DotGnatly.Core..."
+        dotnet nuget push ./nupkg/DotGnatly.Core.*.nupkg \
+          --api-key $NUGET_API_KEY \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+        # Wait a bit for NuGet to process
+        sleep 10
+
+        # Publish DotGnatly.Nats (depends on both above)
+        echo "Publishing DotGnatly.Nats..."
+        dotnet nuget push ./nupkg/DotGnatly.Nats.*.nupkg \
+          --api-key $NUGET_API_KEY \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate
+
+        echo "✓ All packages published to NuGet.org"
+
+    - name: Summary
+      run: |
+        echo "## NuGet Package Build Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Packages Created" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Package | Version |" >> $GITHUB_STEP_SUMMARY
+        echo "|---------|---------|" >> $GITHUB_STEP_SUMMARY
+        for pkg in ./nupkg/*.nupkg; do
+          name=$(basename "$pkg" | sed 's/\.[0-9].*//')
+          version=$(basename "$pkg" | sed -n 's/.*\.\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*.*\)\.nupkg/\1/p')
+          echo "| $name | $version |" >> $GITHUB_STEP_SUMMARY
+        done
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "${{ github.event_name }}" == "release" ] && [ "${{ github.event.release.prerelease }}" == "false" ]; then
+          echo "### ✅ Published to NuGet.org" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ github.event_name }}" == "release" ] && [ "${{ github.event.release.prerelease }}" == "true" ]; then
+          echo "### 📦 Prerelease - Packages Available as Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Packages not published to NuGet.org (prerelease)" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ "${{ inputs.publish }}" == "true" ]; then
+          echo "### ✅ Published to NuGet.org (Manual)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### 📦 Packages Available as Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Packages not published to NuGet.org" >> $GITHUB_STEP_SUMMARY
+        fi
