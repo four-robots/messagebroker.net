@@ -18,12 +18,12 @@ Write-Host "Building shared library..." -ForegroundColor Cyan
 go build -buildmode=c-shared -o nats-bindings.dll nats-bindings.go
 
 # Copy to the .NET output directories
-Write-Host "Copying to MessageBroker.Nats output directories..." -ForegroundColor Cyan
+Write-Host "Copying to DotGnatly.Nats output directories..." -ForegroundColor Cyan
 $TargetDirs = @(
-    "..\src\MessageBroker.Nats\bin\Debug\net9.0",
-    "..\src\MessageBroker.Nats\bin\Release\net9.0",
-    "..\src\MessageBroker.Examples\bin\Debug\net9.0",
-    "..\src\MessageBroker.Examples\bin\Release\net9.0"
+    "..\src\DotGnatly.Nats\bin\Debug\net9.0",
+    "..\src\DotGnatly.Nats\bin\Release\net9.0",
+    "..\src\DotGnatly.Examples\bin\Debug\net9.0",
+    "..\src\DotGnatly.Examples\bin\Release\net9.0"
 )
 
 foreach ($dir in $TargetDirs) {
@@ -34,8 +34,8 @@ foreach ($dir in $TargetDirs) {
 }
 
 # Also copy to the source directory for debugging
-Write-Host "  -> ..\src\MessageBroker.Nats\" -ForegroundColor Gray
-Copy-Item nats-bindings.dll -Destination ..\src\MessageBroker.Nats\ -Force
+Write-Host "  -> ..\src\DotGnatly.Nats\" -ForegroundColor Gray
+Copy-Item nats-bindings.dll -Destination ..\src\DotGnatly.Nats\ -Force
 
 Write-Host ""
 Write-Host "Build complete! nats-bindings.dll created successfully." -ForegroundColor Green

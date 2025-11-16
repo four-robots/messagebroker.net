@@ -19,12 +19,12 @@ echo "Building shared library..."
 go build -buildmode=c-shared -o nats-bindings.so nats-bindings.go
 
 # Copy to the .NET output directories
-echo "Copying to MessageBroker.Nats output directories..."
+echo "Copying to DotGnatly.Nats output directories..."
 TARGET_DIRS=(
-    "../src/MessageBroker.Nats/bin/Debug/net9.0"
-    "../src/MessageBroker.Nats/bin/Release/net9.0"
-    "../src/MessageBroker.Examples/bin/Debug/net9.0"
-    "../src/MessageBroker.Examples/bin/Release/net9.0"
+    "../src/DotGnatly.Nats/bin/Debug/net9.0"
+    "../src/DotGnatly.Nats/bin/Release/net9.0"
+    "../src/DotGnatly.Examples/bin/Debug/net9.0"
+    "../src/DotGnatly.Examples/bin/Release/net9.0"
 )
 
 for dir in "${TARGET_DIRS[@]}"; do
@@ -35,8 +35,8 @@ for dir in "${TARGET_DIRS[@]}"; do
 done
 
 # Also copy to the source directory for debugging
-echo "  -> ../src/MessageBroker.Nats/"
-cp nats-bindings.so ../src/MessageBroker.Nats/
+echo "  -> ../src/DotGnatly.Nats/"
+cp nats-bindings.so ../src/DotGnatly.Nats/
 
 echo ""
 echo "Build complete! nats-bindings.so created successfully."

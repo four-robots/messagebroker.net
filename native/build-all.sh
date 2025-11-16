@@ -27,8 +27,8 @@ GOOS=windows GOARCH=amd64 go build -buildmode=c-shared -o nats-bindings.dll nats
 # Copy to the source directory
 echo ""
 echo "Copying binaries to source directory..."
-cp nats-bindings.so ../src/MessageBroker.Nats/
-cp nats-bindings.dll ../src/MessageBroker.Nats/
+cp nats-bindings.so ../src/DotGnatly.Nats/
+cp nats-bindings.dll ../src/DotGnatly.Nats/
 
 echo ""
 echo "Build complete!"

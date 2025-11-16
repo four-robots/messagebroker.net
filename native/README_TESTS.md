@@ -277,4 +277,4 @@ Each test uses a unique port (14222-14234). If tests fail with "address already 
 
 - [Native Bindings README](README.md) - Build instructions
 - [C# Unit Tests](../src/DotGnatly.Nats.Tests/README.md) - .NET test suite
-- [Integration Tests](../src/MessageBroker.IntegrationTests/README.md) - End-to-end tests
+- [Integration Tests](../src/DotGnatly.IntegrationTests/README.md) - End-to-end tests
