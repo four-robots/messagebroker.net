@@ -49,6 +49,7 @@ jobs:
       run: |
         chmod +x build.sh
         ./build.sh
+        cp nats-bindings.so ../src/DotGnatly.Natives/
 
     - name: Build native bindings (Windows)
       if: matrix.os == 'windows-latest'
@@ -56,6 +57,7 @@ jobs:
       shell: pwsh
       run: |
         .\build.ps1
+        Copy-Item nats-bindings.dll ..\src\DotGnatly.Natives\ -Force
 
     - name: Restore dependencies
       run: dotnet restore DotGnatly.sln
@@ -117,6 +119,7 @@ jobs:
       run: |
         chmod +x build.sh
         ./build.sh
+        cp nats-bindings.so ../src/DotGnatly.Natives/
 
     - name: Restore dependencies
       run: dotnet restore DotGnatly.sln
