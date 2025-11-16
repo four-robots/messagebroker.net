@@ -297,7 +297,8 @@ public static class AccountManagementTests
 
                 foreach (var account in accountsArray)
                 {
-                    if (account.TryGetProperty("account", out var acctName))
+                    // NATS 2.12 uses "acc" not "account"
+                    if (account.TryGetProperty("acc", out var acctName))
                     {
                         var name = acctName.GetString();
                         if (name == "STATS_ACCOUNT_001") foundAccount1 = true;
@@ -390,7 +391,8 @@ public static class AccountManagementTests
                 if (accountsArray.Count > 0)
                 {
                     var firstAccount = accountsArray[0];
-                    if (firstAccount.TryGetProperty("account", out var acctName))
+                    // NATS 2.12 uses "acc" not "account"
+                    if (firstAccount.TryGetProperty("acc", out var acctName))
                     {
                         var name = acctName.GetString();
                         Console.WriteLine($"    Account: {name}");
