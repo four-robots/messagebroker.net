@@ -351,7 +351,18 @@ public class ConfigurationValidator : IConfigurationValidator
 
     private void ValidateCluster(ClusterConfiguration cluster, int mainPort, int httpPort, int httpsPort, LeafNodeConfiguration leafNode, ValidationResult result)
     {
-        if (cluster == null || cluster.Port == 0)
+        if (cluster == null)
+            return;
+
+        // If cluster name is configured but port is 0 or invalid, that's an error
+        if (!string.IsNullOrWhiteSpace(cluster.Name) && cluster.Port == 0)
+        {
+            result.AddError("Cluster.Port", "Cluster port must be specified when cluster name is configured");
+            return; // Don't continue validation if port is 0
+        }
+
+        // If port is 0, clustering is disabled - skip remaining validation
+        if (cluster.Port == 0)
             return;
 
         if (cluster.Port < MinPort || cluster.Port > MaxPort)

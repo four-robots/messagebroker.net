@@ -65,6 +65,13 @@ public static class ConfigurationDiffEngine
                     (LeafNodeConfiguration?)newValue,
                     diff);
             }
+            else if (property.PropertyType == typeof(ClusterConfiguration))
+            {
+                CompareClusterConfiguration(
+                    (ClusterConfiguration?)oldValue,
+                    (ClusterConfiguration?)newValue,
+                    diff);
+            }
             else if (!AreEqual(oldValue, newValue))
             {
                 diff.Changes.Add(new PropertyChange
@@ -148,6 +155,44 @@ public static class ConfigurationDiffEngine
                 diff.Changes.Add(new PropertyChange
                 {
                     PropertyName = $"LeafNode.{property.Name}",
+                    OldValue = oldValue,
+                    NewValue = newValue
+                });
+            }
+        }
+    }
+
+    private static void CompareClusterConfiguration(
+        ClusterConfiguration? oldCluster,
+        ClusterConfiguration? newCluster,
+        ConfigurationDiff diff)
+    {
+        if (oldCluster == null && newCluster == null)
+            return;
+
+        if (oldCluster == null || newCluster == null)
+        {
+            diff.Changes.Add(new PropertyChange
+            {
+                PropertyName = "Cluster",
+                OldValue = oldCluster,
+                NewValue = newCluster
+            });
+            return;
+        }
+
+        var properties = typeof(ClusterConfiguration).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        foreach (var property in properties)
+        {
+            var oldValue = property.GetValue(oldCluster);
+            var newValue = property.GetValue(newCluster);
+
+            if (!AreEqual(oldValue, newValue))
+            {
+                diff.Changes.Add(new PropertyChange
+                {
+                    PropertyName = $"Cluster.{property.Name}",
                     OldValue = oldValue,
                     NewValue = newValue
                 });
