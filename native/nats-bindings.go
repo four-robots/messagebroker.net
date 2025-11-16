@@ -611,6 +611,9 @@ func GetConnz(subsFilter *C.char) *C.char {
 			opts.Subscriptions = true
 			opts.SubscriptionsDetail = true
 			opts.FilterSubject = filterStr
+			// Note: In NATS 2.12+, FilterSubject requires account filtering
+			// Use the global account ($G) by default
+			opts.Account = "$G"
 		}
 	}
 
