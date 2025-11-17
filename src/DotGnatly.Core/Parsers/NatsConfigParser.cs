@@ -185,29 +185,8 @@ public class NatsConfigParser
                 continue;
             }
 
-            if (TryParseKeyValue(line, out var key, out var value))
-            {
-                switch (key.ToLowerInvariant())
-                {
-                    case "port":
-                        config.LeafNode.Port = ParseInt(value);
-                        break;
-                    case "host":
-                        config.LeafNode.Host = UnquoteString(value);
-                        break;
-                    case "advertise":
-                        config.LeafNode.Advertise = UnquoteString(value);
-                        break;
-                    case "isolate_leafnode_interest":
-                        config.LeafNode.IsolateLeafnodeInterest = ParseBool(value);
-                        break;
-                    case "reconnect_delay":
-                        config.LeafNode.ReconnectDelay = value;
-                        break;
-                }
-                context.MoveNext();
-            }
-            else if (TryParseBlockStart(line, out var blockName))
+            // Check for blocks BEFORE key-value pairs to handle inline blocks like "authorization {key: value}"
+            if (TryParseBlockStart(line, out var blockName))
             {
                 string blockContent;
 
@@ -234,6 +213,28 @@ public class NatsConfigParser
                         ParseRemotesArray(blockContent, config.LeafNode);
                         break;
                 }
+            }
+            else if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "port":
+                        config.LeafNode.Port = ParseInt(value);
+                        break;
+                    case "host":
+                        config.LeafNode.Host = UnquoteString(value);
+                        break;
+                    case "advertise":
+                        config.LeafNode.Advertise = UnquoteString(value);
+                        break;
+                    case "isolate_leafnode_interest":
+                        config.LeafNode.IsolateLeafnodeInterest = ParseBool(value);
+                        break;
+                    case "reconnect_delay":
+                        config.LeafNode.ReconnectDelay = value;
+                        break;
+                }
+                context.MoveNext();
             }
             else
             {
