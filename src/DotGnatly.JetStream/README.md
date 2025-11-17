@@ -110,25 +110,121 @@ var response = await controller.PurgeStreamAsync("EVENTS");
 Console.WriteLine($"Purged {response.Purged} messages");
 ```
 
+### Loading Streams from JSON Configuration
+
+DotGnatly.JetStream supports loading stream configurations from JSON files, making it easy to manage stream definitions as infrastructure-as-code.
+
+**From JSON String:**
+```csharp
+var json = @"{
+    ""name"": ""ORDERS"",
+    ""subjects"": [""orders.*""],
+    ""retention"": ""limits"",
+    ""max_msgs"": 10000,
+    ""storage"": ""file""
+}";
+
+var streamInfo = await controller.CreateStreamFromJsonAsync(json);
+```
+
+**From JSON File:**
+```csharp
+var streamInfo = await controller.CreateStreamFromFileAsync("./configs/orders.json");
+```
+
+**From Directory (multiple files):**
+```csharp
+var streamInfos = await controller.CreateStreamsFromDirectoryAsync("./configs");
+Console.WriteLine($"Created {streamInfos.Count} streams");
+```
+
+**Parse and Modify:**
+```csharp
+// Load JSON, modify with fluent API, then create
+var configJson = await StreamConfigJson.FromFileAsync("./configs/orders.json");
+var builder = configJson.ToBuilder();
+
+builder
+    .WithMaxMessages(20000) // Override JSON value
+    .WithDescription("Modified from JSON");
+
+await using var context = await controller.GetJetStreamContextAsync();
+var stream = await context.JetStream.CreateStreamAsync(builder.Build());
+```
+
+**Example JSON Format:**
+```json
+{
+  "name": "ORDERS",
+  "description": "Order processing stream",
+  "subjects": ["orders.*", "shipments.*"],
+  "retention": "limits",
+  "max_consumers": 10,
+  "max_msgs": 100000,
+  "max_bytes": 1073741824,
+  "max_age": 2592000000000000,
+  "max_msg_size": 1048576,
+  "max_msgs_per_subject": -1,
+  "storage": "file",
+  "discard": "old",
+  "num_replicas": 1,
+  "duplicate_window": 120000000000,
+  "placement": {
+    "cluster": ""
+  },
+  "sources": [
+    {
+      "name": "SOURCE_STREAM",
+      "filter_subject": "source.*",
+      "external": {
+        "api": "$JS.hub.API",
+        "deliver": "deliver.hub.source"
+      }
+    }
+  ],
+  "sealed": false,
+  "deny_delete": false,
+  "deny_purge": false,
+  "allow_rollup_hdrs": false,
+  "allow_direct": false
+}
+```
+
 ### Stream Configuration Options
 
 The `StreamConfigBuilder` provides a fluent API for configuring streams:
 
 ```csharp
 builder
-    .WithSubjects("orders.*", "shipments.*")     // Subject patterns
+    // Basic Configuration
+    .WithSubjects("orders.*", "shipments.*")      // Subject patterns
     .WithDescription("Order processing")          // Description
     .WithStorage(StreamConfigStorage.File)        // File or Memory
     .WithRetention(StreamConfigRetention.Limits)  // Limits, Interest, or WorkQueue
     .WithReplicas(3)                              // Cluster replicas (1-5)
+
+    // Limits
     .WithMaxMessages(100000)                      // Max message count
     .WithMaxBytes(1024 * 1024 * 1024)            // Max storage (1GB)
     .WithMaxAge(TimeSpan.FromDays(7))            // Message TTL
     .WithMaxMessageSize(1024 * 1024)             // Max individual message size
     .WithMaxConsumers(10)                         // Max consumer count
+    .WithMaxMessagesPerSubject(1000)              // Max messages per subject (for KV stores)
+
+    // Behavior
     .WithDiscard(StreamConfigDiscard.Old)         // Discard old or new when full
     .WithDuplicateWindow(TimeSpan.FromMinutes(5)) // Duplicate detection window
-    .WithNoAck();                                 // Disable acknowledgements
+    .WithNoAck()                                  // Disable acknowledgements
+
+    // Advanced Features
+    .WithPlacement("cluster-1", new[] { "tag1", "tag2" }) // Cluster placement
+    .AddSource("SOURCE_STREAM", "source.*",       // External stream sources
+               "$JS.hub.API", "deliver.hub.source")
+    .WithSealed(true)                             // Prevent modifications
+    .WithDenyDelete(true)                         // Prevent message deletion
+    .WithDenyPurge(true)                          // Prevent purging
+    .WithAllowRollup(true)                        // Allow rollup headers (aggregation)
+    .WithAllowDirect(true);                       // Allow direct message access
 ```
 
 ### Storage Types

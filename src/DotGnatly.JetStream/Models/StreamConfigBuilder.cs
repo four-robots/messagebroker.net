@@ -23,6 +23,16 @@ public class StreamConfigBuilder
     private string? _description;
     private TimeSpan _duplicateWindow = TimeSpan.FromMinutes(2);
 
+    // Advanced properties
+    private long _maxMsgsPerSubject = -1;
+    private Placement? _placement;
+    private readonly List<StreamSource> _sources = new();
+    private bool _sealed = false;
+    private bool _denyDelete = false;
+    private bool _denyPurge = false;
+    private bool _allowRollup = false;
+    private bool _allowDirect = false;
+
     /// <summary>
     /// Initializes a new instance of the StreamConfigBuilder class.
     /// </summary>
@@ -190,6 +200,112 @@ public class StreamConfigBuilder
     }
 
     /// <summary>
+    /// Sets the maximum number of messages per subject.
+    /// </summary>
+    /// <param name="maxMessagesPerSubject">The maximum messages per subject (-1 for unlimited).</param>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder WithMaxMessagesPerSubject(long maxMessagesPerSubject)
+    {
+        _maxMsgsPerSubject = maxMessagesPerSubject;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets the placement constraints for the stream.
+    /// </summary>
+    /// <param name="cluster">The cluster name for placement.</param>
+    /// <param name="tags">Optional tags for placement.</param>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder WithPlacement(string? cluster = null, string[]? tags = null)
+    {
+        _placement = new Placement
+        {
+            Cluster = cluster ?? string.Empty,
+            Tags = tags?.ToList() ?? new List<string>()
+        };
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a stream source for sourcing messages from another stream.
+    /// </summary>
+    /// <param name="name">The name of the source stream.</param>
+    /// <param name="filterSubject">Optional subject filter.</param>
+    /// <param name="externalApi">External API prefix for hub-and-spoke.</param>
+    /// <param name="externalDeliver">External deliver subject for hub-and-spoke.</param>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder AddSource(string name, string? filterSubject = null, string? externalApi = null, string? externalDeliver = null)
+    {
+        var source = new StreamSource
+        {
+            Name = name,
+            FilterSubject = filterSubject,
+        };
+
+        if (!string.IsNullOrWhiteSpace(externalApi) || !string.IsNullOrWhiteSpace(externalDeliver))
+        {
+            source.External = new External
+            {
+                ApiPrefix = externalApi ?? string.Empty,
+                DeliverPrefix = externalDeliver ?? string.Empty
+            };
+        }
+
+        _sources.Add(source);
+        return this;
+    }
+
+    /// <summary>
+    /// Seals the stream, preventing further modifications.
+    /// </summary>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder WithSealed(bool sealed = true)
+    {
+        _sealed = sealed;
+        return this;
+    }
+
+    /// <summary>
+    /// Prevents message deletion from the stream.
+    /// </summary>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder WithDenyDelete(bool denyDelete = true)
+    {
+        _denyDelete = denyDelete;
+        return this;
+    }
+
+    /// <summary>
+    /// Prevents purging messages from the stream.
+    /// </summary>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder WithDenyPurge(bool denyPurge = true)
+    {
+        _denyPurge = denyPurge;
+        return this;
+    }
+
+    /// <summary>
+    /// Allows rollup headers for message aggregation.
+    /// </summary>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder WithAllowRollup(bool allowRollup = true)
+    {
+        _allowRollup = allowRollup;
+        return this;
+    }
+
+    /// <summary>
+    /// Enables direct access to messages (bypassing consumer API).
+    /// </summary>
+    /// <returns>The builder instance for method chaining.</returns>
+    public StreamConfigBuilder WithAllowDirect(bool allowDirect = true)
+    {
+        _allowDirect = allowDirect;
+        return this;
+    }
+
+    /// <summary>
     /// Builds the StreamConfig instance with the configured settings.
     /// </summary>
     /// <returns>A configured StreamConfig instance.</returns>
@@ -216,7 +332,17 @@ public class StreamConfigBuilder
             Discard = _discard,
             NoAck = _noAck,
             Description = _description,
-            DuplicateWindow = _duplicateWindow
+            DuplicateWindow = _duplicateWindow,
+
+            // Advanced properties
+            MaxMsgsPerSubject = _maxMsgsPerSubject,
+            Placement = _placement,
+            Sources = _sources.Count > 0 ? _sources : null,
+            Sealed = _sealed,
+            DenyDelete = _denyDelete,
+            DenyPurge = _denyPurge,
+            AllowRollup = _allowRollup,
+            AllowDirect = _allowDirect
         };
     }
 }

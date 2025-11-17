@@ -283,4 +283,148 @@ public static class JetStreamExtensions
 
         return await stream.PurgeAsync(cancellationToken: cancellationToken);
     }
+
+    /// <summary>
+    /// Creates a JetStream stream from a JSON configuration string.
+    /// </summary>
+    /// <param name="controller">The NatsController instance.</param>
+    /// <param name="json">The JSON configuration string.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>Information about the created stream.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller or json is null.</exception>
+    public static async Task<StreamInfo> CreateStreamFromJsonAsync(
+        this NatsController controller,
+        string json,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new ArgumentNullException(nameof(json));
+        }
+
+        var configJson = StreamConfigJson.FromJson(json);
+        var builder = configJson.ToBuilder();
+
+        await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
+        var streamConfig = builder.Build();
+        var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
+
+        return await stream.GetInfoAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates a JetStream stream from a JSON configuration file.
+    /// </summary>
+    /// <param name="controller">The NatsController instance.</param>
+    /// <param name="filePath">The path to the JSON configuration file.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>Information about the created stream.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller or filePath is null.</exception>
+    /// <exception cref="FileNotFoundException">Thrown when the file does not exist.</exception>
+    public static async Task<StreamInfo> CreateStreamFromFileAsync(
+        this NatsController controller,
+        string filePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentNullException(nameof(filePath));
+        }
+
+        var configJson = await StreamConfigJson.FromFileAsync(filePath);
+        var builder = configJson.ToBuilder();
+
+        await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
+        var streamConfig = builder.Build();
+        var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
+
+        return await stream.GetInfoAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Creates multiple JetStream streams from JSON configuration files in a directory.
+    /// </summary>
+    /// <param name="controller">The NatsController instance.</param>
+    /// <param name="directoryPath">The directory containing JSON configuration files.</param>
+    /// <param name="pattern">The file pattern to match (default: *.json).</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A list of StreamInfo for all created streams.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller or directoryPath is null.</exception>
+    /// <exception cref="DirectoryNotFoundException">Thrown when the directory does not exist.</exception>
+    public static async Task<List<StreamInfo>> CreateStreamsFromDirectoryAsync(
+        this NatsController controller,
+        string directoryPath,
+        string pattern = "*.json",
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        if (string.IsNullOrWhiteSpace(directoryPath))
+        {
+            throw new ArgumentNullException(nameof(directoryPath));
+        }
+
+        var configs = await StreamConfigJson.FromDirectoryAsync(directoryPath, pattern);
+        var streamInfos = new List<StreamInfo>();
+
+        await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
+
+        foreach (var configJson in configs)
+        {
+            var builder = configJson.ToBuilder();
+            var streamConfig = builder.Build();
+            var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
+            var info = await stream.GetInfoAsync(cancellationToken);
+            streamInfos.Add(info);
+        }
+
+        return streamInfos;
+    }
+
+    /// <summary>
+    /// Updates a JetStream stream from a JSON configuration file.
+    /// </summary>
+    /// <param name="controller">The NatsController instance.</param>
+    /// <param name="filePath">The path to the JSON configuration file.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>Information about the updated stream.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when controller or filePath is null.</exception>
+    /// <exception cref="FileNotFoundException">Thrown when the file does not exist.</exception>
+    public static async Task<StreamInfo> UpdateStreamFromFileAsync(
+        this NatsController controller,
+        string filePath,
+        CancellationToken cancellationToken = default)
+    {
+        if (controller == null)
+        {
+            throw new ArgumentNullException(nameof(controller));
+        }
+
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentNullException(nameof(filePath));
+        }
+
+        var configJson = await StreamConfigJson.FromFileAsync(filePath);
+        var builder = configJson.ToBuilder();
+
+        await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
+        var streamConfig = builder.Build();
+        var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
+
+        return await stream.GetInfoAsync(cancellationToken);
+    }
 }
