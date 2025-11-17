@@ -1,4 +1,4 @@
-using DotGnatly.JetStream.Models;
+using DotGnatly.Extensions.JetStream.Models;
 using DotGnatly.Nats.Implementation;
 using NATS.Client.Core;
 using NATS.Client.JetStream;

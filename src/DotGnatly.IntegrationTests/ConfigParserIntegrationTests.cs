@@ -80,7 +80,7 @@ max_payload: 8MB
         var result = await controller.ConfigureAsync(config);
 
         // Assert
-        Assert.True(result.Success, result.Message);
+        Assert.True(result.Success, result.ErrorMessage);
         Assert.Equal("127.0.0.1", config.Host);
         Assert.Equal(14222, config.Port);
         Assert.Equal("test-basic", config.ServerName);
@@ -119,7 +119,7 @@ write_deadline: 10s
         var result = await controller.ConfigureAsync(config);
 
         // Assert
-        Assert.True(result.Success, result.Message);
+        Assert.True(result.Success, result.ErrorMessage);
         Assert.True(config.Debug);
         Assert.False(config.Trace);
         Assert.Equal(logPath, config.LogFile);
@@ -157,7 +157,7 @@ jetstream {{
         var result = await controller.ConfigureAsync(config);
 
         // Assert
-        Assert.True(result.Success, result.Message);
+        Assert.True(result.Success, result.ErrorMessage);
         Assert.True(config.Jetstream);
         Assert.Equal(jsStoreDir, config.JetstreamStoreDir);
         Assert.Equal("integration-test", config.JetstreamDomain);
@@ -194,7 +194,7 @@ leafnodes {
         var result = await controller.ConfigureAsync(config);
 
         // Assert
-        Assert.True(result.Success, result.Message);
+        Assert.True(result.Success, result.ErrorMessage);
         Assert.Equal("0.0.0.0", config.LeafNode.Host);
         Assert.Equal(17422, config.LeafNode.Port);
     }
@@ -242,7 +242,7 @@ leafnodes {{
         var result = await controller.ConfigureAsync(config);
 
         // Assert
-        Assert.True(result.Success, result.Message);
+        Assert.True(result.Success, result.ErrorMessage);
 
         // Verify all settings
         Assert.Equal("127.0.0.1", config.Host);
@@ -306,14 +306,14 @@ jetstream {
         var validationResult = validator.Validate(config);
 
         // Assert validation
-        Assert.True(validationResult.IsValid, string.Join(", ", validationResult.Errors.Select(e => e.Message)));
+        Assert.True(validationResult.IsValid, string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
 
         // Apply configuration
         var controller = new NatsController();
         _controllers.Add(controller);
 
         var result = await controller.ConfigureAsync(config);
-        Assert.True(result.Success, result.Message);
+        Assert.True(result.Success, result.ErrorMessage);
     }
 
     [Fact]
@@ -412,13 +412,13 @@ jetstream {
 
         // Assert - SYS account
         Assert.Single(sysAccount.Users);
-        Assert.Equal("admin", sysAccount.Users[0].Username);
+        Assert.Equal("admin", sysAccount.Users[0].User);
         Assert.Equal(3, sysAccount.Exports.Count);
 
         // Assert - APP account
         Assert.True(appAccount.Jetstream);
         Assert.Single(appAccount.Users);
-        Assert.Equal("app-user", appAccount.Users[0].Username);
+        Assert.Equal("app-user", appAccount.Users[0].User);
         Assert.True(appAccount.Imports.Count > 15); // Has many imports
         Assert.True(appAccount.Exports.Count > 20); // Has many exports
         Assert.Single(appAccount.Mappings); // Has one mapping
@@ -499,13 +499,13 @@ jetstream {
 
         // Assert - SYS account
         Assert.Single(sysAccount.Users);
-        Assert.Equal("admin", sysAccount.Users[0].Username);
+        Assert.Equal("admin", sysAccount.Users[0].User);
         Assert.Equal(3, sysAccount.Exports.Count);
 
         // Assert - APP account
         Assert.True(appAccount.Jetstream);
         Assert.Single(appAccount.Users);
-        Assert.Equal("app-user", appAccount.Users[0].Username);
+        Assert.Equal("app-user", appAccount.Users[0].User);
         Assert.True(appAccount.Imports.Count > 20); // Has many imports
         Assert.True(appAccount.Exports.Count > 10); // Has many exports
 
