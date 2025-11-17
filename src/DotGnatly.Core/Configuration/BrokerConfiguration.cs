@@ -210,6 +210,14 @@ public class BrokerConfiguration : ICloneable
     [JsonPropertyName("cluster")]
     public ClusterConfiguration Cluster { get; set; } = new();
 
+    // Accounts Configuration
+
+    /// <summary>
+    /// Gets or sets the list of accounts.
+    /// </summary>
+    [JsonPropertyName("accounts")]
+    public List<AccountConfiguration> Accounts { get; set; } = new();
+
     /// <summary>
     /// Creates a deep copy of this configuration instance.
     /// </summary>
@@ -248,7 +256,8 @@ public class BrokerConfiguration : ICloneable
             HttpsPort = HttpsPort,
             Auth = (AuthConfiguration)Auth.Clone(),
             LeafNode = (LeafNodeConfiguration)LeafNode.Clone(),
-            Cluster = (ClusterConfiguration)Cluster.Clone()
+            Cluster = (ClusterConfiguration)Cluster.Clone(),
+            Accounts = new List<AccountConfiguration>(Accounts)
         };
     }
 }
@@ -365,6 +374,42 @@ public class LeafNodeConfiguration : ICloneable
     public List<string> ExportSubjects { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the list of remote leaf node connections.
+    /// </summary>
+    [JsonPropertyName("remotes")]
+    public List<LeafNodeRemoteConfiguration> Remotes { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the TLS configuration for leaf node connections.
+    /// </summary>
+    [JsonPropertyName("tls")]
+    public TlsConfiguration? Tls { get; set; }
+
+    /// <summary>
+    /// Gets or sets the authorization configuration for leaf nodes.
+    /// </summary>
+    [JsonPropertyName("authorization")]
+    public AuthorizationConfiguration? Authorization { get; set; }
+
+    /// <summary>
+    /// Gets or sets the advertise address for leaf nodes.
+    /// </summary>
+    [JsonPropertyName("advertise")]
+    public string? Advertise { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to isolate leaf node interest.
+    /// </summary>
+    [JsonPropertyName("isolateLeafnodeInterest")]
+    public bool? IsolateLeafnodeInterest { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reconnect delay.
+    /// </summary>
+    [JsonPropertyName("reconnectDelay")]
+    public string? ReconnectDelay { get; set; }
+
+    /// <summary>
     /// Creates a deep copy of this leaf node configuration.
     /// </summary>
     public object Clone()
@@ -380,7 +425,13 @@ public class LeafNodeConfiguration : ICloneable
             TlsKey = TlsKey,
             TlsCaCert = TlsCaCert,
             ImportSubjects = new List<string>(ImportSubjects),
-            ExportSubjects = new List<string>(ExportSubjects)
+            ExportSubjects = new List<string>(ExportSubjects),
+            Remotes = new List<LeafNodeRemoteConfiguration>(Remotes),
+            Tls = Tls,
+            Authorization = Authorization,
+            Advertise = Advertise,
+            IsolateLeafnodeInterest = IsolateLeafnodeInterest,
+            ReconnectDelay = ReconnectDelay
         };
     }
 }
