@@ -1,0 +1,403 @@
+using System.Text;
+using System.Text.RegularExpressions;
+using DotGnatly.Core.Configuration;
+
+namespace DotGnatly.Core.Parsers;
+
+/// <summary>
+/// Parser for NATS server configuration files.
+/// Converts NATS config format to BrokerConfiguration instances.
+/// </summary>
+public class NatsConfigParser
+{
+    private static readonly Regex SizeUnitRegex = new(@"^(\d+(?:\.\d+)?)\s*(B|KB?|MB?|GB?|TB?)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex TimeUnitRegex = new(@"^(\d+(?:\.\d+)?)\s*(ns|us|ms|s|m|h)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex ListenRegex = new(@"^([\w\.\-]+):(\d+)$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Parses a NATS configuration file and returns a BrokerConfiguration instance.
+    /// </summary>
+    /// <param name="filePath">Path to the NATS config file</param>
+    /// <returns>A BrokerConfiguration instance with parsed values</returns>
+    public static BrokerConfiguration ParseFile(string filePath)
+    {
+        var content = File.ReadAllText(filePath);
+        return Parse(content);
+    }
+
+    /// <summary>
+    /// Parses NATS configuration content and returns a BrokerConfiguration instance.
+    /// </summary>
+    /// <param name="content">The NATS config file content</param>
+    /// <returns>A BrokerConfiguration instance with parsed values</returns>
+    public static BrokerConfiguration Parse(string content)
+    {
+        var config = new BrokerConfiguration();
+        var lines = content.Split('\n', StringSplitOptions.None);
+        var context = new ParseContext(lines);
+
+        while (context.HasMore())
+        {
+            var line = context.CurrentLine.Trim();
+
+            // Skip empty lines and comments
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+            {
+                context.MoveNext();
+                continue;
+            }
+
+            // Parse top-level key-value pairs
+            if (TryParseKeyValue(line, out var key, out var value))
+            {
+                ApplyTopLevelProperty(config, key, value);
+                context.MoveNext();
+            }
+            // Parse blocks (jetstream, accounts, leafnodes, etc.)
+            else if (TryParseBlockStart(line, out var blockName))
+            {
+                var blockContent = ExtractBlock(context);
+                ApplyBlock(config, blockName, blockContent);
+            }
+            else
+            {
+                context.MoveNext();
+            }
+        }
+
+        return config;
+    }
+
+    private static void ApplyTopLevelProperty(BrokerConfiguration config, string key, string value)
+    {
+        switch (key.ToLowerInvariant())
+        {
+            case "listen":
+                ParseListenAddress(value, config);
+                break;
+            case "server_name":
+                config.ServerName = UnquoteString(value);
+                break;
+            case "monitor_port":
+                config.HttpPort = ParseInt(value);
+                break;
+            case "debug":
+                config.Debug = ParseBool(value);
+                break;
+            case "trace":
+                config.Trace = ParseBool(value);
+                break;
+            case "log_file":
+                config.LogFile = UnquoteString(value);
+                break;
+            case "logfile_size_limit":
+                config.LogFileSize = ParseSize(value);
+                break;
+            case "logfile_max_num":
+                config.LogFileMaxNum = ParseInt(value);
+                break;
+            case "max_payload":
+                config.MaxPayload = (int)ParseSize(value);
+                break;
+            case "write_deadline":
+                config.WriteDeadline = ParseTimeSeconds(value);
+                break;
+            case "disable_sublist_cache":
+                config.DisableSublistCache = ParseBool(value);
+                break;
+            case "system_account":
+                config.SystemAccount = UnquoteString(value);
+                break;
+            case "jetstream":
+                // Handle simple "jetstream: enabled" or "jetstream: true"
+                if (value.Equals("enabled", StringComparison.OrdinalIgnoreCase) || ParseBool(value))
+                {
+                    config.Jetstream = true;
+                }
+                break;
+        }
+    }
+
+    private static void ApplyBlock(BrokerConfiguration config, string blockName, string blockContent)
+    {
+        switch (blockName.ToLowerInvariant())
+        {
+            case "jetstream":
+                ParseJetStreamBlock(blockContent, config);
+                break;
+            case "leafnodes":
+                ParseLeafNodesBlock(blockContent, config);
+                break;
+            case "accounts":
+                // Accounts parsing would go here
+                // For now, we'll skip detailed account parsing as it requires more complex structures
+                break;
+        }
+    }
+
+    private static void ParseJetStreamBlock(string content, BrokerConfiguration config)
+    {
+        config.Jetstream = true;
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+                continue;
+
+            if (TryParseKeyValue(trimmed, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "store_dir":
+                        config.JetstreamStoreDir = UnquoteString(value);
+                        break;
+                    case "domain":
+                        config.JetstreamDomain = UnquoteString(value);
+                        break;
+                    case "max_memory":
+                    case "max_memory_store":
+                        config.JetstreamMaxMemory = ParseSize(value);
+                        break;
+                    case "max_file":
+                    case "max_file_store":
+                        config.JetstreamMaxStore = ParseSize(value);
+                        break;
+                    case "unique_tag":
+                        config.JetstreamUniqueTag = UnquoteString(value);
+                        break;
+                }
+            }
+        }
+    }
+
+    private static void ParseLeafNodesBlock(string content, BrokerConfiguration config)
+    {
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var context = new ParseContext(lines);
+
+        while (context.HasMore())
+        {
+            var line = context.CurrentLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+            {
+                context.MoveNext();
+                continue;
+            }
+
+            if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "port":
+                        config.LeafNode.Port = ParseInt(value);
+                        break;
+                    case "host":
+                        config.LeafNode.Host = UnquoteString(value);
+                        break;
+                }
+                context.MoveNext();
+            }
+            else if (TryParseBlockStart(line, out var blockName))
+            {
+                var blockContent = ExtractBlock(context);
+                // Handle nested blocks like 'remotes', 'tls', 'authorization'
+                // For now, we'll skip detailed parsing
+            }
+            else
+            {
+                context.MoveNext();
+            }
+        }
+    }
+
+    private static void ParseListenAddress(string value, BrokerConfiguration config)
+    {
+        var match = ListenRegex.Match(value);
+        if (match.Success)
+        {
+            config.Host = match.Groups[1].Value;
+            config.Port = int.Parse(match.Groups[2].Value);
+        }
+    }
+
+    private static bool TryParseKeyValue(string line, out string key, out string value)
+    {
+        key = string.Empty;
+        value = string.Empty;
+
+        // Remove inline comments
+        var commentIndex = line.IndexOf('#');
+        if (commentIndex > 0)
+        {
+            line = line.Substring(0, commentIndex).Trim();
+        }
+
+        var colonIndex = line.IndexOf(':');
+        var equalsIndex = line.IndexOf('=');
+
+        int separatorIndex;
+        if (colonIndex >= 0 && (equalsIndex < 0 || colonIndex < equalsIndex))
+        {
+            separatorIndex = colonIndex;
+        }
+        else if (equalsIndex >= 0)
+        {
+            separatorIndex = equalsIndex;
+        }
+        else
+        {
+            return false;
+        }
+
+        key = line.Substring(0, separatorIndex).Trim();
+        value = line.Substring(separatorIndex + 1).Trim();
+
+        return !string.IsNullOrWhiteSpace(key);
+    }
+
+    private static bool TryParseBlockStart(string line, out string blockName)
+    {
+        blockName = string.Empty;
+
+        // Check if line ends with opening brace
+        if (line.TrimEnd().EndsWith("{"))
+        {
+            blockName = line.Substring(0, line.LastIndexOf('{')).Trim();
+            return !string.IsNullOrWhiteSpace(blockName);
+        }
+
+        return false;
+    }
+
+    private static string ExtractBlock(ParseContext context)
+    {
+        var sb = new StringBuilder();
+        var braceCount = 1; // We already encountered the opening brace
+        context.MoveNext();
+
+        while (context.HasMore() && braceCount > 0)
+        {
+            var line = context.CurrentLine;
+
+            // Count braces
+            foreach (var ch in line)
+            {
+                if (ch == '{') braceCount++;
+                if (ch == '}') braceCount--;
+            }
+
+            if (braceCount > 0)
+            {
+                sb.AppendLine(line);
+            }
+
+            context.MoveNext();
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Parses a size value with units (e.g., "8MB", "100Mb", "1GB") into bytes.
+    /// </summary>
+    public static long ParseSize(string value)
+    {
+        value = value.Trim();
+        var match = SizeUnitRegex.Match(value);
+
+        if (!match.Success)
+        {
+            // Try parsing as plain number
+            if (long.TryParse(value, out var bytes))
+                return bytes;
+            return 0;
+        }
+
+        var number = double.Parse(match.Groups[1].Value);
+        var unit = match.Groups[2].Value.ToUpperInvariant();
+
+        return unit switch
+        {
+            "B" => (long)number,
+            "K" or "KB" => (long)(number * 1024),
+            "M" or "MB" => (long)(number * 1024 * 1024),
+            "G" or "GB" => (long)(number * 1024 * 1024 * 1024),
+            "T" or "TB" => (long)(number * 1024 * 1024 * 1024 * 1024),
+            _ => 0
+        };
+    }
+
+    /// <summary>
+    /// Parses a time value with units (e.g., "10s", "2m", "1h") into seconds.
+    /// </summary>
+    public static int ParseTimeSeconds(string value)
+    {
+        value = value.Trim();
+        var match = TimeUnitRegex.Match(value);
+
+        if (!match.Success)
+        {
+            // Try parsing as plain number (assume seconds)
+            if (int.TryParse(value, out var seconds))
+                return seconds;
+            return 0;
+        }
+
+        var number = double.Parse(match.Groups[1].Value);
+        var unit = match.Groups[2].Value.ToLowerInvariant();
+
+        return unit switch
+        {
+            "ns" => (int)(number / 1_000_000_000),
+            "us" => (int)(number / 1_000_000),
+            "ms" => (int)(number / 1000),
+            "s" => (int)number,
+            "m" => (int)(number * 60),
+            "h" => (int)(number * 3600),
+            _ => 0
+        };
+    }
+
+    private static int ParseInt(string value)
+    {
+        value = UnquoteString(value);
+        if (int.TryParse(value, out var result))
+            return result;
+        return 0;
+    }
+
+    private static bool ParseBool(string value)
+    {
+        value = UnquoteString(value).ToLowerInvariant();
+        return value is "true" or "enabled" or "yes" or "1";
+    }
+
+    private static string UnquoteString(string value)
+    {
+        value = value.Trim();
+        if ((value.StartsWith("\"") && value.EndsWith("\"")) ||
+            (value.StartsWith("'") && value.EndsWith("'")))
+        {
+            return value.Substring(1, value.Length - 2);
+        }
+        return value;
+    }
+
+    private class ParseContext
+    {
+        private readonly string[] _lines;
+        private int _index;
+
+        public ParseContext(string[] lines)
+        {
+            _lines = lines;
+            _index = 0;
+        }
+
+        public string CurrentLine => _index < _lines.Length ? _lines[_index] : string.Empty;
+        public bool HasMore() => _index < _lines.Length;
+        public void MoveNext() => _index++;
+    }
+}

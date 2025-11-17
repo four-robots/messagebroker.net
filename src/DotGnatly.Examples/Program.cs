@@ -2,6 +2,7 @@ using DotGnatly.Examples.BasicUsage;
 using DotGnatly.Examples.HotReload;
 using DotGnatly.Examples.Advanced;
 using DotGnatly.Examples.Monitoring;
+using DotGnatly.Examples.ConfigParser;
 
 namespace DotGnatly.Examples;
 
@@ -79,6 +80,13 @@ class Program
                     await ClientManagementExample.RunAsync();
                     break;
 
+                case 'c':
+                case 'C':
+                    ConfigParserExample.Run();
+                    Console.WriteLine("\nPress any key to continue...");
+                    Console.ReadKey(true);
+                    break;
+
                 case 'q':
                 case 'Q':
                 case '0':
@@ -88,7 +96,7 @@ class Program
 
                 default:
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\nInvalid choice. Please select 1-9, A-B, or Q to quit.");
+                    Console.WriteLine("\nInvalid choice. Please select 1-9, A-C, or Q to quit.");
                     Console.ResetColor();
                     Console.WriteLine("\nPress any key to continue...");
                     Console.ReadKey(true);
@@ -168,6 +176,13 @@ class Program
         Console.WriteLine();
 
         Console.ForegroundColor = ConsoleColor.White;
+        Console.WriteLine("  UTILITIES");
+        Console.ResetColor();
+        Console.WriteLine("  C. Config File Parser");
+        Console.WriteLine("     └─ Parse NATS .conf files to BrokerConfiguration");
+        Console.WriteLine();
+
+        Console.ForegroundColor = ConsoleColor.White;
         Console.WriteLine("  OTHER");
         Console.ResetColor();
         Console.WriteLine("  Q. Exit");
@@ -176,7 +191,7 @@ class Program
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine("═══════════════════════════════════════════════════════════════");
         Console.ResetColor();
-        Console.Write("\nSelect an option (1-9, A-B, Q): ");
+        Console.Write("\nSelect an option (1-9, A-C, Q): ");
     }
 
     static void ShowGoodbye()
