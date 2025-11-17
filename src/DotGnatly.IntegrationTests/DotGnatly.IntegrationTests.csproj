@@ -13,4 +13,8 @@
     <ProjectReference Include="..\DotGnatly.Nats\DotGnatly.Nats.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NATS.Net" Version="2.5.2" />
+  </ItemGroup>
+
 </Project>

@@ -13,6 +13,7 @@ public class IntegrationTestRunner
         // Register all test suites
         _tests.Add(new MultiServerTests());
         _tests.Add(new LeafNodeConfigurationTests());
+        _tests.Add(new HubAndSpokeTests());
         _tests.Add(new ValidationTests());
         _tests.Add(new EventSystemTests());
         _tests.Add(new ConcurrentOperationTests());
