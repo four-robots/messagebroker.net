@@ -1256,40 +1256,15 @@ func GetOpts() *C.char {
 		return C.CString("ERROR: Server not running")
 	}
 
-	// Get current server options (use Opts() method, not GetOpts())
-	opts := srv.Opts()
-	if opts == nil {
-		return C.CString("ERROR: Failed to get server options")
+	// Use Varz to get server configuration and options
+	// This is the standard way to access server configuration in NATS
+	varz, err := srv.Varz(nil)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to get server options: %v", err))
 	}
 
-	// Create a simplified representation of the options
-	// We can't serialize server.Options directly due to unexported fields
-	optsInfo := map[string]interface{}{
-		"host":                  opts.Host,
-		"port":                  opts.Port,
-		"max_payload":           opts.MaxPayload,
-		"max_control_line":      opts.MaxControlLine,
-		"max_pings_out":         opts.MaxPingsOut,
-		"debug":                 opts.Debug,
-		"trace":                 opts.Trace,
-		"logtime":               opts.Logtime,
-		"log_file":              opts.LogFile,
-		"log_size_limit":        opts.LogSizeLimit,
-		"jetstream":             opts.JetStream,
-		"jetstream_max_memory":  opts.JetStreamMaxMemory,
-		"jetstream_max_store":   opts.JetStreamMaxStore,
-		"jetstream_domain":      opts.JetStreamDomain,
-		"jetstream_unique_tag":  opts.JetStreamUniqueTag,
-		"store_dir":             opts.StoreDir,
-		"http_host":             opts.HTTPHost,
-		"http_port":             opts.HTTPPort,
-		"https_port":            opts.HTTPSPort,
-		"cluster_name":          opts.Cluster.Name,
-		"cluster_port":          opts.Cluster.Port,
-		"leaf_node_port":        opts.LeafNode.Port,
-	}
-
-	jsonBytes, err := json.Marshal(optsInfo)
+	// Marshal the Varz structure which contains all server options
+	jsonBytes, err := json.Marshal(varz)
 	if err != nil {
 		return C.CString(fmt.Sprintf("ERROR: Failed to marshal options: %v", err))
 	}
