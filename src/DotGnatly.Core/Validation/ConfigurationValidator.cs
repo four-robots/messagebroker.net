@@ -140,6 +140,12 @@ public class ConfigurationValidator : IConfigurationValidator
         // Validate cluster configuration
         ValidateCluster(config.Cluster, config.Port, config.HttpPort, config.HttpsPort, config.LeafNode, result);
 
+        // Validate logging configuration
+        if (config.LogFileSize < 0)
+        {
+            result.AddError(nameof(config.LogFileSize), "LogFileSize cannot be negative");
+        }
+
         // Check for trace without debug
         if (config.Trace && !config.Debug)
         {
@@ -204,6 +210,15 @@ public class ConfigurationValidator : IConfigurationValidator
         {
             result.AddError(nameof(proposed.JetstreamStoreDir),
                 "Changing JetStream store directory may cause loss of existing data",
+                ValidationSeverity.Warning);
+        }
+
+        // Check for JetStream domain changes
+        if (current.Jetstream && proposed.Jetstream &&
+            current.JetstreamDomain != proposed.JetstreamDomain)
+        {
+            result.AddError(nameof(proposed.JetstreamDomain),
+                "Changing JetStream domain may affect cluster isolation and stream accessibility",
                 ValidationSeverity.Warning);
         }
 
