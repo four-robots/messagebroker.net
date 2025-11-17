@@ -1,0 +1,9 @@
+{
+  "bucket": "APP_CACHE",
+  "description": "Application cache with TTL and memory storage for fast access",
+  "max_history_per_key": 1,
+  "ttl": 3600000000000,
+  "max_bucket_size": 10485760,
+  "replicas": 1,
+  "storage": "memory"
+}

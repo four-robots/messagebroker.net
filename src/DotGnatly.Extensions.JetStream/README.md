@@ -4,11 +4,11 @@ Fluent extension methods for managing NATS JetStream streams, consumers, and key
 
 ## Overview
 
-This package extends `NatsController` with client-side JetStream operations, providing a seamless fluent API for stream management that works alongside DotGnatly's server management capabilities.
+This package extends `NatsController` with client-side JetStream operations, providing a seamless fluent API for stream and key-value store management that works alongside DotGnatly's server management capabilities.
 
 **Key Distinction:**
 - **DotGnatly.Nats** - Server-side control (configures JetStream settings, storage limits, etc.)
-- **DotGnatly.Extensions.JetStream** - Client-side operations (creates/manages streams, consumers, etc.)
+- **DotGnatly.Extensions.JetStream** - Client-side operations (creates/manages streams, consumers, key-value stores, etc.)
 
 ## Installation
 
@@ -243,6 +243,144 @@ builder
 - **Old** - Discard oldest messages when limits are reached (default)
 - **New** - Reject new messages when limits are reached
 
+## Key-Value Store Management
+
+NATS Key-Value stores are built on top of JetStream streams and provide a simple key-value interface with features like TTL, versioning, and watching for changes.
+
+**Create KV Store:**
+```csharp
+var store = await controller.CreateKeyValueAsync("USER_PROFILES", builder =>
+{
+    builder
+        .WithDescription("User profile storage")
+        .WithMaxHistoryPerKey(3)        // Keep 3 versions per key
+        .WithTTL(TimeSpan.FromHours(24)) // Auto-expire after 24 hours
+        .WithStorage(NatsKVStorageType.File);
+});
+
+// Put and get values
+await store.PutAsync("user:123", "John Doe");
+var entry = await store.GetEntryAsync("user:123");
+Console.WriteLine($"Value: {entry.Value}, Revision: {entry.Revision}");
+```
+
+**Get Existing KV Store:**
+```csharp
+var store = await controller.GetKeyValueAsync("USER_PROFILES");
+```
+
+**List KV Stores:**
+```csharp
+var buckets = await controller.ListKeyValuesAsync();
+foreach (var bucket in buckets)
+{
+    Console.WriteLine($"Bucket: {bucket}");
+}
+```
+
+**Get KV Status:**
+```csharp
+var status = await controller.GetKeyValueStatusAsync("USER_PROFILES");
+Console.WriteLine($"Values: {status.Values}, Bytes: {status.Bytes}");
+```
+
+**Update KV Store:**
+```csharp
+await controller.UpdateKeyValueAsync("USER_PROFILES", builder =>
+{
+    builder
+        .WithDescription("Updated description")
+        .WithMaxHistoryPerKey(5); // Increase history
+});
+```
+
+**Purge KV Store:**
+```csharp
+// Clear all values but keep the bucket
+await controller.PurgeKeyValueAsync("USER_PROFILES");
+```
+
+**Delete KV Store:**
+```csharp
+await controller.DeleteKeyValueAsync("USER_PROFILES");
+```
+
+### Loading KV Stores from JSON Configuration
+
+Similar to streams, you can load KV store configurations from JSON files:
+
+**From JSON String:**
+```csharp
+var json = @"{
+    ""bucket"": ""USER_SESSIONS"",
+    ""description"": ""User session storage"",
+    ""max_history_per_key"": 1,
+    ""ttl"": 7200000000000,
+    ""storage"": ""memory""
+}";
+
+var store = await controller.CreateKeyValueFromJsonAsync(json);
+```
+
+**From JSON File:**
+```csharp
+var store = await controller.CreateKeyValueFromFileAsync("./configs/user-profiles.json");
+```
+
+**From Directory (multiple files):**
+```csharp
+var stores = await controller.CreateKeyValuesFromDirectoryAsync("./configs");
+Console.WriteLine($"Created {stores.Count} KV stores");
+```
+
+**Example KV JSON Format:**
+```json
+{
+  "bucket": "USER_PROFILES",
+  "description": "User profile storage",
+  "max_history_per_key": 3,
+  "ttl": 86400000000000,
+  "max_bucket_size": 52428800,
+  "replicas": 1,
+  "storage": "file"
+}
+```
+
+**Notes:**
+- `ttl` is in nanoseconds (e.g., 86400000000000 = 24 hours)
+- `ttl` of 0 means no expiration
+- `max_bucket_size` is in bytes (-1 for unlimited)
+- `storage` can be "file" or "memory"
+
+### Key-Value Configuration Options
+
+The `KVConfigBuilder` provides a fluent API for configuring KV stores:
+
+```csharp
+builder
+    .WithDescription("User session storage")     // Bucket description
+    .WithMaxHistoryPerKey(5)                     // Keep 5 versions per key
+    .WithTTL(TimeSpan.FromHours(2))             // Auto-expire after 2 hours
+    .WithMaxBucketSize(10 * 1024 * 1024)        // 10MB max bucket size
+    .WithReplicas(3)                             // Cluster replicas (1-5)
+    .WithStorage(NatsKVStorageType.Memory);      // File or Memory storage
+```
+
+**Configuration Options:**
+
+- **max_history_per_key** - Number of historical values to keep per key (default: 1)
+- **ttl** - Time-to-live for keys (0 = no expiration)
+- **max_bucket_size** - Maximum bucket size in bytes (-1 = unlimited)
+- **replicas** - Number of replicas in a clustered setup (1-5)
+- **storage** - Storage type: `file` (persistent) or `memory` (fast, non-persistent)
+
+**Common Use Cases:**
+
+- **Session Storage** - Use memory storage with TTL for fast session lookups
+- **Configuration** - Use file storage with versioning to track config changes
+- **Cache** - Use memory storage with TTL for application caching
+- **User Profiles** - Use file storage with moderate history for profile data
+
 ## Advanced Usage
 
 ### Direct JetStream Context
@@ -281,12 +419,27 @@ await controller.CreateStreamAsync("SECURE", builder => { ... });
 
 ## Examples
 
-See the [StreamManagementExample.cs](../../DotGnatly.Examples/JetStream/StreamManagementExample.cs) for a complete working example demonstrating:
+### Stream Management Examples
+
+See [StreamManagementExample.cs](../../DotGnatly.Examples/JetStream/StreamManagementExample.cs) and [JsonConfigExample.cs](../../DotGnatly.Examples/JetStream/JsonConfigExample.cs) for complete working examples demonstrating:
 - Creating streams with different configurations
 - Updating stream settings
 - Listing and querying streams
 - Purging and deleting streams
+- Loading streams from JSON files and directories
 - Cleanup and resource management
+
+### Key-Value Store Examples
+
+See [KeyValueManagementExample.cs](../../DotGnatly.Examples/KeyValue/KeyValueManagementExample.cs) and [KVJsonConfigExample.cs](../../DotGnatly.Examples/KeyValue/KVJsonConfigExample.cs) for complete working examples demonstrating:
+- Creating KV stores with different configurations
+- Session storage with TTL
+- Configuration storage with versioning
+- Updating KV store settings
+- Putting and getting values
+- Watching for changes
+- Loading KV stores from JSON files and directories
+- Purging and deleting KV stores
 
 ## Architecture
 
