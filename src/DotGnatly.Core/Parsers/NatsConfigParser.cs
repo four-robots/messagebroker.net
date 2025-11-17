@@ -185,8 +185,29 @@ public class NatsConfigParser
                 continue;
             }
 
-            // Check for blocks BEFORE key-value pairs to handle inline blocks like "authorization {key: value}"
-            if (TryParseBlockStart(line, out var blockName))
+            if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "port":
+                        config.LeafNode.Port = ParseInt(value);
+                        break;
+                    case "host":
+                        config.LeafNode.Host = UnquoteString(value);
+                        break;
+                    case "advertise":
+                        config.LeafNode.Advertise = UnquoteString(value);
+                        break;
+                    case "isolate_leafnode_interest":
+                        config.LeafNode.IsolateLeafnodeInterest = ParseBool(value);
+                        break;
+                    case "reconnect_delay":
+                        config.LeafNode.ReconnectDelay = value;
+                        break;
+                }
+                context.MoveNext();
+            }
+            else if (TryParseBlockStart(line, out var blockName))
             {
                 string blockContent;
 
@@ -213,28 +234,6 @@ public class NatsConfigParser
                         ParseRemotesArray(blockContent, config.LeafNode);
                         break;
                 }
-            }
-            else if (TryParseKeyValue(line, out var key, out var value))
-            {
-                switch (key.ToLowerInvariant())
-                {
-                    case "port":
-                        config.LeafNode.Port = ParseInt(value);
-                        break;
-                    case "host":
-                        config.LeafNode.Host = UnquoteString(value);
-                        break;
-                    case "advertise":
-                        config.LeafNode.Advertise = UnquoteString(value);
-                        break;
-                    case "isolate_leafnode_interest":
-                        config.LeafNode.IsolateLeafnodeInterest = ParseBool(value);
-                        break;
-                    case "reconnect_delay":
-                        config.LeafNode.ReconnectDelay = value;
-                        break;
-                }
-                context.MoveNext();
             }
             else
             {
@@ -284,6 +283,13 @@ public class NatsConfigParser
 
         key = line.Substring(0, separatorIndex).Trim();
         value = line.Substring(separatorIndex + 1).Trim();
+
+        // Reject lines where the key portion contains '{' - these are inline block starts
+        // e.g., "authorization {timeout: 60}" should not be parsed as a key-value pair
+        if (key.Contains('{'))
+        {
+            return false;
+        }
 
         return !string.IsNullOrWhiteSpace(key);
     }
@@ -507,8 +513,18 @@ public class NatsConfigParser
                 continue;
             }
 
-            // Check for blocks BEFORE key-value pairs
-            if (TryParseBlockStart(line, out var blockName))
+            if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "jetstream":
+                        account.Jetstream = value.Equals("enabled", StringComparison.OrdinalIgnoreCase) ||
+                                          ParseBool(value);
+                        break;
+                }
+                context.MoveNext();
+            }
+            else if (TryParseBlockStart(line, out var blockName))
             {
                 var blockContent = ExtractBlock(context);
                 switch (blockName.ToLowerInvariant())
@@ -526,17 +542,6 @@ public class NatsConfigParser
                         account.Mappings = ParseMappingsBlock(blockContent);
                         break;
                 }
-            }
-            else if (TryParseKeyValue(line, out var key, out var value))
-            {
-                switch (key.ToLowerInvariant())
-                {
-                    case "jetstream":
-                        account.Jetstream = value.Equals("enabled", StringComparison.OrdinalIgnoreCase) ||
-                                          ParseBool(value);
-                        break;
-                }
-                context.MoveNext();
             }
             else
             {
@@ -905,13 +910,7 @@ public class NatsConfigParser
                 continue;
             }
 
-            // Check for blocks BEFORE key-value pairs
-            if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "tls")
-            {
-                var blockContent = ExtractBlock(context);
-                remote.Tls = ParseTlsBlock(blockContent);
-            }
-            else if (TryParseKeyValue(line, out var key, out var value))
+            if (TryParseKeyValue(line, out var key, out var value))
             {
                 switch (key.ToLowerInvariant())
                 {
@@ -929,6 +928,11 @@ public class NatsConfigParser
                         break;
                 }
                 context.MoveNext();
+            }
+            else if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "tls")
+            {
+                var blockContent = ExtractBlock(context);
+                remote.Tls = ParseTlsBlock(blockContent);
             }
             else
             {
