@@ -884,4 +884,204 @@ public class ConfigurationValidatorTests
             e.Severity == ValidationSeverity.Warning &&
             e.ErrorMessage.Contains("restart"));
     }
+
+    // Logging Configuration Tests
+
+    [Fact]
+    public void Validate_LogFileSize_Negative_ReturnsError()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            LogFileSize = -1
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == "LogFileSize");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1024)]
+    [InlineData(1048576)]
+    [InlineData(10485760)]
+    public void Validate_LogFileSize_ValidValues_Succeeds(long logFileSize)
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            LogFileSize = logFileSize
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_LogFile_ValidPath_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            LogFile = "/var/log/nats.log"
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_LogFile_NullValue_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            LogFile = null
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_LogTimeUtc_True_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            LogTimeUtc = true
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_LogTimeUtc_False_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            LogTimeUtc = false
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    // JetStream Clustering Tests
+
+    [Fact]
+    public void Validate_JetstreamDomain_ValidValue_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Jetstream = true,
+            JetstreamDomain = "production"
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_JetstreamUniqueTag_ValidValue_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Jetstream = true,
+            JetstreamUniqueTag = "server-001"
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_JetstreamDomain_WithoutJetstreamEnabled_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Jetstream = false,
+            JetstreamDomain = "production"
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        // This should succeed - domain is ignored if JetStream is disabled
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void Validate_JetstreamUniqueTag_WithoutJetstreamEnabled_Succeeds()
+    {
+        // Arrange
+        var config = new BrokerConfiguration
+        {
+            Jetstream = false,
+            JetstreamUniqueTag = "server-001"
+        };
+
+        // Act
+        var result = _validator.Validate(config);
+
+        // Assert
+        // This should succeed - unique tag is ignored if JetStream is disabled
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public void ValidateChanges_ChangingJetstreamDomain_ReturnsWarning()
+    {
+        // Arrange
+        var current = new BrokerConfiguration
+        {
+            Jetstream = true,
+            JetstreamDomain = "domain-1"
+        };
+        var proposed = new BrokerConfiguration
+        {
+            Jetstream = true,
+            JetstreamDomain = "domain-2"
+        };
+
+        // Act
+        var result = _validator.ValidateChanges(current, proposed);
+
+        // Assert
+        // Changing JetStream domain might require careful consideration
+        Assert.Contains(result.Errors, e =>
+            e.PropertyName.Contains("JetstreamDomain") ||
+            e.Severity == ValidationSeverity.Warning);
+    }
 }

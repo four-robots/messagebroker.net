@@ -511,4 +511,208 @@ public class ConfigurationMapperTests
         Assert.Equal(original.Cluster.AuthUsername, roundTripped.Cluster.AuthUsername);
         Assert.Equal(original.Cluster.AuthPassword, roundTripped.Cluster.AuthPassword);
     }
+
+    // Logging Configuration Tests
+
+    [Fact]
+    public void MapToServerConfig_LoggingConfiguration_MapsCorrectly()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration
+        {
+            LogFile = "/var/log/nats.log",
+            LogTimeUtc = true,
+            LogFileSize = 1048576
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.Equal("/var/log/nats.log", serverConfig.LogFile);
+        Assert.True(serverConfig.LogTimeUtc);
+        Assert.Equal(1048576, serverConfig.LogFileSize);
+    }
+
+    [Fact]
+    public void MapToBrokerConfiguration_LoggingConfiguration_MapsCorrectly()
+    {
+        // Arrange
+        var serverConfig = new ServerConfig
+        {
+            LogFile = "/var/log/nats.log",
+            LogTimeUtc = false,
+            LogFileSize = 2097152
+        };
+
+        // Act
+        var brokerConfig = ConfigurationMapper.MapToBrokerConfiguration(serverConfig);
+
+        // Assert
+        Assert.Equal("/var/log/nats.log", brokerConfig.LogFile);
+        Assert.False(brokerConfig.LogTimeUtc);
+        Assert.Equal(2097152, brokerConfig.LogFileSize);
+    }
+
+    [Fact]
+    public void MapToServerConfig_LogFileSize_DefaultValue()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration
+        {
+            // LogFileSize has default value of 0
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.Equal(0, serverConfig.LogFileSize);
+    }
+
+    [Fact]
+    public void MapToServerConfig_LogTimeUtc_DefaultValue()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration
+        {
+            // LogTimeUtc has default value of true
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.True(serverConfig.LogTimeUtc);
+    }
+
+    // JetStream Clustering Tests
+
+    [Fact]
+    public void MapToServerConfig_JetStreamClustering_MapsCorrectly()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration
+        {
+            Jetstream = true,
+            JetstreamDomain = "production-domain",
+            JetstreamUniqueTag = "server-001"
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.True(serverConfig.Jetstream);
+        Assert.Equal("production-domain", serverConfig.JetstreamDomain);
+        Assert.Equal("server-001", serverConfig.JetstreamUniqueTag);
+    }
+
+    [Fact]
+    public void MapToBrokerConfiguration_JetStreamClustering_MapsCorrectly()
+    {
+        // Arrange
+        var serverConfig = new ServerConfig
+        {
+            Jetstream = true,
+            JetstreamDomain = "staging-domain",
+            JetstreamUniqueTag = "server-002"
+        };
+
+        // Act
+        var brokerConfig = ConfigurationMapper.MapToBrokerConfiguration(serverConfig);
+
+        // Assert
+        Assert.True(brokerConfig.Jetstream);
+        Assert.Equal("staging-domain", brokerConfig.JetstreamDomain);
+        Assert.Equal("server-002", brokerConfig.JetstreamUniqueTag);
+    }
+
+    [Fact]
+    public void MapToServerConfig_JetStreamWithoutClustering_MapsCorrectly()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration
+        {
+            Jetstream = true
+            // No domain or unique tag
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.True(serverConfig.Jetstream);
+        Assert.Null(serverConfig.JetstreamDomain);
+        Assert.Null(serverConfig.JetstreamUniqueTag);
+    }
+
+    [Fact]
+    public void RoundTrip_LoggingConfiguration_PreservesValues()
+    {
+        // Arrange
+        var original = new BrokerConfiguration
+        {
+            LogFile = "/logs/nats.log",
+            LogTimeUtc = false,
+            LogFileSize = 5242880
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(original);
+        var roundTripped = ConfigurationMapper.MapToBrokerConfiguration(serverConfig);
+
+        // Assert
+        Assert.Equal(original.LogFile, roundTripped.LogFile);
+        Assert.Equal(original.LogTimeUtc, roundTripped.LogTimeUtc);
+        Assert.Equal(original.LogFileSize, roundTripped.LogFileSize);
+    }
+
+    [Fact]
+    public void RoundTrip_JetStreamClustering_PreservesValues()
+    {
+        // Arrange
+        var original = new BrokerConfiguration
+        {
+            Jetstream = true,
+            JetstreamDomain = "multi-tenant",
+            JetstreamUniqueTag = "tenant-a-server-1"
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(original);
+        var roundTripped = ConfigurationMapper.MapToBrokerConfiguration(serverConfig);
+
+        // Assert
+        Assert.Equal(original.Jetstream, roundTripped.Jetstream);
+        Assert.Equal(original.JetstreamDomain, roundTripped.JetstreamDomain);
+        Assert.Equal(original.JetstreamUniqueTag, roundTripped.JetstreamUniqueTag);
+    }
+
+    [Fact]
+    public void RoundTrip_LoggingAndClustering_PreservesValues()
+    {
+        // Arrange
+        var original = new BrokerConfiguration
+        {
+            LogFile = "/var/log/nats-cluster.log",
+            LogTimeUtc = true,
+            LogFileSize = 10485760,
+            Jetstream = true,
+            JetstreamDomain = "ha-cluster",
+            JetstreamUniqueTag = "node-alpha"
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(original);
+        var roundTripped = ConfigurationMapper.MapToBrokerConfiguration(serverConfig);
+
+        // Assert
+        Assert.Equal(original.LogFile, roundTripped.LogFile);
+        Assert.Equal(original.LogTimeUtc, roundTripped.LogTimeUtc);
+        Assert.Equal(original.LogFileSize, roundTripped.LogFileSize);
+        Assert.Equal(original.Jetstream, roundTripped.Jetstream);
+        Assert.Equal(original.JetstreamDomain, roundTripped.JetstreamDomain);
+        Assert.Equal(original.JetstreamUniqueTag, roundTripped.JetstreamUniqueTag);
+    }
 }
