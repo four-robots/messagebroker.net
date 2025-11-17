@@ -33,10 +33,10 @@ public class ValidationTests : IIntegrationTest
                 using var server = new NatsController();
                 var result = await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { ".invalid", "also..bad", "bad." }
                     }
                 });
@@ -52,10 +52,10 @@ public class ValidationTests : IIntegrationTest
                 var validator = new ConfigurationValidator();
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { "" }
                     }
                 };
@@ -72,10 +72,10 @@ public class ValidationTests : IIntegrationTest
                 var validator = new ConfigurationValidator();
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string>
                         {
                             "events.>",
@@ -101,10 +101,10 @@ public class ValidationTests : IIntegrationTest
                 var validator = new ConfigurationValidator();
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 4222 // Same as main port
+                        Port = 14222 // Same as main port
                     }
                 };
 
@@ -120,7 +120,7 @@ public class ValidationTests : IIntegrationTest
                 var validator = new ConfigurationValidator();
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Jetstream = true,
                     JetstreamStoreDir = "" // Empty store dir
                 };
@@ -137,7 +137,7 @@ public class ValidationTests : IIntegrationTest
                 var validator = new ConfigurationValidator();
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Auth = new AuthConfiguration
                     {
                         Username = "user",
@@ -157,10 +157,10 @@ public class ValidationTests : IIntegrationTest
                 var validator = new ConfigurationValidator();
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         AuthUsername = "user",
                         AuthPassword = null // Username without password
                     }
@@ -176,7 +176,7 @@ public class ValidationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 var result = await server.ApplyChangesAsync(c => c.Port = 99999);
 
@@ -189,7 +189,7 @@ public class ValidationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 var result = await server.ApplyChangesAsync(c => c.Debug = true);
 
@@ -226,10 +226,10 @@ public class ValidationTests : IIntegrationTest
                 var validator = new ConfigurationValidator();
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string>
                         {
                             "bad.>.middle",  // > must be at the end

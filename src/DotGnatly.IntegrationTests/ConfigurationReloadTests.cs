@@ -16,7 +16,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222, Debug = false });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
 
                 var result = await server.ApplyChangesAsync(c => c.Debug = true);
 
@@ -34,7 +34,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Debug = false,
                     Trace = false,
                     MaxPayload = 1024
@@ -62,7 +62,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                var result1 = await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                var result1 = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
                 var version1 = result1.Version?.Version ?? 0;
 
                 var result2 = await server.ApplyChangesAsync(c => c.Debug = true);
@@ -79,7 +79,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222, Debug = false });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
 
                 await server.ApplyChangesAsync(c => c.Debug = true);
 
@@ -97,7 +97,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222, MaxPayload = 1024 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 });
 
                 for (int i = 1; i <= 10; i++)
                 {
@@ -116,7 +116,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222, MaxPayload = 1024 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 });
 
                 var result = await server.ApplyChangesAsync(c => c.MaxPayload = -1);
 
@@ -134,7 +134,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Jetstream = false
                 });
 
@@ -156,7 +156,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
                 var initialVersion = result.Version?.Version ?? 0;
 
                 ConfigurationResult? lastResult = null;
@@ -179,7 +179,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
                         Port = 0,
@@ -190,7 +190,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                 // Attempt to hot reload LeafNode configuration
                 var result = await server.ApplyChangesAsync(c =>
                 {
-                    c.LeafNode.Port = 7422;
+                    c.LeafNode.Port = 17422;
                     c.LeafNode.ImportSubjects.Add("test.>");
                 });
 
@@ -215,7 +215,7 @@ public class ConfigurationReloadTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Debug = false,
                     Trace = false,
                     MaxPayload = 1024,
@@ -239,7 +239,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 await server.SetDebugAsync(true);
                 await server.SetMaxPayloadAsync(2048);
@@ -257,7 +257,7 @@ public class ConfigurationReloadTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 await server.SetAuthenticationAsync("user", "pass");
 

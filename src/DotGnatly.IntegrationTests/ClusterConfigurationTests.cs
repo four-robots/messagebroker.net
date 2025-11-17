@@ -18,12 +18,12 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
                         Name = "test-cluster",
-                        Port = 6222,
-                        Routes = new List<string> { "nats-route://server1:6222", "nats-route://server2:6222" }
+                        Port = 16222,
+                        Routes = new List<string> { "nats-route://server1:16222", "nats-route://server2:16222" }
                     }
                 });
 
@@ -35,14 +35,14 @@ public class ClusterConfigurationTests : IIntegrationTest
                     throw new Exception("Cluster name not configured correctly");
                 }
 
-                if (cluster.Port != 6222)
+                if (cluster.Port != 16222)
                 {
                     throw new Exception("Cluster port not configured correctly");
                 }
 
                 if (cluster.Routes.Count != 2 ||
-                    !cluster.Routes.Contains("nats-route://server1:6222") ||
-                    !cluster.Routes.Contains("nats-route://server2:6222"))
+                    !cluster.Routes.Contains("nats-route://server1:16222") ||
+                    !cluster.Routes.Contains("nats-route://server2:16222"))
                 {
                     throw new Exception("Cluster routes not configured correctly");
                 }
@@ -56,9 +56,9 @@ public class ClusterConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
-                var result = await server.EnableClusteringAsync("production-cluster", 6222);
+                var result = await server.EnableClusteringAsync("production-cluster", 16222);
 
                 if (!result.Success)
                 {
@@ -68,7 +68,7 @@ public class ClusterConfigurationTests : IIntegrationTest
                 var info = await server.GetInfoAsync();
                 var cluster = info.CurrentConfig.Cluster;
 
-                if (cluster.Name != "production-cluster" || cluster.Port != 6222)
+                if (cluster.Name != "production-cluster" || cluster.Port != 16222)
                 {
                     throw new Exception("Cluster not enabled correctly via fluent API");
                 }
@@ -84,18 +84,18 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
                         Name = "test-cluster",
-                        Port = 6222,
-                        Routes = new List<string> { "nats-route://server1:6222" }
+                        Port = 16222,
+                        Routes = new List<string> { "nats-route://server1:16222" }
                     }
                 });
 
                 var result = await server.AddClusterRoutesAsync(
-                    "nats-route://server2:6222",
-                    "nats-route://server3:6222");
+                    "nats-route://server2:16222",
+                    "nats-route://server3:16222");
 
                 if (!result.Success)
                 {
@@ -106,9 +106,9 @@ public class ClusterConfigurationTests : IIntegrationTest
                 var routes = info.CurrentConfig.Cluster.Routes;
 
                 if (routes.Count != 3 ||
-                    !routes.Contains("nats-route://server1:6222") ||
-                    !routes.Contains("nats-route://server2:6222") ||
-                    !routes.Contains("nats-route://server3:6222"))
+                    !routes.Contains("nats-route://server1:16222") ||
+                    !routes.Contains("nats-route://server2:16222") ||
+                    !routes.Contains("nats-route://server3:16222"))
                 {
                     throw new Exception("Cluster routes not updated correctly");
                 }
@@ -124,21 +124,21 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
                         Name = "test-cluster",
-                        Port = 6222,
+                        Port = 16222,
                         Routes = new List<string>
                         {
-                            "nats-route://server1:6222",
-                            "nats-route://server2:6222",
-                            "nats-route://server3:6222"
+                            "nats-route://server1:16222",
+                            "nats-route://server2:16222",
+                            "nats-route://server3:16222"
                         }
                     }
                 });
 
-                var result = await server.RemoveClusterRoutesAsync("nats-route://server2:6222");
+                var result = await server.RemoveClusterRoutesAsync("nats-route://server2:16222");
 
                 if (!result.Success)
                 {
@@ -149,9 +149,9 @@ public class ClusterConfigurationTests : IIntegrationTest
                 var routes = info.CurrentConfig.Cluster.Routes;
 
                 if (routes.Count != 2 ||
-                    !routes.Contains("nats-route://server1:6222") ||
-                    !routes.Contains("nats-route://server3:6222") ||
-                    routes.Contains("nats-route://server2:6222"))
+                    !routes.Contains("nats-route://server1:16222") ||
+                    !routes.Contains("nats-route://server3:16222") ||
+                    routes.Contains("nats-route://server2:16222"))
                 {
                     throw new Exception("Cluster routes not updated correctly after removal");
                 }
@@ -167,11 +167,11 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
                         Name = "secure-cluster",
-                        Port = 6222,
+                        Port = 16222,
                         AuthUsername = "clusteradmin",
                         AuthPassword = "secretpass"
                     }
@@ -196,11 +196,11 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
                         Name = "test-cluster",
-                        Port = 6222
+                        Port = 16222
                     }
                 });
 
@@ -230,12 +230,12 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
                         Name = "test-cluster",
-                        Port = 6222,
-                        Routes = new List<string> { "nats-route://server1:6222" }
+                        Port = 16222,
+                        Routes = new List<string> { "nats-route://server1:16222" }
                     }
                 });
 
@@ -265,11 +265,11 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 var result = await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
                         Name = "test-cluster",
-                        Port = 4222  // Same as main port
+                        Port = 14222  // Same as main port
                     }
                 });
 
@@ -289,10 +289,10 @@ public class ClusterConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 var result = await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Cluster = new ClusterConfiguration
                     {
-                        Port = 6222,
+                        Port = 16222,
                         Name = null  // Missing required name
                     }
                 });

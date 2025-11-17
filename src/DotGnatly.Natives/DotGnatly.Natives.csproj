@@ -2,33 +2,15 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <LangVersion>12</LangVersion>
 
     <!-- NuGet Package Properties -->
-    <PackageId>DotGnatly.Natives</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>DotGnatly Contributors</Authors>
-    <Company>DotGnatly</Company>
     <Description>Native NATS server bindings for DotGnatly. Contains platform-specific native libraries (Windows x64, Linux x64) for NATS Server v2.11.0. This package is automatically referenced by DotGnatly.Nats and can be updated independently for hotfixes.</Description>
     <PackageTags>nats;native;bindings;nats-server;runtime;native-libraries</PackageTags>
-    <PackageProjectUrl>https://github.com/four-robots/messagebroker.net</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/four-robots/messagebroker.net</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <IncludeSymbols>false</IncludeSymbols>
 
     <!-- This is a runtime package - no need for symbols -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
-  </ItemGroup>
 
   <!-- Native bindings for local development (copy to output directory) -->
   <ItemGroup>

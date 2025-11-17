@@ -22,7 +22,7 @@ public class LoggingAndClusteringTests : IIntegrationTest
 
                 var config = new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LogFile = logFilePath,
                     LogTimeUtc = true,
                     LogFileSize = 1024 * 1024 // 1MB
@@ -65,7 +65,7 @@ public class LoggingAndClusteringTests : IIntegrationTest
 
                 var config = new BrokerConfiguration
                 {
-                    Port = 4223,
+                    Port = 14223,
                     LogFile = logFilePath,
                     Debug = true // Generate some log output
                 };
@@ -107,7 +107,7 @@ public class LoggingAndClusteringTests : IIntegrationTest
 
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4224,
+                    Port = 14224,
                     LogTimeUtc = true
                 });
 

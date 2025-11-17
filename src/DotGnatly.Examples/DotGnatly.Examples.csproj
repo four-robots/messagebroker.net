@@ -1,15 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\DotGnatly.Core\DotGnatly.Core.csproj" />
-    <ProjectReference Include="..\DotGnatly.Nats\DotGnatly.Nats.csproj" />
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+	</PropertyGroup>
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\DotGnatly.Core\DotGnatly.Core.csproj" />
+		<ProjectReference Include="..\DotGnatly.Nats\DotGnatly.Nats.csproj" />
+	</ItemGroup>
 
 </Project>

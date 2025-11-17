@@ -40,7 +40,7 @@ public static class MonitoringTests
         var config = new BrokerConfiguration
         {
             Host = "127.0.0.1",
-            Port = 4222,
+            Port = 14222,
             Description = "Connz monitoring test"
         };
 
@@ -102,7 +102,7 @@ public static class MonitoringTests
         var config = new BrokerConfiguration
         {
             Host = "127.0.0.1",
-            Port = 4223,
+            Port = 14223,
             Description = "Subsz monitoring test"
         };
 
@@ -158,7 +158,7 @@ public static class MonitoringTests
         var config = new BrokerConfiguration
         {
             Host = "127.0.0.1",
-            Port = 4224,
+            Port = 14224,
             Jetstream = true,
             JetstreamStoreDir = Path.Combine(Path.GetTempPath(), "nats-jsz-test"),
             Description = "Jsz monitoring test"
@@ -247,7 +247,7 @@ public static class MonitoringTests
             {
                 Name = "test-cluster",
                 Host = "127.0.0.1",
-                Port = 6222
+                Port = 16222
             },
             Description = "Routez monitoring test"
         };
@@ -308,7 +308,7 @@ public static class MonitoringTests
             LeafNode = new LeafNodeConfiguration
             {
                 Host = "127.0.0.1",
-                Port = 7422
+                Port = 17422
             },
             Description = "Leafz monitoring test"
         };

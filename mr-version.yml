@@ -1,0 +1,4 @@
+
+baseVersion: "0.1.0"
+prereleaseType: none  # Options: none, alpha, beta, rc
+defaultIncrement: patch

@@ -6,3 +6,10 @@ bin/
 *.dll
 *.dylib
 *.h
+jetstream[0-9]?/
+jetstream-(.+)/
+
+.vs/
+.claude/
+.idea/
+.vscode/

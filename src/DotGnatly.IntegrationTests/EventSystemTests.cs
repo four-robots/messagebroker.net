@@ -17,7 +17,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 bool eventFired = false;
                 server.ConfigurationChanging += (sender, args) =>
@@ -37,7 +37,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 bool eventFired = false;
                 server.ConfigurationChanged += (sender, args) =>
@@ -57,7 +57,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222, Debug = false });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
 
                 server.ConfigurationChanging += (sender, args) =>
                 {
@@ -78,7 +78,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222, Debug = false });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
 
                 ConfigurationChangedEventArgs? capturedArgs = null;
                 server.ConfigurationChanged += (sender, args) =>
@@ -99,7 +99,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 int handler1Count = 0;
                 int handler2Count = 0;
@@ -121,7 +121,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222, MaxPayload = 1024 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 });
 
                 bool correctValues = false;
                 server.ConfigurationChanging += (sender, args) =>
@@ -144,10 +144,10 @@ public class EventSystemTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { "old.>" }
                     }
                 });
@@ -172,7 +172,7 @@ public class EventSystemTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
                         ImportSubjects = new List<string> { "original.>" }
@@ -199,7 +199,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 var eventOrder = new List<string>();
 
@@ -222,8 +222,8 @@ public class EventSystemTests : IIntegrationTest
                 using var server1 = new NatsController();
                 using var server2 = new NatsController();
 
-                await server1.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
-                await server2.ConfigureAsync(new BrokerConfiguration { Port = 4223 });
+                await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+                await server2.ConfigureAsync(new BrokerConfiguration { Port = 14223 });
 
                 int server1Events = 0;
                 int server2Events = 0;

@@ -20,9 +20,9 @@ public class MultiServerTests : IIntegrationTest
                 using var server2 = new NatsController();
                 using var server3 = new NatsController();
 
-                var config1 = new BrokerConfiguration { Port = 4222, Description = "Server 1" };
-                var config2 = new BrokerConfiguration { Port = 4223, Description = "Server 2" };
-                var config3 = new BrokerConfiguration { Port = 4224, Description = "Server 3" };
+                var config1 = new BrokerConfiguration { Port = 14222, Description = "Server 1" };
+                var config2 = new BrokerConfiguration { Port = 14223, Description = "Server 2" };
+                var config3 = new BrokerConfiguration { Port = 14224, Description = "Server 3" };
 
                 var result1 = await server1.ConfigureAsync(config1);
                 var result2 = await server2.ConfigureAsync(config2);
@@ -50,14 +50,14 @@ public class MultiServerTests : IIntegrationTest
 
                 await server1.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Debug = true,
                     MaxPayload = 1024
                 });
 
                 await server2.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4223,
+                    Port = 14223,
                     Debug = false,
                     MaxPayload = 2048
                 });
@@ -71,8 +71,8 @@ public class MultiServerTests : IIntegrationTest
                 await server1.ShutdownAsync();
                 await server2.ShutdownAsync();
 
-                return config1.Port == 4222 && config1.Debug == true && config1.MaxPayload == 1024 &&
-                       config2.Port == 4223 && config2.Debug == false && config2.MaxPayload == 2048;
+                return config1.Port == 14222 && config1.Debug == true && config1.MaxPayload == 1024 &&
+                       config2.Port == 14223 && config2.Debug == false && config2.MaxPayload == 2048;
             });
 
         // Test 3: Concurrent hot reloads on different servers
@@ -83,8 +83,8 @@ public class MultiServerTests : IIntegrationTest
                 using var server1 = new NatsController();
                 using var server2 = new NatsController();
 
-                await server1.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
-                await server2.ConfigureAsync(new BrokerConfiguration { Port = 4223 });
+                await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+                await server2.ConfigureAsync(new BrokerConfiguration { Port = 14223 });
 
                 // Perform concurrent hot reloads
                 var task1 = server1.ApplyChangesAsync(c => c.Debug = true);
@@ -108,12 +108,12 @@ public class MultiServerTests : IIntegrationTest
             {
                 // Start first server
                 using var server1 = new NatsController();
-                await server1.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
                 await server1.ShutdownAsync();
 
                 // Start second server on same port after first is stopped
                 using var server2 = new NatsController();
-                await server2.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server2.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
                 await server2.ShutdownAsync();
             });
 
@@ -127,14 +127,14 @@ public class MultiServerTests : IIntegrationTest
 
                 await server1.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     Jetstream = true,
                     JetstreamStoreDir = "./jetstream1"
                 });
 
                 await server2.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4223,
+                    Port = 14223,
                     Jetstream = true,
                     JetstreamStoreDir = "./jetstream2"
                 });
@@ -161,7 +161,7 @@ public class MultiServerTests : IIntegrationTest
                         servers.Add(server);
                         tasks.Add(server.ConfigureAsync(new BrokerConfiguration
                         {
-                            Port = 4222 + i,
+                            Port = 14222 + i,
                             Description = $"Stress Test Server {i}"
                         }));
                     }

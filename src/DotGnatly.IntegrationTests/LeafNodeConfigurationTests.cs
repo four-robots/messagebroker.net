@@ -18,10 +18,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { "events.>", "data.*" },
                         ExportSubjects = new List<string> { "commands.>", "status.*" }
                     }
@@ -55,10 +55,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { "events.>" }
                     }
                 });
@@ -93,10 +93,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { "events.>", "data.*", "logs.>" }
                     }
                 });
@@ -131,10 +131,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ExportSubjects = new List<string> { "commands.>" }
                     }
                 });
@@ -165,10 +165,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { "old.>", "legacy.*" }
                     }
                 });
@@ -202,10 +202,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ExportSubjects = new List<string> { "old.>", "legacy.*" }
                     }
                 });
@@ -238,10 +238,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string> { "v1.>" }
                     }
                 });
@@ -277,10 +277,10 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
+                    Port = 14222,
                     LeafNode = new LeafNodeConfiguration
                     {
-                        Port = 7422,
+                        Port = 17422,
                         ImportSubjects = new List<string>
                         {
                             "events.>",          // Multi-token wildcard

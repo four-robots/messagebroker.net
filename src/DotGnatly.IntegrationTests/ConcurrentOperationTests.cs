@@ -16,7 +16,7 @@ public class ConcurrentOperationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 var tasks = new List<Task>();
                 for (int i = 0; i < 10; i++)
@@ -38,7 +38,7 @@ public class ConcurrentOperationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 var writeTask = Task.Run(async () =>
                 {
@@ -72,8 +72,8 @@ public class ConcurrentOperationTests : IIntegrationTest
                 using var server = new NatsController();
                 await server.ConfigureAsync(new BrokerConfiguration
                 {
-                    Port = 4222,
-                    LeafNode = new LeafNodeConfiguration { Port = 7422 }
+                    Port = 14222,
+                    LeafNode = new LeafNodeConfiguration { Port = 17422 }
                 });
 
                 var tasks = new List<Task>();
@@ -108,7 +108,7 @@ public class ConcurrentOperationTests : IIntegrationTest
                     {
                         var server = new NatsController();
                         servers.Add(server);
-                        int port = 4222 + i;
+                        int port = 14222 + i;
                         tasks.Add(server.ConfigureAsync(new BrokerConfiguration { Port = port }));
                     }
 
@@ -139,7 +139,7 @@ public class ConcurrentOperationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 for (int i = 0; i < 20; i++)
                 {
@@ -155,7 +155,7 @@ public class ConcurrentOperationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 });
+                await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
 
                 // Create some version history
                 for (int i = 0; i < 5; i++)
@@ -190,7 +190,7 @@ public class ConcurrentOperationTests : IIntegrationTest
                     {
                         var server = new NatsController();
                         servers.Add(server);
-                        await server.ConfigureAsync(new BrokerConfiguration { Port = 4222 + i });
+                        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 + i });
                     }
 
                     // Perform 100 operations across the servers
