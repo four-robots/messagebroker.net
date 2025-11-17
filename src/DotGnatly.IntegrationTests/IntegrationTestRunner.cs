@@ -20,6 +20,7 @@ public class IntegrationTestRunner
         _tests.Add(new ConfigurationReloadTests());
         _tests.Add(new MonitoringTestSuite());
         _tests.Add(new AccountManagementTestSuite());
+        _tests.Add(new AuthorizationAndFilteringTestSuite());
         _tests.Add(new RuntimeControlTestSuite());
         _tests.Add(new LoggingAndClusteringTests());
     }
