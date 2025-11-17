@@ -1237,8 +1237,8 @@ func ReOpenLogFile() *C.char {
 		return C.CString("ERROR: Server not running")
 	}
 
-	// NATS server's ReopenLogFile method
-	srv.ReopenLogFile()
+	// NATS server's ReOpenLogFile method (note the capital O)
+	srv.ReOpenLogFile()
 
 	return C.CString("SUCCESS: Log file reopened")
 }
@@ -1256,8 +1256,8 @@ func GetOpts() *C.char {
 		return C.CString("ERROR: Server not running")
 	}
 
-	// Get current server options
-	opts := srv.GetOpts()
+	// Get current server options (use Opts() method, not GetOpts())
+	opts := srv.Opts()
 	if opts == nil {
 		return C.CString("ERROR: Failed to get server options")
 	}
