@@ -82,6 +82,25 @@ public class BrokerConfiguration : ICloneable
     [JsonPropertyName("trace")]
     public bool Trace { get; set; } = false;
 
+    /// <summary>
+    /// Gets or sets the log file path. If set, logs will be written to this file.
+    /// </summary>
+    [JsonPropertyName("logFile")]
+    public string? LogFile { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to log time in UTC (true) or local time (false).
+    /// </summary>
+    [JsonPropertyName("logTimeUtc")]
+    public bool LogTimeUtc { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the size in bytes after which the log file should be rotated.
+    /// 0 means no automatic rotation based on size.
+    /// </summary>
+    [JsonPropertyName("logFileSize")]
+    public long LogFileSize { get; set; } = 0;
+
     // JetStream Configuration
 
     /// <summary>
@@ -107,6 +126,20 @@ public class BrokerConfiguration : ICloneable
     /// </summary>
     [JsonPropertyName("jetstreamMaxStore")]
     public long JetstreamMaxStore { get; set; } = -1;
+
+    /// <summary>
+    /// Gets or sets the JetStream domain name for clustering scenarios.
+    /// Used to create isolated JetStream clusters within a larger NATS cluster.
+    /// </summary>
+    [JsonPropertyName("jetstreamDomain")]
+    public string? JetstreamDomain { get; set; }
+
+    /// <summary>
+    /// Gets or sets a unique identifier for this JetStream server in a cluster.
+    /// If not set, the server will generate one automatically.
+    /// </summary>
+    [JsonPropertyName("jetstreamUniqueTag")]
+    public string? JetstreamUniqueTag { get; set; }
 
     // HTTP Monitoring Configuration
 
@@ -172,10 +205,15 @@ public class BrokerConfiguration : ICloneable
             WriteDeadline = WriteDeadline,
             Debug = Debug,
             Trace = Trace,
+            LogFile = LogFile,
+            LogTimeUtc = LogTimeUtc,
+            LogFileSize = LogFileSize,
             Jetstream = Jetstream,
             JetstreamStoreDir = JetstreamStoreDir,
             JetstreamMaxMemory = JetstreamMaxMemory,
             JetstreamMaxStore = JetstreamMaxStore,
+            JetstreamDomain = JetstreamDomain,
+            JetstreamUniqueTag = JetstreamUniqueTag,
             HttpPort = HttpPort,
             HttpHost = HttpHost,
             HttpsPort = HttpsPort,

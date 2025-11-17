@@ -51,6 +51,10 @@ internal interface INatsBindings
     // Advanced monitoring
     IntPtr GetRaftz(string? accountFilter, string? groupFilter);
     IntPtr SetSystemAccount(string accountName);
+
+    // Logging and configuration management
+    IntPtr ReOpenLogFile();
+    IntPtr GetOpts();
 }
 
 internal sealed class WindowsNatsBindings : INatsBindings
@@ -233,6 +237,17 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern IntPtr _setSystemAccount(string accountName);
 
     public IntPtr SetSystemAccount(string accountName) => _setSystemAccount(accountName);
+
+    // Logging and configuration management declarations
+    [DllImport("nats-bindings.dll", EntryPoint = "ReOpenLogFile")]
+    internal static extern IntPtr _reOpenLogFile();
+
+    public IntPtr ReOpenLogFile() => _reOpenLogFile();
+
+    [DllImport("nats-bindings.dll", EntryPoint = "GetOpts")]
+    internal static extern IntPtr _getOpts();
+
+    public IntPtr GetOpts() => _getOpts();
 }
 
 
@@ -416,4 +431,15 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern IntPtr _setSystemAccount(string accountName);
 
     public IntPtr SetSystemAccount(string accountName) => _setSystemAccount(accountName);
+
+    // Logging and configuration management declarations
+    [DllImport("nats-bindings.so", EntryPoint = "ReOpenLogFile")]
+    internal static extern IntPtr _reOpenLogFile();
+
+    public IntPtr ReOpenLogFile() => _reOpenLogFile();
+
+    [DllImport("nats-bindings.so", EntryPoint = "GetOpts")]
+    internal static extern IntPtr _getOpts();
+
+    public IntPtr GetOpts() => _getOpts();
 }

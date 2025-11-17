@@ -1369,6 +1369,100 @@ public class NatsController : IBrokerController, IDisposable
     }
 
     /// <summary>
+    /// Reopens the log file for rotation.
+    /// This is useful for log rotation scenarios where the log file is renamed
+    /// and a new file needs to be created (e.g., when using logrotate).
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task that completes when the log file has been reopened.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the broker is not running.</exception>
+    /// <remarks>
+    /// This method does not throw an exception if no log file is configured.
+    /// Call this after rotating the log file externally to ensure the server
+    /// starts writing to a new file.
+    /// </remarks>
+    public async Task ReOpenLogFileAsync(CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.ReOpenLogFile();
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to reopen log file: {response}");
+                }
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Gets the current server options/configuration as JSON.
+    /// This provides a snapshot of the actual running server configuration,
+    /// which may be useful for debugging or verification.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>JSON string containing the current server options.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the broker is not running or retrieval fails.</exception>
+    /// <remarks>
+    /// The returned JSON includes runtime configuration such as ports, limits,
+    /// JetStream settings, clustering configuration, and logging settings.
+    /// This is a read-only operation that does not modify the server state.
+    /// </remarks>
+    public async Task<string> GetOptsAsync(CancellationToken cancellationToken = default)
+    {
+        await _operationSemaphore.WaitAsync(cancellationToken);
+        try
+        {
+            EnsureRunning();
+            _bindings.SetCurrentPort(_currentConfiguration!.Port);
+
+            IntPtr resultPtr = IntPtr.Zero;
+            try
+            {
+                resultPtr = _bindings.GetOpts();
+                var response = MarshalResponseString(resultPtr);
+
+                if (IsErrorResponse(response))
+                {
+                    throw new InvalidOperationException($"Failed to get server options: {response}");
+                }
+
+                return response;
+            }
+            finally
+            {
+                if (resultPtr != IntPtr.Zero)
+                {
+                    _bindings.FreeString(resultPtr);
+                }
+            }
+        }
+        finally
+        {
+            _operationSemaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Ensures the broker is running, throwing an exception if not.
     /// </summary>
     private void EnsureRunning()

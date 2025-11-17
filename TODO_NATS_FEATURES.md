@@ -297,36 +297,55 @@ This document tracks the implementation status of NATS server features that are 
 
 ### 6. Logging Control
 
-#### ⏳ SetLogger() - Custom Logger
-- **Purpose**: Inject custom logger implementation
-- **Parameters**: Logger interface
-- **Use Case**: Integration with application logging
+#### ✅ Log File Configuration - Custom Logging
+- **Status**: **Implemented** via `BrokerConfiguration` properties
+- **Location**: `BrokerConfiguration.cs:85-102`, `nats-bindings.go:38-40`
+- **Purpose**: Configure log file path, UTC time, and size-based rotation
+- **Properties**:
+  - `LogFile` (string): Path to log file
+  - `LogTimeUtc` (bool): Use UTC time in logs
+  - `LogFileSize` (long): Max log file size for automatic rotation
+- **Use Case**: Production logging with rotation support
 - **Priority**: LOW
+- **Completed**: 2025-11-17
+- **Note**: Replaces the original SetLogger() concept with configuration-based approach that's more practical for .NET/CGo integration
 
-#### ⏳ ReOpenLogFile() - Log Rotation
-- **Purpose**: Support log file rotation
-- **Use Case**: Log management
+#### ✅ ReOpenLogFile() - Log Rotation
+- **Status**: **Implemented** in `ReOpenLogFileAsync()`
+- **Location**: `native/nats-bindings.go:1230`, `NatsController.cs:1384`
+- **Purpose**: Support external log file rotation (e.g., logrotate)
+- **Use Case**: Trigger log file reopening after external rotation
 - **Priority**: LOW
+- **Completed**: 2025-11-17
 
 ### 7. Advanced Configuration
 
-#### ⏳ GetOpts() - Retrieve Options
-- **Purpose**: Get current server options
-- **Returns**: Full Options object
-- **Use Case**: Configuration introspection
+#### ✅ GetOpts() - Retrieve Options
+- **Status**: **Implemented** in `GetOptsAsync()`
+- **Location**: `native/nats-bindings.go:1249`, `NatsController.cs:1430`
+- **Purpose**: Get current server options as JSON
+- **Returns**: JSON object with runtime configuration
+- **Use Case**: Configuration introspection, debugging, monitoring
 - **Priority**: LOW
+- **Completed**: 2025-11-17
 
 #### ⏳ AccountResolver() - Custom Resolution
 - **Purpose**: Set custom account resolution logic
 - **Parameters**: Resolver interface
 - **Use Case**: External account systems
 - **Priority**: LOW
+- **Note**: Deferred - requires complex Go function interface bridging via CGo
 
-#### ⏳ EnableJetStreamClustering() - JS Clustering
-- **Purpose**: Configure JetStream clustering
-- **Parameters**: Clustering configuration
-- **Use Case**: JetStream HA
+#### ✅ JetStream Clustering - JS Clustering
+- **Status**: **Implemented** via `BrokerConfiguration` properties
+- **Location**: `BrokerConfiguration.cs:130-142`, `nats-bindings.go:45-46`
+- **Purpose**: Configure JetStream clustering for high availability
+- **Properties**:
+  - `JetstreamDomain` (string): Domain name for JetStream cluster isolation
+  - `JetstreamUniqueTag` (string): Unique identifier for this server in cluster
+- **Use Case**: JetStream HA, multi-tenant isolation, disaster recovery
 - **Priority**: LOW
+- **Completed**: 2025-11-17
 
 ## Implementation Roadmap
 

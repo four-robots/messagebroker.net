@@ -35,10 +35,15 @@ type ServerConfig struct {
 	WriteDeadline      int            `json:"write_deadline"`
 	Debug              bool           `json:"debug"`
 	Trace              bool           `json:"trace"`
+	LogFile            string         `json:"log_file"`
+	LogTimeUtc         bool           `json:"log_time_utc"`
+	LogFileSize        int64          `json:"log_file_size"`
 	Jetstream          bool           `json:"jetstream"`
 	JetstreamStoreDir  string         `json:"jetstream_store_dir"`
 	JetstreamMaxMemory int64          `json:"jetstream_max_memory"`
 	JetstreamMaxStore  int64          `json:"jetstream_max_store"`
+	JetstreamDomain    string         `json:"jetstream_domain"`
+	JetstreamUniqueTag string         `json:"jetstream_unique_tag"`
 	HTTPPort           int            `json:"http_port"`
 	HTTPHost           string         `json:"http_host"`
 	HTTPSPort          int            `json:"https_port"`
@@ -103,9 +108,12 @@ func convertToNatsOptions(config *ServerConfig) *server.Options {
 		WriteDeadline:  server.DEFAULT_FLUSH_DEADLINE,
 		Debug:          config.Debug,
 		Trace:          config.Trace,
+		Logtime:        config.LogTimeUtc,
 		HTTPHost:       config.HTTPHost,
 		HTTPPort:       config.HTTPPort,
 		HTTPSPort:      config.HTTPSPort,
+		LogFile:        config.LogFile,
+		LogSizeLimit:   config.LogFileSize,
 	}
 
 	// Configure authentication if provided
@@ -125,6 +133,12 @@ func convertToNatsOptions(config *ServerConfig) *server.Options {
 		}
 		if config.JetstreamMaxStore > 0 {
 			opts.JetStreamMaxStore = config.JetstreamMaxStore
+		}
+		if config.JetstreamDomain != "" {
+			opts.JetStreamDomain = config.JetstreamDomain
+		}
+		if config.JetstreamUniqueTag != "" {
+			opts.JetStreamUniqueTag = config.JetstreamUniqueTag
 		}
 	}
 
@@ -1207,6 +1221,80 @@ func SetSystemAccount(accountName *C.char) *C.char {
 	}
 
 	return C.CString("SUCCESS: System account set to " + acctName)
+}
+
+// ReOpenLogFile reopens the log file for rotation.
+// This is useful for log rotation scenarios where the log file is renamed
+// and a new file needs to be created.
+//
+//export ReOpenLogFile
+func ReOpenLogFile() *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	// NATS server's ReopenLogFile method
+	srv.ReopenLogFile()
+
+	return C.CString("SUCCESS: Log file reopened")
+}
+
+// GetOpts returns the current server options as JSON.
+// This allows inspection of the current server configuration.
+//
+//export GetOpts
+func GetOpts() *C.char {
+	serverMu.Lock()
+	defer serverMu.Unlock()
+
+	srv, exists := natsServers[currentPort]
+	if !exists || srv == nil {
+		return C.CString("ERROR: Server not running")
+	}
+
+	// Get current server options
+	opts := srv.GetOpts()
+	if opts == nil {
+		return C.CString("ERROR: Failed to get server options")
+	}
+
+	// Create a simplified representation of the options
+	// We can't serialize server.Options directly due to unexported fields
+	optsInfo := map[string]interface{}{
+		"host":                  opts.Host,
+		"port":                  opts.Port,
+		"max_payload":           opts.MaxPayload,
+		"max_control_line":      opts.MaxControlLine,
+		"max_pings_out":         opts.MaxPingsOut,
+		"debug":                 opts.Debug,
+		"trace":                 opts.Trace,
+		"logtime":               opts.Logtime,
+		"log_file":              opts.LogFile,
+		"log_size_limit":        opts.LogSizeLimit,
+		"jetstream":             opts.JetStream,
+		"jetstream_max_memory":  opts.JetStreamMaxMemory,
+		"jetstream_max_store":   opts.JetStreamMaxStore,
+		"jetstream_domain":      opts.JetStreamDomain,
+		"jetstream_unique_tag":  opts.JetStreamUniqueTag,
+		"store_dir":             opts.StoreDir,
+		"http_host":             opts.HTTPHost,
+		"http_port":             opts.HTTPPort,
+		"https_port":            opts.HTTPSPort,
+		"cluster_name":          opts.Cluster.Name,
+		"cluster_port":          opts.Cluster.Port,
+		"leaf_node_port":        opts.LeafNode.Port,
+	}
+
+	jsonBytes, err := json.Marshal(optsInfo)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to marshal options: %v", err))
+	}
+
+	return C.CString(string(jsonBytes))
 }
 
 func main() {

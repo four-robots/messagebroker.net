@@ -34,12 +34,17 @@ public static class ConfigurationMapper
             WriteDeadline = config.WriteDeadline,
             Debug = config.Debug,
             Trace = config.Trace,
+            LogFile = config.LogFile,
+            LogTimeUtc = config.LogTimeUtc,
+            LogFileSize = config.LogFileSize,
 
             // JetStream settings
             Jetstream = config.Jetstream,
             JetstreamStoreDir = config.JetstreamStoreDir,
             JetstreamMaxMemory = config.JetstreamMaxMemory,
             JetstreamMaxStore = config.JetstreamMaxStore,
+            JetstreamDomain = config.JetstreamDomain,
+            JetstreamUniqueTag = config.JetstreamUniqueTag,
 
             // HTTP monitoring settings
             HTTPPort = config.HttpPort,
@@ -82,12 +87,17 @@ public static class ConfigurationMapper
             WriteDeadline = config.WriteDeadline,
             Debug = config.Debug,
             Trace = config.Trace,
+            LogFile = config.LogFile,
+            LogTimeUtc = config.LogTimeUtc,
+            LogFileSize = config.LogFileSize,
 
             // JetStream settings
             Jetstream = config.Jetstream,
             JetstreamStoreDir = config.JetstreamStoreDir,
             JetstreamMaxMemory = config.JetstreamMaxMemory,
             JetstreamMaxStore = config.JetstreamMaxStore,
+            JetstreamDomain = config.JetstreamDomain,
+            JetstreamUniqueTag = config.JetstreamUniqueTag,
 
             // HTTP monitoring settings
             HttpPort = config.HTTPPort,

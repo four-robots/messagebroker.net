@@ -34,6 +34,15 @@ public class ServerConfig
     [JsonPropertyName("trace")]
     public bool Trace { get; set; } = false;
 
+    [JsonPropertyName("log_file")]
+    public string? LogFile { get; set; }
+
+    [JsonPropertyName("log_time_utc")]
+    public bool LogTimeUtc { get; set; } = true;
+
+    [JsonPropertyName("log_file_size")]
+    public long LogFileSize { get; set; } = 0;
+
     [JsonPropertyName("jetstream")]
     public bool Jetstream { get; set; } = false;
 
@@ -45,6 +54,12 @@ public class ServerConfig
 
     [JsonPropertyName("jetstream_max_store")]
     public long JetstreamMaxStore { get; set; } = -1; // unlimited
+
+    [JsonPropertyName("jetstream_domain")]
+    public string? JetstreamDomain { get; set; }
+
+    [JsonPropertyName("jetstream_unique_tag")]
+    public string? JetstreamUniqueTag { get; set; }
 
     [JsonPropertyName("http_port")]
     public int HTTPPort { get; set; } = 0; // 0 means disabled
