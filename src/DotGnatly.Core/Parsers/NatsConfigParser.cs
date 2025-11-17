@@ -507,18 +507,8 @@ public class NatsConfigParser
                 continue;
             }
 
-            if (TryParseKeyValue(line, out var key, out var value))
-            {
-                switch (key.ToLowerInvariant())
-                {
-                    case "jetstream":
-                        account.Jetstream = value.Equals("enabled", StringComparison.OrdinalIgnoreCase) ||
-                                          ParseBool(value);
-                        break;
-                }
-                context.MoveNext();
-            }
-            else if (TryParseBlockStart(line, out var blockName))
+            // Check for blocks BEFORE key-value pairs
+            if (TryParseBlockStart(line, out var blockName))
             {
                 var blockContent = ExtractBlock(context);
                 switch (blockName.ToLowerInvariant())
@@ -536,6 +526,17 @@ public class NatsConfigParser
                         account.Mappings = ParseMappingsBlock(blockContent);
                         break;
                 }
+            }
+            else if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "jetstream":
+                        account.Jetstream = value.Equals("enabled", StringComparison.OrdinalIgnoreCase) ||
+                                          ParseBool(value);
+                        break;
+                }
+                context.MoveNext();
             }
             else
             {
@@ -827,7 +828,13 @@ public class NatsConfigParser
                     continue;
                 }
 
-                if (TryParseKeyValue(line, out var key, out var value))
+                // Check for blocks BEFORE key-value pairs
+                if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "users")
+                {
+                    var blockContent = ExtractBlock(context);
+                    auth.Users = ParseUsersArray(blockContent);
+                }
+                else if (TryParseKeyValue(line, out var key, out var value))
                 {
                     switch (key.ToLowerInvariant())
                     {
@@ -848,11 +855,6 @@ public class NatsConfigParser
                             break;
                     }
                     context.MoveNext();
-                }
-                else if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "users")
-                {
-                    var blockContent = ExtractBlock(context);
-                    auth.Users = ParseUsersArray(blockContent);
                 }
                 else
                 {
@@ -903,7 +905,13 @@ public class NatsConfigParser
                 continue;
             }
 
-            if (TryParseKeyValue(line, out var key, out var value))
+            // Check for blocks BEFORE key-value pairs
+            if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "tls")
+            {
+                var blockContent = ExtractBlock(context);
+                remote.Tls = ParseTlsBlock(blockContent);
+            }
+            else if (TryParseKeyValue(line, out var key, out var value))
             {
                 switch (key.ToLowerInvariant())
                 {
@@ -921,11 +929,6 @@ public class NatsConfigParser
                         break;
                 }
                 context.MoveNext();
-            }
-            else if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "tls")
-            {
-                var blockContent = ExtractBlock(context);
-                remote.Tls = ParseTlsBlock(blockContent);
             }
             else
             {
