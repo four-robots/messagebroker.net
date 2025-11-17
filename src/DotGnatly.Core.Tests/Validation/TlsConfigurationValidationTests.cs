@@ -44,8 +44,8 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls" &&
-            e.Message.Contains("Windows Certificate Store") &&
-            e.Message.Contains("only supported on Windows"));
+            e.ErrorMessage.Contains("Windows Certificate Store") &&
+            e.ErrorMessage.Contains("only supported on Windows"));
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public class TlsConfigurationValidationTests
         // Assert - Should not have Windows cert store OS error
         Assert.DoesNotContain(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls" &&
-            e.Message.Contains("only supported on Windows"));
+            e.ErrorMessage.Contains("only supported on Windows"));
     }
 
     [Fact]
@@ -113,8 +113,8 @@ public class TlsConfigurationValidationTests
         // Assert - Should have warning about using both methods
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls" &&
-            e.Message.Contains("Cannot use both certificate files") &&
-            e.Message.Contains("Windows Certificate Store") &&
+            e.ErrorMessage.Contains("Cannot use both certificate files") &&
+            e.ErrorMessage.Contains("Windows Certificate Store") &&
             e.Severity == ValidationSeverity.Warning);
     }
 
@@ -145,7 +145,7 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls.CertFile" &&
-            e.Message.Contains("key file is not"));
+            e.ErrorMessage.Contains("key file is not"));
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls.KeyFile" &&
-            e.Message.Contains("certificate file is not"));
+            e.ErrorMessage.Contains("certificate file is not"));
     }
 
     [Fact]
@@ -206,7 +206,7 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls.CertStore" &&
-            e.Message.Contains("cert_store must be specified"));
+            e.ErrorMessage.Contains("cert_store must be specified"));
     }
 
     [Fact]
@@ -237,7 +237,7 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls.CertMatch" &&
-            e.Message.Contains("cert_match must be specified"));
+            e.ErrorMessage.Contains("cert_match must be specified"));
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls.CertMatchBy" &&
-            e.Message.Contains("cert_match_by must be specified"));
+            e.ErrorMessage.Contains("cert_match_by must be specified"));
     }
 
     [Fact]
@@ -299,7 +299,7 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Tls.Timeout" &&
-            e.Message.Contains("cannot be negative"));
+            e.ErrorMessage.Contains("cannot be negative"));
     }
 
     [Fact]
@@ -343,8 +343,8 @@ public class TlsConfigurationValidationTests
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
             e.PropertyName == "LeafNode.Remotes[0].Tls" &&
-            e.Message.Contains("Windows Certificate Store") &&
-            e.Message.Contains("only supported on Windows"));
+            e.ErrorMessage.Contains("Windows Certificate Store") &&
+            e.ErrorMessage.Contains("only supported on Windows"));
     }
 
     [Fact]

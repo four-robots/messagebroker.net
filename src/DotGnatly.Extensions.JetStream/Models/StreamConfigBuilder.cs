@@ -259,9 +259,9 @@ public class StreamConfigBuilder
     /// Seals the stream, preventing further modifications.
     /// </summary>
     /// <returns>The builder instance for method chaining.</returns>
-    public StreamConfigBuilder WithSealed(bool sealed = true)
+    public StreamConfigBuilder WithSealed(bool @sealed = true)
     {
-        _sealed = sealed;
+        _sealed = @sealed;
         return this;
     }
 

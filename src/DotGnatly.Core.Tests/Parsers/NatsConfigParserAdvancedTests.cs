@@ -34,7 +34,7 @@ accounts {
         Assert.Single(config.Accounts);
         Assert.Equal("APP", config.Accounts[0].Name);
         Assert.Single(config.Accounts[0].Users);
-        Assert.Equal("app-user", config.Accounts[0].Users[0].Username);
+        Assert.Equal("app-user", config.Accounts[0].Users[0].User);
         Assert.Equal("secret", config.Accounts[0].Users[0].Password);
     }
 
@@ -60,9 +60,9 @@ accounts {
         // Assert
         Assert.Single(config.Accounts);
         Assert.Equal(3, config.Accounts[0].Users.Count);
-        Assert.Equal("user1", config.Accounts[0].Users[0].Username);
-        Assert.Equal("user2", config.Accounts[0].Users[1].Username);
-        Assert.Equal("user3", config.Accounts[0].Users[2].Username);
+        Assert.Equal("user1", config.Accounts[0].Users[0].User);
+        Assert.Equal("user2", config.Accounts[0].Users[1].User);
+        Assert.Equal("user3", config.Accounts[0].Users[2].User);
     }
 
     [Fact]
@@ -526,8 +526,8 @@ leafnodes {
         // Assert
         Assert.NotNull(config.LeafNode.Authorization);
         Assert.Equal(2, config.LeafNode.Authorization.Users.Count);
-        Assert.Equal("leaf1", config.LeafNode.Authorization.Users[0].Username);
-        Assert.Equal("leaf2", config.LeafNode.Authorization.Users[1].Username);
+        Assert.Equal("leaf1", config.LeafNode.Authorization.Users[0].User);
+        Assert.Equal("leaf2", config.LeafNode.Authorization.Users[1].User);
     }
 
     #endregion
@@ -657,9 +657,9 @@ leafnodes {
         // Assert
         Assert.Single(config.LeafNode.Remotes);
         Assert.NotNull(config.LeafNode.Remotes[0].Tls);
-        Assert.Equal("/path/to/client-cert.pem", config.LeafNode.Remotes[0].Tls.CertFile);
-        Assert.Equal("/path/to/client-key.pem", config.LeafNode.Remotes[0].Tls.KeyFile);
-        Assert.Equal("/path/to/ca.pem", config.LeafNode.Remotes[0].Tls.CaCertFile);
+        Assert.Equal("/path/to/client-cert.pem", config.LeafNode.Remotes[0].Tls!.CertFile);
+        Assert.Equal("/path/to/client-key.pem", config.LeafNode.Remotes[0].Tls!.KeyFile);
+        Assert.Equal("/path/to/ca.pem", config.LeafNode.Remotes[0].Tls!.CaCertFile);
     }
 
     [Fact]
