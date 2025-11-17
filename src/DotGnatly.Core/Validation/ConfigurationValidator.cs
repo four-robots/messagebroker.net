@@ -362,6 +362,25 @@ public class ConfigurationValidator : IConfigurationValidator
                 }
             }
         }
+
+        // Validate TLS configuration
+        if (leafNode.Tls != null)
+        {
+            ValidateTlsConfiguration(leafNode.Tls, "LeafNode.Tls", result);
+        }
+
+        // Validate remotes and their TLS configuration
+        if (leafNode.Remotes != null && leafNode.Remotes.Any())
+        {
+            for (int i = 0; i < leafNode.Remotes.Count; i++)
+            {
+                var remote = leafNode.Remotes[i];
+                if (remote.Tls != null)
+                {
+                    ValidateTlsConfiguration(remote.Tls, $"LeafNode.Remotes[{i}].Tls", result);
+                }
+            }
+        }
     }
 
     private void ValidateCluster(ClusterConfiguration cluster, int mainPort, int httpPort, int httpsPort, LeafNodeConfiguration leafNode, ValidationResult result)
@@ -472,6 +491,77 @@ public class ConfigurationValidator : IConfigurationValidator
         if (cluster.ConnectTimeout < 0)
         {
             result.AddError("Cluster.ConnectTimeout", "Connect timeout cannot be negative");
+        }
+    }
+
+    private void ValidateTlsConfiguration(TlsConfiguration tls, string propertyPath, ValidationResult result)
+    {
+        if (tls == null)
+            return;
+
+        // Check if Windows Certificate Store is being used on Linux
+        var isWindowsCertStore = !string.IsNullOrWhiteSpace(tls.CertStore) ||
+                                  !string.IsNullOrWhiteSpace(tls.CertMatchBy) ||
+                                  !string.IsNullOrWhiteSpace(tls.CertMatch);
+
+        if (isWindowsCertStore && !OperatingSystem.IsWindows())
+        {
+            result.AddError(propertyPath,
+                "Windows Certificate Store configuration (cert_store, cert_match_by, cert_match) is only supported on Windows. " +
+                "Use cert_file and key_file instead on Linux/Unix systems.");
+        }
+
+        // Validate that either cert files OR cert store is used, not both
+        var hasCertFiles = !string.IsNullOrWhiteSpace(tls.CertFile) ||
+                          !string.IsNullOrWhiteSpace(tls.KeyFile);
+
+        if (hasCertFiles && isWindowsCertStore)
+        {
+            result.AddError(propertyPath,
+                "Cannot use both certificate files (cert_file/key_file) and Windows Certificate Store (cert_store) simultaneously. Choose one method.",
+                ValidationSeverity.Warning);
+        }
+
+        // Validate cert_file and key_file are both present if one is specified
+        var hasCert = !string.IsNullOrWhiteSpace(tls.CertFile);
+        var hasKey = !string.IsNullOrWhiteSpace(tls.KeyFile);
+
+        if (hasCert && !hasKey)
+        {
+            result.AddError($"{propertyPath}.CertFile", "TLS certificate file is specified but key file is not");
+        }
+
+        if (!hasCert && hasKey)
+        {
+            result.AddError($"{propertyPath}.KeyFile", "TLS key file is specified but certificate file is not");
+        }
+
+        // Validate Windows Certificate Store configuration completeness
+        if (isWindowsCertStore)
+        {
+            if (string.IsNullOrWhiteSpace(tls.CertStore))
+            {
+                result.AddError($"{propertyPath}.CertStore",
+                    "cert_store must be specified when using Windows Certificate Store (e.g., 'WindowsCurrentUser', 'WindowsLocalMachine')");
+            }
+
+            if (string.IsNullOrWhiteSpace(tls.CertMatchBy) && !string.IsNullOrWhiteSpace(tls.CertMatch))
+            {
+                result.AddError($"{propertyPath}.CertMatchBy",
+                    "cert_match_by must be specified when cert_match is provided (e.g., 'Subject', 'Issuer')");
+            }
+
+            if (!string.IsNullOrWhiteSpace(tls.CertMatchBy) && string.IsNullOrWhiteSpace(tls.CertMatch))
+            {
+                result.AddError($"{propertyPath}.CertMatch",
+                    "cert_match must be specified when cert_match_by is provided");
+            }
+        }
+
+        // Validate timeout
+        if (tls.Timeout.HasValue && tls.Timeout.Value < 0)
+        {
+            result.AddError($"{propertyPath}.Timeout", "TLS timeout cannot be negative");
         }
     }
 

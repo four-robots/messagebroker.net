@@ -32,11 +32,58 @@ DotGnatly includes a parser that can convert NATS server configuration files (`.
   - `domain` - JetStream domain name
   - `max_memory` - Maximum memory for JetStream
   - `max_file` / `max_file_store` - Maximum disk storage
+  - `unique_tag` - Unique identifier for this JetStream server in a cluster
 
 ### Leaf Node Settings
 - Leaf nodes block properties:
   - `port` - Leaf node listening port
   - `host` - Leaf node binding address
+  - `advertise` - Advertise address for leaf nodes
+  - `isolate_leafnode_interest` - Isolate leaf node interest propagation
+  - `reconnect_delay` - Delay between reconnection attempts
+  - `tls` - TLS configuration block (see TLS Configuration below)
+  - `authorization` - Authorization configuration block
+  - `remotes` - Array of remote leaf node connections
+
+### TLS Configuration
+- TLS block properties (for leaf nodes and remotes):
+  - `cert_file` - Path to TLS certificate file
+  - `key_file` - Path to TLS key file
+  - `ca_cert_file` - Path to CA certificate file
+  - `verify` - Verify client certificates
+  - `timeout` - TLS handshake timeout
+  - `handshake_first` - Perform TLS handshake before INFO protocol
+  - `insecure` - Skip certificate verification (not recommended for production)
+  - `cert_store` - Windows certificate store (e.g., "WindowsLocalMachine", "WindowsCurrentUser")
+  - `cert_match_by` - Certificate matching method (e.g., "Subject")
+  - `cert_match` - Certificate match pattern
+  - `pinned_certs` - Array of pinned certificate fingerprints
+
+### Authorization Configuration
+- Authorization block properties:
+  - `user` - Username for authentication
+  - `password` - Password for authentication
+  - `token` - Authentication token
+  - `account` - Account assignment
+  - `timeout` - Authorization timeout
+  - `users` - Array of authorized users
+
+### Accounts Configuration
+- Accounts block with named account sections:
+  - `jetstream` - Enable/disable JetStream for this account
+  - `users` - Array of users (username/password pairs)
+  - `imports` - Array of stream/service imports from other accounts
+  - `exports` - Array of stream/service exports to other accounts
+  - `mappings` - Subject transformation mappings
+
+### Import/Export Configuration
+- Import/export object properties:
+  - `stream` or `service` - Type of import/export
+  - `subject` - Subject pattern
+  - `account` - Source/destination account (for imports)
+  - `to` - Subject transformation (mapping)
+  - `response_type` - Response type for services (single/stream)
+  - `response_threshold` - Response timeout threshold
 
 ## Usage
 
@@ -232,33 +279,86 @@ int seconds = NatsConfigParser.ParseTimeSeconds("10s"); // Returns 10
 int seconds2 = NatsConfigParser.ParseTimeSeconds("2m"); // Returns 120
 ```
 
-## Current Limitations
+## Advanced Features
 
-The parser currently supports basic NATS configuration properties. The following advanced features are recognized but not fully parsed:
+The parser now includes full support for advanced NATS configuration features:
 
-- **Accounts**: Account definitions are recognized but imports/exports are not yet parsed into structured objects
-- **TLS Configuration**: TLS blocks are recognized but detailed TLS settings are not yet extracted
-- **Authorization**: Authorization blocks are recognized but not fully parsed
-- **Clustering**: Cluster configuration blocks are recognized but detailed settings are not yet extracted
+- **Accounts**: Complete account definitions with users, imports, exports, and mappings
+- **TLS Configuration**: Full TLS support including cert files, Windows cert store, pinned certs, and timeouts
+- **Authorization**: Complete authorization blocks with users, tokens, and account assignments
+- **Leaf Node Remotes**: Full support for leaf node remote connections with TLS and credentials
+- **Import/Export Mappings**: Subject mappings and transformations for account isolation
+- **Response Types**: Service response types (single/stream) and response thresholds
 
-These features will be added in future versions. For now, basic server configuration, JetStream, and leaf node settings are fully supported.
+### Accounts Configuration
+
+Accounts are fully parsed with support for:
+- Multiple users per account
+- Stream and service imports/exports
+- Subject mappings with "to" transformations
+- JetStream enablement per account
+- Response types and thresholds on exports
+
+### TLS Configuration
+
+Full TLS support includes:
+- Certificate files (cert_file, key_file, ca_cert_file)
+- Windows Certificate Store (cert_store, cert_match_by, cert_match)
+- Certificate pinning (pinned_certs array)
+- TLS options (verify, timeout, handshake_first, insecure)
+
+### Leaf Node Configuration
+
+Complete leaf node support:
+- Advertise addresses
+- Isolation settings (isolate_leafnode_interest)
+- Reconnect delays
+- TLS configuration
+- Authorization blocks
+- Multiple remotes with individual TLS settings
+
+### Cluster Configuration
+
+Basic cluster configuration is recognized. Detailed cluster settings are planned for future versions.
 
 ## Testing
 
-The parser includes comprehensive unit tests in `DotGnatly.Core.Tests/Parsers/NatsConfigParserTests.cs`:
+The parser includes comprehensive test coverage with 111+ tests across multiple test files:
 
-- Size unit parsing (MB, GB, KB)
-- Time unit parsing (s, m, h)
-- Basic configuration parsing
-- JetStream configuration parsing
-- Leaf node configuration parsing
-- Comment handling
-- Boolean value parsing
+### Unit Tests
+- **NatsConfigParserTests.cs** (27 tests) - Basic parsing, JetStream, leaf nodes, size/time units
+- **NatsConfigParserErrorTests.cs** (28 tests) - Error handling and edge cases
+- **NatsConfigParserAdvancedTests.cs** (36 tests) - Accounts, TLS, authorization, remotes
+- **ActualConfigFilesTests.cs** (10 tests) - Real config file parsing
+
+### Integration Tests
+- **ConfigParserIntegrationTests.cs** (10 tests) - End-to-end parsing with NatsController
+
+### Test Coverage
+- Size unit parsing (B, KB, MB, GB, TB)
+- Time unit parsing (ns, us, ms, s, m, h)
+- Basic server configuration
+- JetStream configuration
+- Leaf node configuration with TLS and authorization
+- Accounts with imports/exports
+- Subject mappings and transformations
+- Windows certificate store configuration
+- Certificate pinning
+- Response types and thresholds
+- Error handling and malformed input
+- Unicode and special character handling
 
 To run the tests:
 
 ```bash
-dotnet test src/DotGnatly.Core.Tests/
+# Run all parser tests
+dotnet test src/DotGnatly.Core.Tests/ --filter "NatsConfigParser"
+
+# Run integration tests
+dotnet test src/DotGnatly.IntegrationTests/ --filter "ConfigParser"
+
+# Run all tests
+dotnet test
 ```
 
 ## Interactive Example

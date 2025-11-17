@@ -368,7 +368,7 @@ jetstream {
         // Act
         var config = NatsConfigParser.ParseFile(configPath);
 
-        // Assert
+        // Assert - Basic properties
         Assert.NotNull(config);
         Assert.Equal("nats-leaf-01", config.ServerName);
         Assert.Equal(4223, config.Port);
@@ -378,6 +378,64 @@ jetstream {
         Assert.Equal(100 * 1024 * 1024, config.LogFileSize);
         Assert.Equal(10, config.LogFileMaxNum);
         Assert.Equal(10, config.WriteDeadline);
+        Assert.Equal("SYS", config.SystemAccount);
+
+        // Assert - Leaf node advanced features
+        Assert.True(config.LeafNode.IsolateLeafnodeInterest);
+        Assert.Equal("2s", config.LeafNode.ReconnectDelay);
+
+        // Assert - Leaf node TLS with pinned certs
+        Assert.NotNull(config.LeafNode.Tls);
+        Assert.Equal(2, config.LeafNode.Tls.PinnedCerts.Count);
+        Assert.Equal(60, config.LeafNode.Tls.Timeout);
+
+        // Assert - Leaf node remotes
+        Assert.Single(config.LeafNode.Remotes);
+        var remote = config.LeafNode.Remotes[0];
+        Assert.Single(remote.Urls);
+        Assert.Contains("tls://", remote.Urls[0]);
+        Assert.Equal("LEAF-DMZ", remote.Account);
+        Assert.NotNull(remote.Tls);
+        Assert.True(remote.Tls.HandshakeFirst);
+        Assert.True(remote.Tls.Insecure);
+        Assert.Equal(60, remote.Tls.Timeout);
+
+        // Assert - Accounts
+        Assert.Equal(3, config.Accounts.Count);
+        var sysAccount = config.Accounts.FirstOrDefault(a => a.Name == "SYS");
+        var appAccount = config.Accounts.FirstOrDefault(a => a.Name == "APP");
+        var leafDmzAccount = config.Accounts.FirstOrDefault(a => a.Name == "LEAF-DMZ");
+
+        Assert.NotNull(sysAccount);
+        Assert.NotNull(appAccount);
+        Assert.NotNull(leafDmzAccount);
+
+        // Assert - SYS account
+        Assert.Single(sysAccount.Users);
+        Assert.Equal("admin", sysAccount.Users[0].Username);
+        Assert.Equal(3, sysAccount.Exports.Count);
+
+        // Assert - APP account
+        Assert.True(appAccount.Jetstream);
+        Assert.Single(appAccount.Users);
+        Assert.Equal("app-user", appAccount.Users[0].Username);
+        Assert.True(appAccount.Imports.Count > 15); // Has many imports
+        Assert.True(appAccount.Exports.Count > 20); // Has many exports
+        Assert.Single(appAccount.Mappings); // Has one mapping
+
+        // Assert - APP account imports with "to" mapping
+        var importWithTo = appAccount.Imports.FirstOrDefault(i => i.To != null);
+        Assert.NotNull(importWithTo);
+        Assert.NotNull(importWithTo.To);
+
+        // Assert - APP account exports with response_type
+        var exportWithResponseType = appAccount.Exports.FirstOrDefault(e => e.ResponseType != null);
+        Assert.NotNull(exportWithResponseType);
+
+        // Assert - LEAF-DMZ account
+        Assert.False(leafDmzAccount.Jetstream); // jetstream: disabled
+        Assert.True(leafDmzAccount.Exports.Count > 10);
+        Assert.True(leafDmzAccount.Imports.Count > 15);
     }
 
     [Fact]
@@ -399,7 +457,7 @@ jetstream {
         // Act
         var config = NatsConfigParser.ParseFile(configPath);
 
-        // Assert
+        // Assert - Basic properties
         Assert.NotNull(config);
         Assert.Equal("nats-hub", config.ServerName);
         Assert.Equal(4222, config.Port);
@@ -408,6 +466,64 @@ jetstream {
         Assert.Equal("hub", config.JetstreamDomain);
         Assert.Equal(7422, config.LeafNode.Port);
         Assert.False(config.DisableSublistCache);
+        Assert.Equal("SYS", config.SystemAccount);
+
+        // Assert - Leaf node advanced features
+        Assert.True(config.LeafNode.IsolateLeafnodeInterest);
+        Assert.Equal("10.0.0.21:7422", config.LeafNode.Advertise);
+
+        // Assert - Leaf node TLS with Windows cert store
+        Assert.NotNull(config.LeafNode.Tls);
+        Assert.Equal("WindowsLocalMachine", config.LeafNode.Tls.CertStore);
+        Assert.Equal("Subject", config.LeafNode.Tls.CertMatchBy);
+        Assert.Equal("nats-cert-hub", config.LeafNode.Tls.CertMatch);
+        Assert.True(config.LeafNode.Tls.HandshakeFirst);
+        Assert.Equal(60, config.LeafNode.Tls.Timeout);
+
+        // Assert - Leaf node authorization
+        Assert.NotNull(config.LeafNode.Authorization);
+        Assert.Equal("app-user", config.LeafNode.Authorization.User);
+        Assert.NotNull(config.LeafNode.Authorization.Password);
+        Assert.Equal("HUB-DMZ", config.LeafNode.Authorization.Account);
+        Assert.Equal(60, config.LeafNode.Authorization.Timeout);
+
+        // Assert - Accounts
+        Assert.Equal(3, config.Accounts.Count);
+        var sysAccount = config.Accounts.FirstOrDefault(a => a.Name == "SYS");
+        var appAccount = config.Accounts.FirstOrDefault(a => a.Name == "APP");
+        var hubDmzAccount = config.Accounts.FirstOrDefault(a => a.Name == "HUB-DMZ");
+
+        Assert.NotNull(sysAccount);
+        Assert.NotNull(appAccount);
+        Assert.NotNull(hubDmzAccount);
+
+        // Assert - SYS account
+        Assert.Single(sysAccount.Users);
+        Assert.Equal("admin", sysAccount.Users[0].Username);
+        Assert.Equal(3, sysAccount.Exports.Count);
+
+        // Assert - APP account
+        Assert.True(appAccount.Jetstream);
+        Assert.Single(appAccount.Users);
+        Assert.Equal("app-user", appAccount.Users[0].Username);
+        Assert.True(appAccount.Imports.Count > 20); // Has many imports
+        Assert.True(appAccount.Exports.Count > 10); // Has many exports
+
+        // Assert - APP account imports with "to" mapping
+        var importWithTo = appAccount.Imports.FirstOrDefault(i => i.To != null);
+        Assert.NotNull(importWithTo);
+        Assert.NotNull(importWithTo.To);
+
+        // Assert - HUB-DMZ account
+        Assert.False(hubDmzAccount.Jetstream); // jetstream: disabled
+        Assert.True(hubDmzAccount.Exports.Count > 20);
+        Assert.True(hubDmzAccount.Imports.Count > 10);
+
+        // Assert - HUB-DMZ account exports with response_type and response_threshold
+        var exportWithResponseType = hubDmzAccount.Exports.FirstOrDefault(e => e.ResponseType != null);
+        Assert.NotNull(exportWithResponseType);
+        var exportWithResponseThreshold = hubDmzAccount.Exports.FirstOrDefault(e => e.ResponseThreshold != null);
+        Assert.NotNull(exportWithResponseThreshold);
     }
 
     private string? FindRepositoryRoot()

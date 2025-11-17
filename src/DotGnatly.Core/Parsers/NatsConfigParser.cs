@@ -129,8 +129,7 @@ public class NatsConfigParser
                 ParseLeafNodesBlock(blockContent, config);
                 break;
             case "accounts":
-                // Accounts parsing would go here
-                // For now, we'll skip detailed account parsing as it requires more complex structures
+                ParseAccountsBlock(blockContent, config);
                 break;
         }
     }
@@ -196,14 +195,33 @@ public class NatsConfigParser
                     case "host":
                         config.LeafNode.Host = UnquoteString(value);
                         break;
+                    case "advertise":
+                        config.LeafNode.Advertise = UnquoteString(value);
+                        break;
+                    case "isolate_leafnode_interest":
+                        config.LeafNode.IsolateLeafnodeInterest = ParseBool(value);
+                        break;
+                    case "reconnect_delay":
+                        config.LeafNode.ReconnectDelay = value;
+                        break;
                 }
                 context.MoveNext();
             }
             else if (TryParseBlockStart(line, out var blockName))
             {
                 var blockContent = ExtractBlock(context);
-                // Handle nested blocks like 'remotes', 'tls', 'authorization'
-                // For now, we'll skip detailed parsing
+                switch (blockName.ToLowerInvariant())
+                {
+                    case "tls":
+                        config.LeafNode.Tls = ParseTlsBlock(blockContent);
+                        break;
+                    case "authorization":
+                        config.LeafNode.Authorization = ParseAuthorizationBlock(blockContent);
+                        break;
+                    case "remotes":
+                        ParseRemotesArray(blockContent, config.LeafNode);
+                        break;
+                }
             }
             else
             {
@@ -383,6 +401,468 @@ public class NatsConfigParser
             return value.Substring(1, value.Length - 2);
         }
         return value;
+    }
+
+    private static void ParseAccountsBlock(string content, BrokerConfiguration config)
+    {
+        var lines = content.Split('\n', StringSplitOptions.None);
+        var context = new ParseContext(lines);
+
+        while (context.HasMore())
+        {
+            var line = context.CurrentLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+            {
+                context.MoveNext();
+                continue;
+            }
+
+            // Check if this is an account name followed by a brace
+            var colonIndex = line.IndexOf(':');
+            if (colonIndex > 0 && line.TrimEnd().EndsWith("{"))
+            {
+                var accountName = line.Substring(0, colonIndex).Trim();
+                var accountContent = ExtractBlock(context);
+                var account = ParseAccountBlock(accountName, accountContent);
+                config.Accounts.Add(account);
+            }
+            else
+            {
+                context.MoveNext();
+            }
+        }
+    }
+
+    private static AccountConfiguration ParseAccountBlock(string name, string content)
+    {
+        var account = new AccountConfiguration { Name = name };
+        var lines = content.Split('\n', StringSplitOptions.None);
+        var context = new ParseContext(lines);
+
+        while (context.HasMore())
+        {
+            var line = context.CurrentLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+            {
+                context.MoveNext();
+                continue;
+            }
+
+            if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "jetstream":
+                        account.Jetstream = value.Equals("enabled", StringComparison.OrdinalIgnoreCase) ||
+                                          ParseBool(value);
+                        break;
+                }
+                context.MoveNext();
+            }
+            else if (TryParseBlockStart(line, out var blockName))
+            {
+                var blockContent = ExtractBlock(context);
+                switch (blockName.ToLowerInvariant())
+                {
+                    case "users":
+                        account.Users = ParseUsersArray(blockContent);
+                        break;
+                    case "imports":
+                        account.Imports = ParseImportsExportsArray(blockContent);
+                        break;
+                    case "exports":
+                        account.Exports = ParseImportsExportsArray(blockContent);
+                        break;
+                    case "mappings":
+                        account.Mappings = ParseMappingsBlock(blockContent);
+                        break;
+                }
+            }
+            else
+            {
+                context.MoveNext();
+            }
+        }
+
+        return account;
+    }
+
+    private static List<UserConfiguration> ParseUsersArray(string content)
+    {
+        var users = new List<UserConfiguration>();
+
+        // Remove array brackets and split by objects
+        content = content.Trim();
+        if (content.StartsWith("["))
+            content = content.Substring(1);
+        if (content.EndsWith("]"))
+            content = content.Substring(0, content.Length - 1);
+
+        // Simple parsing of user objects
+        var userMatches = System.Text.RegularExpressions.Regex.Matches(
+            content,
+            @"\{([^}]+)\}",
+            System.Text.RegularExpressions.RegexOptions.Singleline
+        );
+
+        foreach (System.Text.RegularExpressions.Match match in userMatches)
+        {
+            var userContent = match.Groups[1].Value;
+            var user = ParseUserObject(userContent);
+            users.Add(user);
+        }
+
+        return users;
+    }
+
+    private static UserConfiguration ParseUserObject(string content)
+    {
+        var user = new UserConfiguration();
+
+        // Parse key-value pairs within the user object
+        var pairs = content.Split(',');
+        foreach (var pair in pairs)
+        {
+            if (TryParseKeyValue(pair, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "user":
+                        user.User = UnquoteString(value);
+                        break;
+                    case "password":
+                        user.Password = UnquoteString(value);
+                        break;
+                    case "account":
+                        user.Account = UnquoteString(value);
+                        break;
+                }
+            }
+        }
+
+        return user;
+    }
+
+    private static List<ImportExportConfiguration> ParseImportsExportsArray(string content)
+    {
+        var items = new List<ImportExportConfiguration>();
+
+        // Remove array brackets
+        content = content.Trim();
+        if (content.StartsWith("["))
+            content = content.Substring(1);
+        if (content.EndsWith("]"))
+            content = content.Substring(0, content.Length - 1);
+
+        // Parse each import/export object
+        var objectMatches = System.Text.RegularExpressions.Regex.Matches(
+            content,
+            @"\{([^}]+)\}",
+            System.Text.RegularExpressions.RegexOptions.Singleline
+        );
+
+        foreach (System.Text.RegularExpressions.Match match in objectMatches)
+        {
+            var objectContent = match.Groups[1].Value;
+            var item = ParseImportExportObject(objectContent);
+            items.Add(item);
+        }
+
+        return items;
+    }
+
+    private static ImportExportConfiguration ParseImportExportObject(string content)
+    {
+        var item = new ImportExportConfiguration();
+
+        // Determine if this is a stream or service
+        if (content.Contains("stream:") || content.Contains("stream "))
+            item.Type = "stream";
+        else if (content.Contains("service:") || content.Contains("service "))
+            item.Type = "service";
+
+        // Parse the content
+        var pairs = content.Split(',');
+        foreach (var pair in pairs)
+        {
+            if (TryParseKeyValue(pair, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "subject":
+                        item.Subject = UnquoteString(value);
+                        break;
+                    case "account":
+                        item.Account = UnquoteString(value);
+                        break;
+                    case "to":
+                        item.To = UnquoteString(value);
+                        break;
+                    case "response_type":
+                        item.ResponseType = UnquoteString(value);
+                        break;
+                    case "response_threshold":
+                        item.ResponseThreshold = UnquoteString(value);
+                        break;
+                }
+            }
+            else if (pair.Contains(":"))
+            {
+                // Handle nested objects like {account: SYS, subject: "..."}
+                var nestedMatch = System.Text.RegularExpressions.Regex.Match(
+                    pair,
+                    @"(stream|service)\s*:\s*\{([^}]+)\}"
+                );
+                if (nestedMatch.Success)
+                {
+                    item.Type = nestedMatch.Groups[1].Value;
+                    var nestedContent = nestedMatch.Groups[2].Value;
+                    var nestedPairs = nestedContent.Split(',');
+                    foreach (var nestedPair in nestedPairs)
+                    {
+                        if (TryParseKeyValue(nestedPair, out var nk, out var nv))
+                        {
+                            switch (nk.ToLowerInvariant())
+                            {
+                                case "subject":
+                                    item.Subject = UnquoteString(nv);
+                                    break;
+                                case "account":
+                                    item.Account = UnquoteString(nv);
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return item;
+    }
+
+    private static Dictionary<string, string> ParseMappingsBlock(string content)
+    {
+        var mappings = new Dictionary<string, string>();
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+                continue;
+
+            if (TryParseKeyValue(trimmed, out var key, out var value))
+            {
+                mappings[UnquoteString(key)] = UnquoteString(value);
+            }
+        }
+
+        return mappings;
+    }
+
+    private static TlsConfiguration ParseTlsBlock(string content)
+    {
+        var tls = new TlsConfiguration();
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var line in lines)
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+                continue;
+
+            if (TryParseKeyValue(trimmed, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "cert_file":
+                        tls.CertFile = UnquoteString(value);
+                        break;
+                    case "key_file":
+                        tls.KeyFile = UnquoteString(value);
+                        break;
+                    case "ca_cert_file":
+                    case "ca_file":
+                        tls.CaCertFile = UnquoteString(value);
+                        break;
+                    case "verify_client_certs":
+                    case "verify":
+                        tls.VerifyClientCerts = ParseBool(value);
+                        break;
+                    case "timeout":
+                        tls.Timeout = ParseInt(value);
+                        break;
+                    case "handshake_first":
+                        tls.HandshakeFirst = ParseBool(value);
+                        break;
+                    case "insecure":
+                        tls.Insecure = ParseBool(value);
+                        break;
+                    case "cert_store":
+                        tls.CertStore = UnquoteString(value);
+                        break;
+                    case "cert_match_by":
+                        tls.CertMatchBy = UnquoteString(value);
+                        break;
+                    case "cert_match":
+                        tls.CertMatch = UnquoteString(value);
+                        break;
+                    case "pinned_certs":
+                        tls.PinnedCerts = ParseStringArray(value);
+                        break;
+                }
+            }
+        }
+
+        return tls;
+    }
+
+    private static AuthorizationConfiguration ParseAuthorizationBlock(string content)
+    {
+        var auth = new AuthorizationConfiguration();
+        var lines = content.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var context = new ParseContext(lines);
+
+        while (context.HasMore())
+        {
+            var line = context.CurrentLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+            {
+                context.MoveNext();
+                continue;
+            }
+
+            if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "timeout":
+                        auth.Timeout = ParseInt(value);
+                        break;
+                    case "user":
+                        auth.User = UnquoteString(value);
+                        break;
+                    case "password":
+                        auth.Password = UnquoteString(value);
+                        break;
+                    case "account":
+                        auth.Account = UnquoteString(value);
+                        break;
+                    case "token":
+                        auth.Token = UnquoteString(value);
+                        break;
+                }
+                context.MoveNext();
+            }
+            else if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "users")
+            {
+                var blockContent = ExtractBlock(context);
+                auth.Users = ParseUsersArray(blockContent);
+            }
+            else
+            {
+                context.MoveNext();
+            }
+        }
+
+        return auth;
+    }
+
+    private static void ParseRemotesArray(string content, LeafNodeConfiguration leafNode)
+    {
+        // Remove array brackets
+        content = content.Trim();
+        if (content.StartsWith("["))
+            content = content.Substring(1);
+        if (content.EndsWith("]"))
+            content = content.Substring(0, content.Length - 1);
+
+        // Parse each remote object
+        var objectMatches = System.Text.RegularExpressions.Regex.Matches(
+            content,
+            @"\{([^}]*(?:\{[^}]*\}[^}]*)*)\}",
+            System.Text.RegularExpressions.RegexOptions.Singleline
+        );
+
+        foreach (System.Text.RegularExpressions.Match match in objectMatches)
+        {
+            var objectContent = match.Groups[1].Value;
+            var remote = ParseRemoteObject(objectContent);
+            leafNode.Remotes.Add(remote);
+        }
+    }
+
+    private static LeafNodeRemoteConfiguration ParseRemoteObject(string content)
+    {
+        var remote = new LeafNodeRemoteConfiguration();
+        var lines = content.Split('\n', StringSplitOptions.None);
+        var context = new ParseContext(lines);
+
+        while (context.HasMore())
+        {
+            var line = context.CurrentLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
+            {
+                context.MoveNext();
+                continue;
+            }
+
+            if (TryParseKeyValue(line, out var key, out var value))
+            {
+                switch (key.ToLowerInvariant())
+                {
+                    case "urls":
+                        remote.Urls = ParseStringArray(value);
+                        break;
+                    case "account":
+                        remote.Account = UnquoteString(value);
+                        break;
+                    case "credentials":
+                        remote.Credentials = UnquoteString(value);
+                        break;
+                    case "first_info_timeout":
+                        remote.FirstInfoTimeout = value;
+                        break;
+                }
+                context.MoveNext();
+            }
+            else if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "tls")
+            {
+                var blockContent = ExtractBlock(context);
+                remote.Tls = ParseTlsBlock(blockContent);
+            }
+            else
+            {
+                context.MoveNext();
+            }
+        }
+
+        return remote;
+    }
+
+    private static List<string> ParseStringArray(string value)
+    {
+        var result = new List<string>();
+
+        // Remove brackets
+        value = value.Trim();
+        if (value.StartsWith("["))
+            value = value.Substring(1);
+        if (value.EndsWith("]"))
+            value = value.Substring(0, value.Length - 1);
+
+        // Split by comma and clean up
+        var items = value.Split(',');
+        foreach (var item in items)
+        {
+            var cleaned = UnquoteString(item.Trim());
+            if (!string.IsNullOrWhiteSpace(cleaned))
+            {
+                result.Add(cleaned);
+            }
+        }
+
+        return result;
     }
 
     private class ParseContext
