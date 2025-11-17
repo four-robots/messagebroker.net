@@ -1,0 +1,9 @@
+{
+  "bucket": "USER_SESSIONS",
+  "description": "User session storage with 2-hour TTL and memory storage",
+  "max_history_per_key": 1,
+  "ttl": 7200000000000,
+  "max_bucket_size": 5242880,
+  "replicas": 1,
+  "storage": "memory"
+}

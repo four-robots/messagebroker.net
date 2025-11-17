@@ -1,0 +1,9 @@
+{
+  "bucket": "CONFIG_STORE",
+  "description": "Application configuration with version history and no expiration",
+  "max_history_per_key": 10,
+  "ttl": 0,
+  "max_bucket_size": 104857600,
+  "replicas": 1,
+  "storage": "file"
+}

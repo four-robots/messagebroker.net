@@ -1,0 +1,9 @@
+{
+  "bucket": "USER_PROFILES",
+  "description": "User profile storage with persistent file storage",
+  "max_history_per_key": 3,
+  "ttl": 0,
+  "max_bucket_size": 52428800,
+  "replicas": 1,
+  "storage": "file"
+}
