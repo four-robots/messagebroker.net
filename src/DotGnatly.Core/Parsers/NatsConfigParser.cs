@@ -291,15 +291,41 @@ public class NatsConfigParser
     {
         blockName = string.Empty;
 
-        // Check if line has an opening brace (could be inline block or multi-line block)
+        // Check if line has an opening brace
         var openBraceIndex = line.IndexOf('{');
-        if (openBraceIndex >= 0)
+        if (openBraceIndex < 0)
         {
-            blockName = line.Substring(0, openBraceIndex).Trim();
-            return !string.IsNullOrWhiteSpace(blockName);
+            return false;
         }
 
-        return false;
+        // Check if there's a key-value separator (: or =) before the brace
+        // If so, the brace is part of a value, not a block start
+        var colonIndex = line.IndexOf(':');
+        var equalsIndex = line.IndexOf('=');
+
+        int separatorIndex = -1;
+        if (colonIndex >= 0 && equalsIndex >= 0)
+        {
+            separatorIndex = Math.Min(colonIndex, equalsIndex);
+        }
+        else if (colonIndex >= 0)
+        {
+            separatorIndex = colonIndex;
+        }
+        else if (equalsIndex >= 0)
+        {
+            separatorIndex = equalsIndex;
+        }
+
+        // If separator comes before the brace, this is a value, not a block
+        if (separatorIndex >= 0 && separatorIndex < openBraceIndex)
+        {
+            return false;
+        }
+
+        // This is a block start (either inline or multi-line)
+        blockName = line.Substring(0, openBraceIndex).Trim();
+        return !string.IsNullOrWhiteSpace(blockName);
     }
 
     private static bool IsInlineBlock(string line)
