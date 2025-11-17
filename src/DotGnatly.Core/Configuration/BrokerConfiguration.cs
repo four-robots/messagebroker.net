@@ -101,6 +101,31 @@ public class BrokerConfiguration : ICloneable
     [JsonPropertyName("logFileSize")]
     public long LogFileSize { get; set; } = 0;
 
+    /// <summary>
+    /// Gets or sets the maximum number of log files to retain during rotation.
+    /// 0 means no limit.
+    /// </summary>
+    [JsonPropertyName("logFileMaxNum")]
+    public int LogFileMaxNum { get; set; } = 0;
+
+    /// <summary>
+    /// Gets or sets the server name identifier.
+    /// </summary>
+    [JsonPropertyName("serverName")]
+    public string? ServerName { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to disable the subject list cache.
+    /// </summary>
+    [JsonPropertyName("disableSublistCache")]
+    public bool DisableSublistCache { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the system account name for NATS server events and monitoring.
+    /// </summary>
+    [JsonPropertyName("systemAccount")]
+    public string? SystemAccount { get; set; }
+
     // JetStream Configuration
 
     /// <summary>
@@ -208,6 +233,10 @@ public class BrokerConfiguration : ICloneable
             LogFile = LogFile,
             LogTimeUtc = LogTimeUtc,
             LogFileSize = LogFileSize,
+            LogFileMaxNum = LogFileMaxNum,
+            ServerName = ServerName,
+            DisableSublistCache = DisableSublistCache,
+            SystemAccount = SystemAccount,
             Jetstream = Jetstream,
             JetstreamStoreDir = JetstreamStoreDir,
             JetstreamMaxMemory = JetstreamMaxMemory,
