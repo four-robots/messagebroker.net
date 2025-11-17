@@ -43,11 +43,11 @@ public class NatsControllerMonitoringTests : IDisposable
         var config = new BrokerConfiguration
         {
             Host = "127.0.0.1",
-            Port = 14222
+            Port = 4222
         };
 
         var successJson = "{\"status\": \"success\"}";
-        var infoJson = "{\"port\": 14222, \"host\": \"127.0.0.1\"}";
+        var infoJson = "{\"port\": 4222, \"host\": \"127.0.0.1\"}";
 
         _mockBindings.Setup(b => b.StartServer(It.IsAny<string>()))
             .Returns(CreateManagedString(successJson));
