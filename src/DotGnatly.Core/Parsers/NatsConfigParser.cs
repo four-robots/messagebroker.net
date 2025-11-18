@@ -219,7 +219,15 @@ public class NatsConfigParser
                 }
                 else
                 {
-                    blockContent = ExtractBlock(context);
+                    // Determine if we're extracting a block {...} or array [...]
+                    if (line.Contains('['))
+                    {
+                        blockContent = ExtractArray(context);
+                    }
+                    else
+                    {
+                        blockContent = ExtractBlock(context);
+                    }
                 }
 
                 switch (blockName.ToLowerInvariant())
@@ -306,15 +314,36 @@ public class NatsConfigParser
     {
         blockName = string.Empty;
 
-        // Check if line has an opening brace
+        // Check if line has an opening brace or bracket
         var openBraceIndex = line.IndexOf('{');
-        if (openBraceIndex < 0)
+        var openBracketIndex = line.IndexOf('[');
+
+        int openIndex = -1;
+        if (openBraceIndex >= 0 && openBracketIndex >= 0)
+        {
+            openIndex = Math.Min(openBraceIndex, openBracketIndex);
+        }
+        else if (openBraceIndex >= 0)
+        {
+            openIndex = openBraceIndex;
+        }
+        else if (openBracketIndex >= 0)
+        {
+            openIndex = openBracketIndex;
+        }
+
+        if (openIndex < 0)
         {
             return false;
         }
 
-        // Extract the block name (everything before the opening brace)
-        blockName = line.Substring(0, openBraceIndex).Trim();
+        // Extract the block name (everything before the opening brace/bracket)
+        blockName = line.Substring(0, openIndex).Trim();
+        // Remove trailing colon or equals if present
+        if (blockName.EndsWith(":") || blockName.EndsWith("="))
+        {
+            blockName = blockName.Substring(0, blockName.Length - 1).Trim();
+        }
         return !string.IsNullOrWhiteSpace(blockName);
     }
 
@@ -355,6 +384,34 @@ public class NatsConfigParser
             }
 
             if (braceCount > 0)
+            {
+                sb.AppendLine(line);
+            }
+
+            context.MoveNext();
+        }
+
+        return sb.ToString();
+    }
+
+    private static string ExtractArray(ParseContext context)
+    {
+        var sb = new StringBuilder();
+        var bracketCount = 1; // We already encountered the opening bracket
+        context.MoveNext();
+
+        while (context.HasMore() && bracketCount > 0)
+        {
+            var line = context.CurrentLine;
+
+            // Count brackets
+            foreach (var ch in line)
+            {
+                if (ch == '[') bracketCount++;
+                if (ch == ']') bracketCount--;
+            }
+
+            if (bracketCount > 0)
             {
                 sb.AppendLine(line);
             }
@@ -509,7 +566,8 @@ public class NatsConfigParser
             }
             else if (TryParseBlockStart(line, out var blockName))
             {
-                var blockContent = ExtractBlock(context);
+                // Determine if we're extracting a block {...} or array [...]
+                var blockContent = line.Contains('[') ? ExtractArray(context) : ExtractBlock(context);
                 switch (blockName.ToLowerInvariant())
                 {
                     case "users":
@@ -819,7 +877,8 @@ public class NatsConfigParser
                 // Check for blocks BEFORE key-value pairs
                 if (TryParseBlockStart(line, out var blockName) && blockName.ToLowerInvariant() == "users")
                 {
-                    var blockContent = ExtractBlock(context);
+                    // Determine if we're extracting a block {...} or array [...]
+                    var blockContent = line.Contains('[') ? ExtractArray(context) : ExtractBlock(context);
                     auth.Users = ParseUsersArray(blockContent);
                 }
                 else if (TryParseKeyValue(line, out var key, out var value))
