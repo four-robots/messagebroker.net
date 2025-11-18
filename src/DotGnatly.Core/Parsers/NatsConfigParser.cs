@@ -19,8 +19,14 @@ public class NatsConfigParser
     /// </summary>
     /// <param name="filePath">Path to the NATS config file</param>
     /// <returns>A BrokerConfiguration instance with parsed values</returns>
+    /// <exception cref="FileNotFoundException">Thrown when the specified file does not exist</exception>
     public static BrokerConfiguration ParseFile(string filePath)
     {
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"Configuration file not found: {filePath}", filePath);
+        }
+
         var content = File.ReadAllText(filePath);
         return Parse(content);
     }
