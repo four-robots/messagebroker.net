@@ -702,10 +702,11 @@ public class NatsConfigParser
     {
         var item = new ImportExportConfiguration();
 
-        // First, check if we have a nested object pattern: stream: {...} or service: {...}
+        // Check if we have a nested object pattern: stream: {...} or service: {...}
+        // Handle both with and without closing brace: "stream: {account: SYS, subject: foo}" or "stream: {account: SYS, subject: foo"
         var nestedMatch = System.Text.RegularExpressions.Regex.Match(
             content,
-            @"(stream|service)\s*:\s*\{([^}]+)\}",
+            @"(stream|service)\s*:\s*\{(.+?)(?:\}|$)",
             System.Text.RegularExpressions.RegexOptions.Singleline
         );
 
@@ -713,7 +714,7 @@ public class NatsConfigParser
         {
             // Handle nested object: {stream: {account: SYS, subject: orders.>}}
             item.Type = nestedMatch.Groups[1].Value;
-            var nestedContent = nestedMatch.Groups[2].Value;
+            var nestedContent = nestedMatch.Groups[2].Value.TrimEnd('}'); // Remove any trailing }
 
             // Parse nested content (can be comma-separated or newline-separated)
             var lines = nestedContent.Split(new[] { ',', '\n' }, StringSplitOptions.RemoveEmptyEntries);
