@@ -98,7 +98,7 @@ public class ConfigurationMapperTests
     }
 
     [Fact]
-    public void MapToServerConfig_AuthConfiguration_MapsCorrectly()
+    public void MapToServerConfig_AuthConfiguration_WithUsernamePassword_MapsCorrectly()
     {
         // Arrange
         var brokerConfig = new BrokerConfiguration
@@ -107,8 +107,7 @@ public class ConfigurationMapperTests
             {
                 Username = "testuser",
                 Password = "testpass",
-                Token = "testtoken",
-                AllowedUsers = new List<string> { "user1", "user2" }
+                Token = "testtoken"
             }
         };
 
@@ -120,6 +119,31 @@ public class ConfigurationMapperTests
         Assert.Equal("testuser", serverConfig.Auth.Username);
         Assert.Equal("testpass", serverConfig.Auth.Password);
         Assert.Equal("testtoken", serverConfig.Auth.Token);
+        Assert.Null(serverConfig.Auth.AllowedUsers); // Should be null when using username/password
+    }
+
+    [Fact]
+    public void MapToServerConfig_AuthConfiguration_WithAllowedUsers_MapsCorrectly()
+    {
+        // Arrange
+        var brokerConfig = new BrokerConfiguration
+        {
+            Auth = new AuthConfiguration
+            {
+                Token = "testtoken",
+                AllowedUsers = new List<string> { "user1", "user2" }
+            }
+        };
+
+        // Act
+        var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
+
+        // Assert
+        Assert.NotNull(serverConfig.Auth);
+        Assert.Null(serverConfig.Auth.Username); // Should be null when using AllowedUsers
+        Assert.Null(serverConfig.Auth.Password); // Should be null when using AllowedUsers
+        Assert.Equal("testtoken", serverConfig.Auth.Token);
+        Assert.NotNull(serverConfig.Auth.AllowedUsers);
         Assert.Equal(2, serverConfig.Auth.AllowedUsers.Count);
         Assert.Contains("user1", serverConfig.Auth.AllowedUsers);
         Assert.Contains("user2", serverConfig.Auth.AllowedUsers);
@@ -314,7 +338,7 @@ public class ConfigurationMapperTests
     [Fact]
     public void RoundTrip_BrokerToServerToBroker_PreservesValues()
     {
-        // Arrange
+        // Arrange - Use only username/password (not AllowedUsers) to avoid NATS validation conflict
         var original = new BrokerConfiguration
         {
             Host = "testhost",
@@ -326,8 +350,7 @@ public class ConfigurationMapperTests
             Auth = new AuthConfiguration
             {
                 Username = "user",
-                Password = "pass",
-                AllowedUsers = new List<string> { "user1" }
+                Password = "pass"
             },
             LeafNode = new LeafNodeConfiguration
             {
@@ -356,7 +379,7 @@ public class ConfigurationMapperTests
     }
 
     [Fact]
-    public void MapToServerConfig_WithNullAuth_CreatesDefaultAuth()
+    public void MapToServerConfig_WithNullAuth_ReturnsNullAuth()
     {
         // Arrange
         var brokerConfig = new BrokerConfiguration();
@@ -364,8 +387,8 @@ public class ConfigurationMapperTests
         // Act
         var serverConfig = ConfigurationMapper.MapToServerConfig(brokerConfig);
 
-        // Assert
-        Assert.NotNull(serverConfig.Auth);
+        // Assert - When no auth is configured, Auth should be null to avoid NATS validation errors
+        Assert.Null(serverConfig.Auth);
     }
 
     [Fact]
