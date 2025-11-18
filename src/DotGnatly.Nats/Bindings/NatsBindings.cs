@@ -55,6 +55,10 @@ internal interface INatsBindings
     // Logging and configuration management
     IntPtr ReOpenLogFile();
     IntPtr GetOpts();
+
+    // Log streaming (for testing/debugging)
+    IntPtr SetupLogPipe(string pipePath);
+    IntPtr CloseLogPipe();
 }
 
 internal sealed class WindowsNatsBindings : INatsBindings
@@ -248,6 +252,16 @@ internal sealed class WindowsNatsBindings : INatsBindings
     internal static extern IntPtr _getOpts();
 
     public IntPtr GetOpts() => _getOpts();
+
+    [DllImport("nats-bindings.dll", EntryPoint = "SetupLogPipe")]
+    internal static extern IntPtr _setupLogPipe(string pipePath);
+
+    public IntPtr SetupLogPipe(string pipePath) => _setupLogPipe(pipePath);
+
+    [DllImport("nats-bindings.dll", EntryPoint = "CloseLogPipe")]
+    internal static extern IntPtr _closeLogPipe();
+
+    public IntPtr CloseLogPipe() => _closeLogPipe();
 }
 
 
@@ -442,4 +456,14 @@ internal sealed class LinuxNatsBindings : INatsBindings
     internal static extern IntPtr _getOpts();
 
     public IntPtr GetOpts() => _getOpts();
+
+    [DllImport("nats-bindings.so", EntryPoint = "SetupLogPipe")]
+    internal static extern IntPtr _setupLogPipe(string pipePath);
+
+    public IntPtr SetupLogPipe(string pipePath) => _setupLogPipe(pipePath);
+
+    [DllImport("nats-bindings.so", EntryPoint = "CloseLogPipe")]
+    internal static extern IntPtr _closeLogPipe();
+
+    public IntPtr CloseLogPipe() => _closeLogPipe();
 }

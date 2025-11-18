@@ -135,6 +135,7 @@ dotnet run --project src/MessageBroker.IntegrationTests/MessageBroker.Integratio
 - Shows individual test start/completion
 - Shows detailed test output from test methods
 - Shows full stack traces for exceptions
+- **Shows NATS server logs in real-time** (Linux/macOS only)
 - Ideal for debugging test failures
 
 ### Expected Output (Standard Mode)
@@ -259,3 +260,31 @@ When adding new features to DotGnatly:
 - Each test cleans up its resources (servers are properly shut down)
 - Tests use different ports to avoid conflicts
 - The test framework provides detailed error messages for failures
+
+## NATS Server Log Streaming
+
+In verbose mode on Linux/macOS, the integration tests capture and display NATS server logs in real-time using lock-free Unix domain sockets. This provides:
+
+- **Real-time debugging**: See exactly what the NATS server is doing during tests
+- **Zero performance impact**: OS-buffered streaming with no application-level locks
+- **Automatic cleanup**: Logs are captured per-test-run and cleaned up automatically
+
+The log streaming uses a Unix domain socket connection from the native Go bindings to the .NET test framework, providing lock-free, high-performance log capture without any mutex contention.
+
+**Platform Support:**
+- ✅ Linux: Full support via Unix domain sockets
+- ✅ macOS: Full support via Unix domain sockets
+- ❌ Windows: Not currently supported (could be added via Named Pipes)
+
+**Example verbose output with NATS logs:**
+```
+[1/12] Running MultiServerTests...
+------------------------------------------------------------
+  → Starting: Multiple servers on different ports can start simultaneously
+[NATS] [INF] Starting nats-server
+[NATS] [INF]   Version:  2.11.0
+[NATS] [INF]   Git:      [not set]
+[NATS] [INF]   Listening on 127.0.0.1:14222
+[NATS] [INF]   Server is ready
+  ✓ Multiple servers on different ports can start simultaneously
+```

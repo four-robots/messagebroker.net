@@ -1522,6 +1522,37 @@ public class NatsController : IBrokerController, IDisposable
         return response.StartsWith("ERROR: ", StringComparison.OrdinalIgnoreCase);
     }
 
+    #region Log Streaming (Internal - for testing)
+
+    /// <summary>
+    /// Sets up log streaming to a Unix domain socket (for integration tests).
+    /// Internal use only - logs will be streamed to the specified pipe path.
+    /// </summary>
+    /// <param name="pipePath">Path to Unix domain socket</param>
+    /// <returns>Success message or error</returns>
+    internal string SetupLogPipe(string pipePath)
+    {
+        var response = _bindings.SetupLogPipe(pipePath);
+        var result = Marshal.PtrToStringAnsi(response) ?? "ERROR: Failed to setup log pipe";
+        _bindings.FreeString(response);
+        return result;
+    }
+
+    /// <summary>
+    /// Closes the log streaming pipe.
+    /// Internal use only - called by test cleanup.
+    /// </summary>
+    /// <returns>Success message or error</returns>
+    internal string CloseLogPipe()
+    {
+        var response = _bindings.CloseLogPipe();
+        var result = Marshal.PtrToStringAnsi(response) ?? "ERROR: Failed to close log pipe";
+        _bindings.FreeString(response);
+        return result;
+    }
+
+    #endregion
+
     /// <summary>
     /// Disposes the controller and releases all resources.
     /// </summary>

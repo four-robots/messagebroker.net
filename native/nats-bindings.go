@@ -7,7 +7,9 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 	"unsafe"
@@ -22,6 +24,10 @@ var (
 	natsServers = make(map[int]*server.Server)
 	currentPort int // Most recently started server port (for GetServerInfo/GetClientURL)
 	serverMu    sync.Mutex
+
+	// Log pipe connection for streaming logs to .NET (lock-free logging)
+	logPipeConn net.Conn
+	logPipePath string
 )
 
 // ServerConfig represents the configuration for the NATS server
@@ -104,6 +110,49 @@ func containsAllSubjects(subjects []string) bool {
 		}
 	}
 	return false
+}
+
+// PipeLogger writes logs to a Unix domain socket or named pipe (lock-free)
+type PipeLogger struct {
+	conn net.Conn
+}
+
+func (pl *PipeLogger) Write(p []byte) (n int, err error) {
+	if pl.conn == nil {
+		// Fallback to stdout if pipe not connected
+		return os.Stdout.Write(p)
+	}
+
+	// Write to pipe (OS handles buffering and synchronization - no application locks!)
+	n, err = pl.conn.Write(p)
+	if err != nil {
+		// If pipe write fails, fallback to stdout
+		return os.Stdout.Write(p)
+	}
+	return n, nil
+}
+
+//export SetupLogPipe
+func SetupLogPipe(pipePath *C.char) *C.char {
+	logPipePath = C.GoString(pipePath)
+
+	// Connect to Unix domain socket (created by C# side)
+	conn, err := net.Dial("unix", logPipePath)
+	if err != nil {
+		return C.CString(fmt.Sprintf("ERROR: Failed to connect to log pipe: %v", err))
+	}
+
+	logPipeConn = conn
+	return C.CString("OK")
+}
+
+//export CloseLogPipe
+func CloseLogPipe() *C.char {
+	if logPipeConn != nil {
+		logPipeConn.Close()
+		logPipeConn = nil
+	}
+	return C.CString("OK")
 }
 
 // convertToNatsOptions converts our config to NATS server options
@@ -316,7 +365,14 @@ func createAndStartServer(opts *server.Options) error {
 	}
 
 	// Configure logger
-	newServer.ConfigureLogger()
+	// If log pipe is configured, use pipe logger (lock-free streaming to .NET)
+	// Otherwise, use standard logger configuration
+	if logPipeConn != nil {
+		pipeLogger := &PipeLogger{conn: logPipeConn}
+		newServer.SetLogger(pipeLogger, opts.Debug, opts.Trace)
+	} else {
+		newServer.ConfigureLogger()
+	}
 
 	// Start server in goroutine
 	go newServer.Start()

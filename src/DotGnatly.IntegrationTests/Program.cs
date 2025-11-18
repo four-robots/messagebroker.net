@@ -14,30 +14,41 @@ if (verbose)
     Console.WriteLine();
 }
 
-var testRunner = new IntegrationTestRunner();
-var results = await testRunner.RunAllTestsAsync(verbose);
+// Initialize NATS log streaming (if verbose and on supported platform)
+NatsLogHelper.Initialize(verbose);
 
-Console.WriteLine();
-Console.WriteLine("========================================");
-Console.WriteLine("Test Results Summary");
-Console.WriteLine("========================================");
-Console.WriteLine($"Total Tests: {results.TotalTests}");
-Console.WriteLine($"Passed: {results.PassedTests}");
-Console.WriteLine($"Failed: {results.FailedTests}");
-Console.WriteLine($"Success Rate: {results.SuccessRate:F1}%");
-Console.WriteLine();
-
-if (results.FailedTests > 0)
+try
 {
-    Console.WriteLine("Failed Tests:");
-    foreach (var failure in results.Failures)
+    var testRunner = new IntegrationTestRunner();
+    var results = await testRunner.RunAllTestsAsync(verbose);
+
+    Console.WriteLine();
+    Console.WriteLine("========================================");
+    Console.WriteLine("Test Results Summary");
+    Console.WriteLine("========================================");
+    Console.WriteLine($"Total Tests: {results.TotalTests}");
+    Console.WriteLine($"Passed: {results.PassedTests}");
+    Console.WriteLine($"Failed: {results.FailedTests}");
+    Console.WriteLine($"Success Rate: {results.SuccessRate:F1}%");
+    Console.WriteLine();
+
+    if (results.FailedTests > 0)
     {
-        Console.WriteLine($"  - {failure}");
+        Console.WriteLine("Failed Tests:");
+        foreach (var failure in results.Failures)
+        {
+            Console.WriteLine($"  - {failure}");
+        }
+        Environment.Exit(1);
     }
-    Environment.Exit(1);
+    else
+    {
+        Console.WriteLine("✓ All integration tests passed!");
+        Environment.Exit(0);
+    }
 }
-else
+finally
 {
-    Console.WriteLine("✓ All integration tests passed!");
-    Environment.Exit(0);
+    // Cleanup NATS log streaming
+    NatsLogHelper.Shutdown();
 }
