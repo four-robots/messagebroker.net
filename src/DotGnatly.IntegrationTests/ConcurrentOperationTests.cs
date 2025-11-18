@@ -70,11 +70,16 @@ public class ConcurrentOperationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration { Port = 17422 }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 var tasks = new List<Task>();
                 for (int i = 0; i < 5; i++)

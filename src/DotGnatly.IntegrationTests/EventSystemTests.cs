@@ -142,7 +142,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -151,6 +151,11 @@ public class EventSystemTests : IIntegrationTest
                         ImportSubjects = new List<string> { "old.>" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 bool changingFired = false;
                 bool changedFired = false;
@@ -170,7 +175,7 @@ public class EventSystemTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -178,6 +183,11 @@ public class EventSystemTests : IIntegrationTest
                         ImportSubjects = new List<string> { "original.>" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 server.ConfigurationChanging += (sender, args) =>
                 {
