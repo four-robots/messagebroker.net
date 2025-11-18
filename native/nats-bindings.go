@@ -113,23 +113,54 @@ func containsAllSubjects(subjects []string) bool {
 }
 
 // PipeLogger writes logs to a Unix domain socket or named pipe (lock-free)
+// Implements server.Logger interface
 type PipeLogger struct {
 	conn net.Conn
 }
 
-func (pl *PipeLogger) Write(p []byte) (n int, err error) {
+func (pl *PipeLogger) write(p []byte) {
 	if pl.conn == nil {
 		// Fallback to stdout if pipe not connected
-		return os.Stdout.Write(p)
+		os.Stdout.Write(p)
+		return
 	}
 
 	// Write to pipe (OS handles buffering and synchronization - no application locks!)
-	n, err = pl.conn.Write(p)
+	_, err := pl.conn.Write(p)
 	if err != nil {
 		// If pipe write fails, fallback to stdout
-		return os.Stdout.Write(p)
+		os.Stdout.Write(p)
 	}
-	return n, nil
+}
+
+// Noticef logs a notice statement
+func (pl *PipeLogger) Noticef(format string, v ...interface{}) {
+	pl.write([]byte(fmt.Sprintf("[INF] "+format+"\n", v...)))
+}
+
+// Warnf logs a warning statement
+func (pl *PipeLogger) Warnf(format string, v ...interface{}) {
+	pl.write([]byte(fmt.Sprintf("[WRN] "+format+"\n", v...)))
+}
+
+// Errorf logs an error statement
+func (pl *PipeLogger) Errorf(format string, v ...interface{}) {
+	pl.write([]byte(fmt.Sprintf("[ERR] "+format+"\n", v...)))
+}
+
+// Fatalf logs a fatal error
+func (pl *PipeLogger) Fatalf(format string, v ...interface{}) {
+	pl.write([]byte(fmt.Sprintf("[FTL] "+format+"\n", v...)))
+}
+
+// Debugf logs a debug statement
+func (pl *PipeLogger) Debugf(format string, v ...interface{}) {
+	pl.write([]byte(fmt.Sprintf("[DBG] "+format+"\n", v...)))
+}
+
+// Tracef logs a trace statement
+func (pl *PipeLogger) Tracef(format string, v ...interface{}) {
+	pl.write([]byte(fmt.Sprintf("[TRC] "+format+"\n", v...)))
 }
 
 //export SetupLogPipe
