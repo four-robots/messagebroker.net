@@ -14,7 +14,7 @@ public class ServerConfig
     public int Port { get; set; } = 4222;
 
     [JsonPropertyName("max_payload")]
-    public int MaxPayload { get; set; } = 1048576; // 1MB
+    public long MaxPayload { get; set; } = 1048576; // 1MB
 
     [JsonPropertyName("max_control_line")]
     public int MaxControlLine { get; set; } = 4096;
