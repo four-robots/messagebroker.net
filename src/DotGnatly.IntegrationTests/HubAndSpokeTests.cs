@@ -31,7 +31,7 @@ public class HubAndSpokeTests : IIntegrationTest
             {
                 // Start hub server with leaf node port enabled
                 using var hub = new NatsController();
-                await hub.ConfigureAsync(new BrokerConfiguration
+                var hubConfigResult = await hub.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -41,12 +41,17 @@ public class HubAndSpokeTests : IIntegrationTest
                     }
                 });
 
+                if (!hubConfigResult.Success)
+                {
+                    throw new Exception($"Hub configuration failed: {hubConfigResult.ErrorMessage}");
+                }
+
                 // Wait for hub to be ready
                 await hub.WaitForReadyAsync(timeoutSeconds: 5);
 
                 // Start leaf node that connects to hub
                 using var leaf = new NatsController();
-                await leaf.ConfigureAsync(new BrokerConfiguration
+                var leafConfigResult = await leaf.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14223,
                     LeafNode = new LeafNodeConfiguration
@@ -55,6 +60,11 @@ public class HubAndSpokeTests : IIntegrationTest
                         ImportSubjects = new List<string> { "hub.>" } // Import from hub
                     }
                 });
+
+                if (!leafConfigResult.Success)
+                {
+                    throw new Exception($"Leaf configuration failed: {leafConfigResult.ErrorMessage}");
+                }
 
                 // Wait for leaf to be ready
                 await leaf.WaitForReadyAsync(timeoutSeconds: 5);
@@ -118,7 +128,7 @@ public class HubAndSpokeTests : IIntegrationTest
             {
                 // Start hub server
                 using var hub = new NatsController();
-                await hub.ConfigureAsync(new BrokerConfiguration
+                var hubConfigResult = await hub.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -128,11 +138,16 @@ public class HubAndSpokeTests : IIntegrationTest
                     }
                 });
 
+                if (!hubConfigResult.Success)
+                {
+                    throw new Exception($"Hub configuration failed: {hubConfigResult.ErrorMessage}");
+                }
+
                 await hub.WaitForReadyAsync(timeoutSeconds: 5);
 
                 // Start leaf node
                 using var leaf = new NatsController();
-                await leaf.ConfigureAsync(new BrokerConfiguration
+                var leafConfigResult = await leaf.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14223,
                     LeafNode = new LeafNodeConfiguration
@@ -141,6 +156,11 @@ public class HubAndSpokeTests : IIntegrationTest
                         ExportSubjects = new List<string> { "leaf.>" } // Export to hub
                     }
                 });
+
+                if (!leafConfigResult.Success)
+                {
+                    throw new Exception($"Leaf configuration failed: {leafConfigResult.ErrorMessage}");
+                }
 
                 await leaf.WaitForReadyAsync(timeoutSeconds: 5);
                 await Task.Delay(1000);

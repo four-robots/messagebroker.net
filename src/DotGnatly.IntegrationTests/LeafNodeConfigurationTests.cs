@@ -16,7 +16,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -26,6 +26,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         ExportSubjects = new List<string> { "commands.>", "status.*" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 var info = await server.GetInfoAsync();
                 var leafNode = info.CurrentConfig.LeafNode;
@@ -53,7 +58,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -62,6 +67,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         ImportSubjects = new List<string> { "events.>" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 // Hot reload to add more import subjects
                 var result = await server.AddLeafNodeImportSubjectsAsync("data.*", "logs.>");
@@ -91,7 +101,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -100,6 +110,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         ImportSubjects = new List<string> { "events.>", "data.*", "logs.>" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 // Hot reload to remove an import subject
                 var result = await server.RemoveLeafNodeImportSubjectsAsync("data.*");
@@ -129,7 +144,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -138,6 +153,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         ExportSubjects = new List<string> { "commands.>" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 var result = await server.AddLeafNodeExportSubjectsAsync("status.*", "metrics.>");
 
@@ -163,7 +183,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -172,6 +192,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         ImportSubjects = new List<string> { "old.>", "legacy.*" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 var result = await server.SetLeafNodeImportSubjectsAsync(new[] { "new.>", "modern.*" });
 
@@ -200,7 +225,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -209,6 +234,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         ExportSubjects = new List<string> { "old.>", "legacy.*" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 var result = await server.SetLeafNodeExportSubjectsAsync(new[] { "new.>", "modern.*" });
 
@@ -236,7 +266,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -245,6 +275,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         ImportSubjects = new List<string> { "v1.>" }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 // First reload - add subjects
                 await server.AddLeafNodeImportSubjectsAsync("v2.>");
@@ -275,7 +310,7 @@ public class LeafNodeConfigurationTests : IIntegrationTest
             async () =>
             {
                 using var server = new NatsController();
-                await server.ConfigureAsync(new BrokerConfiguration
+                var configResult = await server.ConfigureAsync(new BrokerConfiguration
                 {
                     Port = 14222,
                     LeafNode = new LeafNodeConfiguration
@@ -290,6 +325,11 @@ public class LeafNodeConfigurationTests : IIntegrationTest
                         }
                     }
                 });
+
+                if (!configResult.Success)
+                {
+                    throw new Exception($"Configuration failed: {configResult.ErrorMessage}");
+                }
 
                 var info = await server.GetInfoAsync();
 

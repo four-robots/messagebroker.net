@@ -158,3 +158,24 @@ public class TestResults
         }
     }
 }
+
+/// <summary>
+/// Extension methods for integration tests.
+/// </summary>
+public static class IntegrationTestExtensions
+{
+    /// <summary>
+    /// Configures a broker and throws an exception if configuration fails.
+    /// </summary>
+    public static async Task ConfigureAndVerifyAsync(
+        this DotGnatly.Nats.Implementation.NatsController controller,
+        DotGnatly.Core.Configuration.BrokerConfiguration config,
+        string instanceName = "Broker")
+    {
+        var result = await controller.ConfigureAsync(config);
+        if (!result.Success)
+        {
+            throw new Exception($"{instanceName} configuration failed: {result.ErrorMessage}");
+        }
+    }
+}
