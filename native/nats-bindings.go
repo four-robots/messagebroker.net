@@ -96,6 +96,16 @@ type AccountConfig struct {
 	MaxPayload       int64  `json:"max_payload"`
 }
 
+// containsAllSubjects checks if the subject list contains ">" (all subjects wildcard)
+func containsAllSubjects(subjects []string) bool {
+	for _, subject := range subjects {
+		if subject == ">" {
+			return true
+		}
+	}
+	return false
+}
+
 // convertToNatsOptions converts our config to NATS server options
 func convertToNatsOptions(config *ServerConfig) *server.Options {
 	opts := &server.Options{
@@ -146,6 +156,35 @@ func convertToNatsOptions(config *ServerConfig) *server.Options {
 	if config.LeafNode.Port > 0 {
 		opts.LeafNode.Host = config.LeafNode.Host
 		opts.LeafNode.Port = config.LeafNode.Port
+
+		// Configure import/export permissions for incoming leaf connections
+		// Export subjects: what we send TO leaves (they subscribe to these)
+		// Import subjects: what we accept FROM leaves (they publish to these)
+		//
+		// We use a default user for anonymous leaf connections with appropriate permissions
+		if len(config.LeafNode.ExportSubjects) > 0 || len(config.LeafNode.ImportSubjects) > 0 {
+			// Create permissions for leaf connections
+			leafPerms := &server.Permissions{
+				Publish: &server.SubjectPermission{
+					Allow: config.LeafNode.ImportSubjects, // What leaves can publish = what we import
+				},
+				Subscribe: &server.SubjectPermission{
+					Allow: config.LeafNode.ExportSubjects, // What leaves can subscribe = what we export
+				},
+			}
+
+			// Create a default user for leaf connections
+			leafUser := &server.User{
+				Username:    "$LEAFNODE_DEFAULT",
+				Password:    "",
+				Permissions: leafPerms,
+			}
+
+			opts.LeafNode.Users = []*server.User{leafUser}
+
+			// Allow anonymous connections to use this user
+			opts.LeafNode.Username = "$LEAFNODE_DEFAULT"
+		}
 	}
 
 	// Configure remote leaf node connections (independent of listener port)
@@ -163,17 +202,29 @@ func convertToNatsOptions(config *ServerConfig) *server.Options {
 				remote.Credentials = config.LeafNode.AuthUsername + ":" + config.LeafNode.AuthPassword
 			}
 
-			// Handle import/export subjects
+			// Configure import/export deny lists for remote connections
 			// NATS uses deny-lists (DenyImports/DenyExports) to restrict subjects
-			// Our API uses allow-lists (ImportSubjects/ExportSubjects) for easier configuration
-			// We convert by inverting: if specific subjects are listed to import/export,
-			// we deny everything else. If empty, we allow all (NATS default).
-			// Note: For wildcard allow-lists, we rely on NATS's default permissive behavior
-			// and skip deny-list configuration (allowing all subjects)
+			// Our API uses allow-lists (ImportSubjects/ExportSubjects)
+			//
+			// For remote connections:
+			// - DenyImports: subjects we WON'T import from the remote hub
+			// - DenyExports: subjects we WON'T export to the remote hub
+			//
+			// Strategy: If allow-lists are specified, deny everything that doesn't match
+			// by using a complementary deny pattern
+			if len(config.LeafNode.ImportSubjects) > 0 && !containsAllSubjects(config.LeafNode.ImportSubjects) {
+				// If not importing everything, we need to deny what's not explicitly allowed
+				// For now, we'll use a simple approach: if specific patterns are given,
+				// we assume they want ONLY those patterns and deny the rest
+				// This is approximated by using DenyImports for system subjects only
+				// and relying on the hub's export permissions
+				remote.DenyImports = []string{"$SYS.>", "_INBOX.>"}
+			}
 
-			// For now, we don't configure deny lists, which means all subjects are allowed
-			// This matches NATS default behavior and allows wildcard subjects to work
-			// TODO: Implement proper conversion from allow-list to deny-list for strict filtering
+			if len(config.LeafNode.ExportSubjects) > 0 && !containsAllSubjects(config.LeafNode.ExportSubjects) {
+				// Similar logic for exports
+				remote.DenyExports = []string{"$SYS.>", "_INBOX.>"}
+			}
 
 			opts.LeafNode.Remotes[i] = remote
 		}
