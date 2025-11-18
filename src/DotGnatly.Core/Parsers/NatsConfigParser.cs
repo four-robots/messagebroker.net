@@ -681,10 +681,10 @@ public class NatsConfigParser
         if (content.EndsWith("]"))
             content = content.Substring(0, content.Length - 1);
 
-        // Parse each import/export object
+        // Parse each import/export object (supports nested objects like {stream: {account: SYS, subject: foo}})
         var objectMatches = System.Text.RegularExpressions.Regex.Matches(
             content,
-            @"\{([^}]+)\}",
+            @"\{([^}]*(?:\{[^}]*\}[^}]*)*)\}",
             System.Text.RegularExpressions.RegexOptions.Singleline
         );
 
@@ -702,71 +702,81 @@ public class NatsConfigParser
     {
         var item = new ImportExportConfiguration();
 
-        // Determine if this is a stream or service
-        if (content.Contains("stream:") || content.Contains("stream "))
-            item.Type = "stream";
-        else if (content.Contains("service:") || content.Contains("service "))
-            item.Type = "service";
+        // Check if we have a nested object pattern: stream: {...} or service: {...}
+        // Handle both with and without closing brace: "stream: {account: SYS, subject: foo}" or "stream: {account: SYS, subject: foo"
+        var nestedMatch = System.Text.RegularExpressions.Regex.Match(
+            content,
+            @"(stream|service)\s*:\s*\{(.+?)(?:\}|$)",
+            System.Text.RegularExpressions.RegexOptions.Singleline
+        );
 
-        // Parse the content
-        var pairs = content.Split(',');
-        foreach (var pair in pairs)
+        if (nestedMatch.Success)
         {
-            if (TryParseKeyValue(pair, out var key, out var value))
+            // Handle nested object: {stream: {account: SYS, subject: orders.>}}
+            item.Type = nestedMatch.Groups[1].Value;
+            var nestedContent = nestedMatch.Groups[2].Value.TrimEnd('}'); // Remove any trailing }
+
+            // Parse nested content (can be comma-separated or newline-separated)
+            var lines = nestedContent.Split(new[] { ',', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
             {
-                switch (key.ToLowerInvariant())
+                if (TryParseKeyValue(line, out var key, out var value))
                 {
-                    case "stream":
-                        item.Type = "stream";
-                        item.Subject = UnquoteString(value);
-                        break;
-                    case "service":
-                        item.Type = "service";
-                        item.Subject = UnquoteString(value);
-                        break;
-                    case "subject":
-                        item.Subject = UnquoteString(value);
-                        break;
-                    case "account":
-                        item.Account = UnquoteString(value);
-                        break;
-                    case "to":
-                        item.To = UnquoteString(value);
-                        break;
-                    case "response_type":
-                        item.ResponseType = UnquoteString(value);
-                        break;
-                    case "response_threshold":
-                        item.ResponseThreshold = UnquoteString(value);
-                        break;
+                    switch (key.ToLowerInvariant())
+                    {
+                        case "subject":
+                            item.Subject = UnquoteString(value);
+                            break;
+                        case "account":
+                            item.Account = UnquoteString(value);
+                            break;
+                        case "to":
+                            item.To = UnquoteString(value);
+                            break;
+                        case "response_type":
+                            item.ResponseType = UnquoteString(value);
+                            break;
+                        case "response_threshold":
+                            item.ResponseThreshold = UnquoteString(value);
+                            break;
+                    }
                 }
             }
-            else if (pair.Contains(":"))
+        }
+        else
+        {
+            // Handle simple format: {stream: orders.>, account: SYS} or {stream: orders.>}
+            // Split by comma, being careful about nested braces
+            var pairs = content.Split(',');
+            foreach (var pair in pairs)
             {
-                // Handle nested objects like {account: SYS, subject: "..."}
-                var nestedMatch = System.Text.RegularExpressions.Regex.Match(
-                    pair,
-                    @"(stream|service)\s*:\s*\{([^}]+)\}"
-                );
-                if (nestedMatch.Success)
+                if (TryParseKeyValue(pair, out var key, out var value))
                 {
-                    item.Type = nestedMatch.Groups[1].Value;
-                    var nestedContent = nestedMatch.Groups[2].Value;
-                    var nestedPairs = nestedContent.Split(',');
-                    foreach (var nestedPair in nestedPairs)
+                    switch (key.ToLowerInvariant())
                     {
-                        if (TryParseKeyValue(nestedPair, out var nk, out var nv))
-                        {
-                            switch (nk.ToLowerInvariant())
-                            {
-                                case "subject":
-                                    item.Subject = UnquoteString(nv);
-                                    break;
-                                case "account":
-                                    item.Account = UnquoteString(nv);
-                                    break;
-                            }
-                        }
+                        case "stream":
+                            item.Type = "stream";
+                            item.Subject = UnquoteString(value);
+                            break;
+                        case "service":
+                            item.Type = "service";
+                            item.Subject = UnquoteString(value);
+                            break;
+                        case "subject":
+                            item.Subject = UnquoteString(value);
+                            break;
+                        case "account":
+                            item.Account = UnquoteString(value);
+                            break;
+                        case "to":
+                            item.To = UnquoteString(value);
+                            break;
+                        case "response_type":
+                            item.ResponseType = UnquoteString(value);
+                            break;
+                        case "response_threshold":
+                            item.ResponseThreshold = UnquoteString(value);
+                            break;
                     }
                 }
             }
