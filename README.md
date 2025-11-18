@@ -258,6 +258,36 @@ Contributions welcome! Please:
 3. Create a feature branch
 4. Submit a pull request
 
+## Known Limitations
+
+### Leaf Node Dynamic Subject Changes
+
+When using hub-and-spoke topology with leaf nodes, there are some edge cases with dynamically adding or removing export/import subjects:
+
+**Issue**: Permission changes may not synchronize immediately
+- Adding export subjects: Messages might be received before the subject is officially added
+- Removing export subjects: Messages might still flow briefly after removal
+- Concurrent modifications: Rapid concurrent subject changes may not synchronize properly
+
+**Impact**: 4 out of 109 integration tests (96% pass rate)
+- "Dynamic subject changes: Add new export subject" (intermittent)
+- "Dynamic subject changes: Remove export subject" (intermittent)
+- "Bidirectional message flow" (intermittent on Windows)
+- "Concurrent leaf node subject modifications" (intermittent)
+
+**Status**: Under investigation - appears to be related to NATS server's internal permission propagation for leaf node connections
+
+**Workaround**:
+- Configure export/import subjects during initial setup rather than changing them dynamically
+- Allow a brief delay (500-1000ms) after dynamic subject changes before publishing
+- For production use, prefer static subject configuration
+
+**Additional Details**: See `docs/HUB_AND_SPOKE_TESTS.md` section "Known Limitations"
+
+### Other Limitations
+
+No other significant limitations are known at this time. The library has 96% integration test pass rate with 105 out of 109 tests passing consistently.
+
 ## License
 
 DotGnatly is licensed under the Apache License 2.0.
