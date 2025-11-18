@@ -354,19 +354,26 @@ jetstream {
     {
         // Arrange
         var repoRoot = FindRepositoryRoot();
+        Console.WriteLine($"DEBUG leaf.conf - Repository root: {repoRoot}");
         if (repoRoot == null)
         {
+            Console.WriteLine("DEBUG leaf.conf - SKIPPED: Repository root not found");
             return;
         }
 
         var configPath = Path.Combine(repoRoot, "test-configs", "leaf.conf");
+        Console.WriteLine($"DEBUG leaf.conf - Config path: {configPath}");
+        Console.WriteLine($"DEBUG leaf.conf - File exists: {File.Exists(configPath)}");
         if (!File.Exists(configPath))
         {
+            Console.WriteLine("DEBUG leaf.conf - SKIPPED: Config file not found");
             return;
         }
 
         // Act
+        Console.WriteLine("DEBUG leaf.conf - Parsing config file...");
         var config = NatsConfigParser.ParseFile(configPath);
+        Console.WriteLine($"DEBUG leaf.conf - Config parsed. Accounts count: {config.Accounts.Count}");
 
         // Assert - Basic properties
         Assert.NotNull(config);
@@ -419,12 +426,27 @@ jetstream {
         Assert.True(appAccount.Jetstream);
         Assert.Single(appAccount.Users);
         Assert.Equal("app-user", appAccount.Users[0].User);
-        Assert.True(appAccount.Imports.Count >= 14); // Has 14 imports
-        Assert.True(appAccount.Exports.Count > 20); // Has many exports
+
+        // Debug: Output actual counts
+        Console.WriteLine($"DEBUG leaf.conf - APP account imports count: {appAccount.Imports.Count}");
+        Console.WriteLine($"DEBUG leaf.conf - APP account exports count: {appAccount.Exports.Count}");
+        Console.WriteLine($"DEBUG leaf.conf - APP account mappings count: {appAccount.Mappings.Count}");
+
+        // Debug: List all imports
+        Console.WriteLine("DEBUG leaf.conf - All imports:");
+        for (int i = 0; i < appAccount.Imports.Count; i++)
+        {
+            var import = appAccount.Imports[i];
+            Console.WriteLine($"  [{i}] Type={import.Type}, Subject={import.Subject}, Account={import.Account}, To={import.To}");
+        }
+
+        Assert.True(appAccount.Imports.Count >= 14, $"Expected >= 14 imports, got {appAccount.Imports.Count}"); // Has 14 imports
+        Assert.True(appAccount.Exports.Count > 20, $"Expected > 20 exports, got {appAccount.Exports.Count}"); // Has many exports
         Assert.Single(appAccount.Mappings); // Has one mapping
 
         // Assert - APP account imports with "to" mapping
         var importWithTo = appAccount.Imports.FirstOrDefault(i => i.To != null);
+        Console.WriteLine($"DEBUG leaf.conf - Import with 'to' field: {(importWithTo != null ? $"Subject={importWithTo.Subject}, To={importWithTo.To}" : "NOT FOUND")}");
         Assert.NotNull(importWithTo);
         Assert.NotNull(importWithTo.To);
 
@@ -443,19 +465,26 @@ jetstream {
     {
         // Arrange
         var repoRoot = FindRepositoryRoot();
+        Console.WriteLine($"DEBUG hub.conf - Repository root: {repoRoot}");
         if (repoRoot == null)
         {
+            Console.WriteLine("DEBUG hub.conf - SKIPPED: Repository root not found");
             return;
         }
 
         var configPath = Path.Combine(repoRoot, "test-configs", "hub.conf");
+        Console.WriteLine($"DEBUG hub.conf - Config path: {configPath}");
+        Console.WriteLine($"DEBUG hub.conf - File exists: {File.Exists(configPath)}");
         if (!File.Exists(configPath))
         {
+            Console.WriteLine("DEBUG hub.conf - SKIPPED: Config file not found");
             return;
         }
 
         // Act
+        Console.WriteLine("DEBUG hub.conf - Parsing config file...");
         var config = NatsConfigParser.ParseFile(configPath);
+        Console.WriteLine($"DEBUG hub.conf - Config parsed. Accounts count: {config.Accounts.Count}");
 
         // Assert - Basic properties
         Assert.NotNull(config);
@@ -506,11 +535,33 @@ jetstream {
         Assert.True(appAccount.Jetstream);
         Assert.Single(appAccount.Users);
         Assert.Equal("app-user", appAccount.Users[0].User);
-        Assert.True(appAccount.Imports.Count > 20); // Has many imports
-        Assert.True(appAccount.Exports.Count > 10); // Has many exports
+
+        // Debug: Output actual counts
+        Console.WriteLine($"DEBUG hub.conf - APP account imports count: {appAccount.Imports.Count}");
+        Console.WriteLine($"DEBUG hub.conf - APP account exports count: {appAccount.Exports.Count}");
+
+        // Debug: List all imports with "to" field
+        Console.WriteLine("DEBUG hub.conf - Imports with 'to' field:");
+        var importsWithTo = appAccount.Imports.Where(i => i.To != null).ToList();
+        foreach (var import in importsWithTo)
+        {
+            Console.WriteLine($"  Type={import.Type}, Subject={import.Subject}, Account={import.Account}, To={import.To}");
+        }
+
+        // Debug: List first 5 imports
+        Console.WriteLine("DEBUG hub.conf - First 5 imports:");
+        for (int i = 0; i < Math.Min(5, appAccount.Imports.Count); i++)
+        {
+            var import = appAccount.Imports[i];
+            Console.WriteLine($"  [{i}] Type={import.Type}, Subject={import.Subject}, Account={import.Account}, To={import.To}");
+        }
+
+        Assert.True(appAccount.Imports.Count > 20, $"Expected > 20 imports, got {appAccount.Imports.Count}"); // Has many imports
+        Assert.True(appAccount.Exports.Count > 10, $"Expected > 10 exports, got {appAccount.Exports.Count}"); // Has many exports
 
         // Assert - APP account imports with "to" mapping
         var importWithTo = appAccount.Imports.FirstOrDefault(i => i.To != null);
+        Console.WriteLine($"DEBUG hub.conf - Found import with 'to': {importWithTo != null}");
         Assert.NotNull(importWithTo);
         Assert.NotNull(importWithTo.To);
 
