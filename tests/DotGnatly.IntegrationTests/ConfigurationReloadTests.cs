@@ -13,12 +13,12 @@ public class ConfigurationReloadTests
     public async Task BasicHotReloadChangesConfiguration()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false }, TestContext.Current.CancellationToken);
 
-        var result = await server.ApplyChangesAsync(c => c.Debug = true);
+        var result = await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
         Assert.True(info.CurrentConfig.Debug);
@@ -34,17 +34,17 @@ public class ConfigurationReloadTests
             Debug = false,
             Trace = false,
             MaxPayload = 1024
-        });
+        }, TestContext.Current.CancellationToken);
 
         var result = await server.ApplyChangesAsync(c =>
         {
             c.Debug = true;
             c.Trace = true;
             c.MaxPayload = 2048;
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
         Assert.True(info.CurrentConfig.Debug);
@@ -56,13 +56,13 @@ public class ConfigurationReloadTests
     public async Task HotReloadIncrementsVersionNumber()
     {
         using var server = new NatsController();
-        var result1 = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result1 = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         var version1 = result1.Version?.Version ?? 0;
 
-        var result2 = await server.ApplyChangesAsync(c => c.Debug = true);
+        var result2 = await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
         var version2 = result2.Version?.Version ?? 0;
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(version2 > version1);
     }
@@ -71,14 +71,14 @@ public class ConfigurationReloadTests
     public async Task RollbackRestoresPreviousConfiguration()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false }, TestContext.Current.CancellationToken);
 
-        await server.ApplyChangesAsync(c => c.Debug = true);
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
 
-        var rollbackResult = await server.RollbackAsync(toVersion: 1);
+        var rollbackResult = await server.RollbackAsync(toVersion: 1, cancellationToken: TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(rollbackResult.Success);
         Assert.False(info.CurrentConfig.Debug);
@@ -88,15 +88,15 @@ public class ConfigurationReloadTests
     public async Task MultipleSequentialHotReloadsWorkCorrectly()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 }, TestContext.Current.CancellationToken);
 
         for (int i = 1; i <= 10; i++)
         {
-            await server.ApplyChangesAsync(c => c.MaxPayload = 1024 * (i + 1));
+            await server.ApplyChangesAsync(c => c.MaxPayload = 1024 * (i + 1), TestContext.Current.CancellationToken);
         }
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1024 * 11, info.CurrentConfig.MaxPayload);
     }
@@ -105,12 +105,12 @@ public class ConfigurationReloadTests
     public async Task HotReloadWithValidationFailurePreservesOriginalConfig()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 }, TestContext.Current.CancellationToken);
 
-        var result = await server.ApplyChangesAsync(c => c.MaxPayload = -1);
+        var result = await server.ApplyChangesAsync(c => c.MaxPayload = -1, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
         Assert.Equal(1024, info.CurrentConfig.MaxPayload);
@@ -124,16 +124,16 @@ public class ConfigurationReloadTests
         {
             Port = 14222,
             Jetstream = false
-        });
+        }, TestContext.Current.CancellationToken);
 
         var result = await server.ApplyChangesAsync(c =>
         {
             c.Jetstream = true;
             c.JetstreamStoreDir = "./jetstream-test";
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(info.CurrentConfig.Jetstream);
     }
@@ -142,16 +142,16 @@ public class ConfigurationReloadTests
     public async Task VersionNumberIncrementsWithEachChange()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         var initialVersion = result.Version?.Version ?? 0;
 
         ConfigurationResult? lastResult = null;
         for (int i = 0; i < 5; i++)
         {
-            lastResult = await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100));
+            lastResult = await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100), TestContext.Current.CancellationToken);
         }
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(lastResult);
         Assert.NotNull(lastResult.Version);
@@ -170,16 +170,16 @@ public class ConfigurationReloadTests
                 Port = 0,
                 ImportSubjects = new List<string>()
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         // Attempt to hot reload LeafNode configuration
         var result = await server.ApplyChangesAsync(c =>
         {
             c.LeafNode.Port = 17422;
             c.LeafNode.ImportSubjects.Add("test.>");
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // NATS server does not support hot reloading LeafNode configuration
         Assert.False(result.Success);
@@ -198,12 +198,12 @@ public class ConfigurationReloadTests
             Trace = false,
             MaxPayload = 1024,
             MaxControlLine = 4096
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await server.ApplyChangesAsync(c => c.Debug = true);
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(info.CurrentConfig.Debug);
         Assert.False(info.CurrentConfig.Trace);
@@ -215,13 +215,13 @@ public class ConfigurationReloadTests
     public async Task FluentApiExtensionsWorkForHotReload()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
 
-        await server.SetDebugAsync(true);
-        await server.SetMaxPayloadAsync(2048);
+        await server.SetDebugAsync(true, cancellationToken: TestContext.Current.CancellationToken);
+        await server.SetMaxPayloadAsync(2048, cancellationToken: TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(info.CurrentConfig.Debug);
         Assert.Equal(2048, info.CurrentConfig.MaxPayload);
@@ -231,12 +231,12 @@ public class ConfigurationReloadTests
     public async Task AuthenticationCanBeChangedViaHotReload()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
 
-        await server.SetAuthenticationAsync("user", "pass");
+        await server.SetAuthenticationAsync("user", "pass", cancellationToken: TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("user", info.CurrentConfig.Auth.Username);
         Assert.Equal("pass", info.CurrentConfig.Auth.Password);

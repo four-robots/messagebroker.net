@@ -37,10 +37,10 @@ public class AuthorizationAndFilteringTests
             }
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -59,7 +59,7 @@ public class AuthorizationAndFilteringTests
 
             // Verify connection by publishing and subscribing
             var receivedMessages = new List<string>();
-            var subscription = nats.SubscribeAsync<string>("test.auth");
+            var subscription = nats.SubscribeAsync<string>("test.auth", cancellationToken: TestContext.Current.CancellationToken);
 
             var subscriptionTask = Task.Run(async () =>
             {
@@ -69,15 +69,15 @@ public class AuthorizationAndFilteringTests
                     if (receivedMessages.Count >= 3)
                         break;
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(500); // Give subscription time to establish
+            await Task.Delay(500, TestContext.Current.CancellationToken); // Give subscription time to establish
 
-            await nats.PublishAsync("test.auth", "Message 1");
-            await nats.PublishAsync("test.auth", "Message 2");
-            await nats.PublishAsync("test.auth", "Message 3");
+            await nats.PublishAsync("test.auth", "Message 1", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("test.auth", "Message 2", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("test.auth", "Message 3", cancellationToken: TestContext.Current.CancellationToken);
 
-            var timeoutTask = Task.Delay(5000);
+            var timeoutTask = Task.Delay(5000, TestContext.Current.CancellationToken);
             var completedTask = await Task.WhenAny(subscriptionTask, timeoutTask);
 
             Assert.NotEqual(timeoutTask, completedTask);
@@ -88,7 +88,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -114,10 +114,10 @@ public class AuthorizationAndFilteringTests
             }
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -135,7 +135,7 @@ public class AuthorizationAndFilteringTests
                     }
                 };
                 await using var nats = new NatsClient(wrongOpts);
-                await nats.PublishAsync("test", "test"); // Try to use connection
+                await nats.PublishAsync("test", "test", cancellationToken: TestContext.Current.CancellationToken); // Try to use connection
             }
             catch (Exception ex)
             {
@@ -153,7 +153,7 @@ public class AuthorizationAndFilteringTests
                     Url = "nats://127.0.0.1:4251"
                 };
                 await using var nats = new NatsClient(noAuthOpts);
-                await nats.PublishAsync("test", "test"); // Try to use connection
+                await nats.PublishAsync("test", "test", cancellationToken: TestContext.Current.CancellationToken); // Try to use connection
             }
             catch (Exception ex)
             {
@@ -166,7 +166,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -191,10 +191,10 @@ public class AuthorizationAndFilteringTests
             }
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -212,7 +212,7 @@ public class AuthorizationAndFilteringTests
 
             // Verify connection works with pub/sub
             var receivedMessages = new List<string>();
-            var subscription = nats.SubscribeAsync<string>("test.token");
+            var subscription = nats.SubscribeAsync<string>("test.token", cancellationToken: TestContext.Current.CancellationToken);
 
             var subscriptionTask = Task.Run(async () =>
             {
@@ -222,14 +222,14 @@ public class AuthorizationAndFilteringTests
                     if (receivedMessages.Count >= 2)
                         break;
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(500); // Give subscription time to establish
+            await Task.Delay(500, TestContext.Current.CancellationToken); // Give subscription time to establish
 
-            await nats.PublishAsync("test.token", "Token Message 1");
-            await nats.PublishAsync("test.token", "Token Message 2");
+            await nats.PublishAsync("test.token", "Token Message 1", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("test.token", "Token Message 2", cancellationToken: TestContext.Current.CancellationToken);
 
-            var timeoutTask = Task.Delay(5000);
+            var timeoutTask = Task.Delay(5000, TestContext.Current.CancellationToken);
             var completedTask = await Task.WhenAny(subscriptionTask, timeoutTask);
 
             Assert.NotEqual(timeoutTask, completedTask);
@@ -240,7 +240,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -261,10 +261,10 @@ public class AuthorizationAndFilteringTests
             Description = "Subject wildcards test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -274,7 +274,7 @@ public class AuthorizationAndFilteringTests
             var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 
             // Subscribe with wildcard: orders.* matches orders.create, orders.update, etc.
-            var subscription = nats.SubscribeAsync<string>("orders.*");
+            var subscription = nats.SubscribeAsync<string>("orders.*", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -286,20 +286,20 @@ public class AuthorizationAndFilteringTests
                         break;
                     }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(200);
+            await Task.Delay(200, TestContext.Current.CancellationToken);
 
             // Publish to matching subjects
-            await nats.PublishAsync("orders.create", "order1");
-            await nats.PublishAsync("orders.update", "order2");
-            await nats.PublishAsync("orders.delete", "order3");
+            await nats.PublishAsync("orders.create", "order1", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("orders.update", "order2", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("orders.delete", "order3", cancellationToken: TestContext.Current.CancellationToken);
 
             // Publish to non-matching subject (should not be received)
-            await nats.PublishAsync("products.create", "product1");
-            await nats.PublishAsync("orders.create.nested", "nested1"); // Should not match single-level wildcard
+            await nats.PublishAsync("products.create", "product1", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("orders.create.nested", "nested1", cancellationToken: TestContext.Current.CancellationToken); // Should not match single-level wildcard
 
-            await Task.Delay(1000);
+            await Task.Delay(1000, TestContext.Current.CancellationToken);
 
             Console.WriteLine($"  Received {receivedMessages.Count} messages");
             foreach (var msg in receivedMessages)
@@ -317,7 +317,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -338,10 +338,10 @@ public class AuthorizationAndFilteringTests
             Description = "Multi-level wildcards test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -350,7 +350,7 @@ public class AuthorizationAndFilteringTests
             var receivedMessages = new List<string>();
 
             // Subscribe with multi-level wildcard: orders.> matches orders.* and any deeper nesting
-            var subscription = nats.SubscribeAsync<string>("orders.>");
+            var subscription = nats.SubscribeAsync<string>("orders.>", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -362,21 +362,21 @@ public class AuthorizationAndFilteringTests
                         break;
                     }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(200);
+            await Task.Delay(200, TestContext.Current.CancellationToken);
 
             // All of these should match
-            await nats.PublishAsync("orders.create", "msg1");
-            await nats.PublishAsync("orders.create.batch", "msg2");
-            await nats.PublishAsync("orders.update.status", "msg3");
-            await nats.PublishAsync("orders.delete.bulk.confirmed", "msg4");
-            await nats.PublishAsync("orders.query.filter.advanced", "msg5");
+            await nats.PublishAsync("orders.create", "msg1", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("orders.create.batch", "msg2", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("orders.update.status", "msg3", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("orders.delete.bulk.confirmed", "msg4", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("orders.query.filter.advanced", "msg5", cancellationToken: TestContext.Current.CancellationToken);
 
             // This should NOT match
-            await nats.PublishAsync("products.create", "msg6");
+            await nats.PublishAsync("products.create", "msg6", cancellationToken: TestContext.Current.CancellationToken);
 
-            await Task.Delay(1000);
+            await Task.Delay(1000, TestContext.Current.CancellationToken);
 
             Console.WriteLine($"  Received {receivedMessages.Count} messages:");
             foreach (var subject in receivedMessages)
@@ -395,7 +395,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -416,10 +416,10 @@ public class AuthorizationAndFilteringTests
             Description = "Subject pattern matching test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -430,9 +430,9 @@ public class AuthorizationAndFilteringTests
             var allMessages = new List<string>();
 
             // Multiple subscribers with different patterns
-            var sub1 = nats.SubscribeAsync<string>("events.user.created");
-            var sub2 = nats.SubscribeAsync<string>("events.user.*");
-            var sub3 = nats.SubscribeAsync<string>("events.>");
+            var sub1 = nats.SubscribeAsync<string>("events.user.created", cancellationToken: TestContext.Current.CancellationToken);
+            var sub2 = nats.SubscribeAsync<string>("events.user.*", cancellationToken: TestContext.Current.CancellationToken);
+            var sub3 = nats.SubscribeAsync<string>("events.>", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -440,7 +440,7 @@ public class AuthorizationAndFilteringTests
                 {
                     specificMessages.Add(msg.Subject ?? "null");
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -448,7 +448,7 @@ public class AuthorizationAndFilteringTests
                 {
                     wildcardMessages.Add(msg.Subject ?? "null");
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -460,17 +460,17 @@ public class AuthorizationAndFilteringTests
                         break;
                     }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(200);
+            await Task.Delay(200, TestContext.Current.CancellationToken);
 
             // Publish various events
-            await nats.PublishAsync("events.user.created", "user1");
-            await nats.PublishAsync("events.user.updated", "user2");
-            await nats.PublishAsync("events.user.deleted", "user3");
-            await nats.PublishAsync("events.order.created", "order1");
+            await nats.PublishAsync("events.user.created", "user1", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("events.user.updated", "user2", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("events.user.deleted", "user3", cancellationToken: TestContext.Current.CancellationToken);
+            await nats.PublishAsync("events.order.created", "order1", cancellationToken: TestContext.Current.CancellationToken);
 
-            await Task.Delay(1000);
+            await Task.Delay(1000, TestContext.Current.CancellationToken);
 
             Console.WriteLine($"  Specific subscriber received: {specificMessages.Count} messages");
             Console.WriteLine($"  Wildcard subscriber received: {wildcardMessages.Count} messages");
@@ -490,7 +490,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -511,10 +511,10 @@ public class AuthorizationAndFilteringTests
             Description = "Request-reply pattern test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -523,7 +523,7 @@ public class AuthorizationAndFilteringTests
             await using var clientConn = new NatsClient("nats://127.0.0.1:4256");
 
             // Set up a service that responds to requests
-            var subscription = serviceConn.SubscribeAsync<string>("service.echo");
+            var subscription = serviceConn.SubscribeAsync<string>("service.echo", cancellationToken: TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -536,16 +536,14 @@ public class AuthorizationAndFilteringTests
                         Console.WriteLine($"  Service replied to {msg.ReplyTo} with: {response}");
                     }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(200);
+            await Task.Delay(200, TestContext.Current.CancellationToken);
 
             // Client sends request and waits for reply
             Console.WriteLine("  Client sending request...");
-            var reply = await clientConn.RequestAsync<string, string>(
-                "service.echo",
-                "Hello, Service!"
-            );
+            var reply = await clientConn.RequestAsync<string, string>("service.echo", "Hello, Service!"
+, cancellationToken: TestContext.Current.CancellationToken);
 
             Console.WriteLine($"  Client received reply: {reply.Data}");
 
@@ -555,7 +553,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -576,10 +574,10 @@ public class AuthorizationAndFilteringTests
             Description = "Queue groups test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
@@ -590,9 +588,9 @@ public class AuthorizationAndFilteringTests
             var worker3Messages = new List<string>();
 
             // Create 3 workers in the same queue group "workers"
-            var sub1 = nats.SubscribeAsync<string>("tasks.process", queueGroup: "workers");
-            var sub2 = nats.SubscribeAsync<string>("tasks.process", queueGroup: "workers");
-            var sub3 = nats.SubscribeAsync<string>("tasks.process", queueGroup: "workers");
+            var sub1 = nats.SubscribeAsync<string>("tasks.process", queueGroup: "workers", cancellationToken: TestContext.Current.CancellationToken);
+            var sub2 = nats.SubscribeAsync<string>("tasks.process", queueGroup: "workers", cancellationToken: TestContext.Current.CancellationToken);
+            var sub3 = nats.SubscribeAsync<string>("tasks.process", queueGroup: "workers", cancellationToken: TestContext.Current.CancellationToken);
 
             var totalReceived = 0;
             var totalLock = new object();
@@ -604,7 +602,7 @@ public class AuthorizationAndFilteringTests
                     worker1Messages.Add(msg.Data ?? "null");
                     lock (totalLock) { totalReceived++; }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -613,7 +611,7 @@ public class AuthorizationAndFilteringTests
                     worker2Messages.Add(msg.Data ?? "null");
                     lock (totalLock) { totalReceived++; }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             _ = Task.Run(async () =>
             {
@@ -622,20 +620,20 @@ public class AuthorizationAndFilteringTests
                     worker3Messages.Add(msg.Data ?? "null");
                     lock (totalLock) { totalReceived++; }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            await Task.Delay(200);
+            await Task.Delay(200, TestContext.Current.CancellationToken);
 
             // Publish 12 messages
             Console.WriteLine("  Publishing 12 tasks...");
             for (int i = 1; i <= 12; i++)
             {
-                await nats.PublishAsync("tasks.process", $"task{i}");
-                await Task.Delay(50); // Small delay to ensure messages are distributed
+                await nats.PublishAsync("tasks.process", $"task{i}", cancellationToken: TestContext.Current.CancellationToken);
+                await Task.Delay(50, TestContext.Current.CancellationToken); // Small delay to ensure messages are distributed
             }
 
             // Wait for messages to be processed
-            await Task.Delay(1000);
+            await Task.Delay(1000, TestContext.Current.CancellationToken);
 
             Console.WriteLine($"  Worker 1 received: {worker1Messages.Count} messages");
             Console.WriteLine($"  Worker 2 received: {worker2Messages.Count} messages");
@@ -661,7 +659,7 @@ public class AuthorizationAndFilteringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 }

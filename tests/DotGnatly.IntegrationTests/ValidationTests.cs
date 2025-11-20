@@ -17,7 +17,7 @@ public class ValidationTests
         var result = await server.ConfigureAsync(new BrokerConfiguration
         {
             Port = 99999 // Invalid port
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
     }
@@ -34,7 +34,7 @@ public class ValidationTests
                 Port = 17422,
                 ImportSubjects = new List<string> { ".invalid", "also..bad", "bad." }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
     }
@@ -157,9 +157,9 @@ public class ValidationTests
     public async Task HotReloadValidationPreventsInvalidChanges()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
 
-        var result = await server.ApplyChangesAsync(c => c.Port = 99999);
+        var result = await server.ApplyChangesAsync(c => c.Port = 99999, TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
     }
@@ -168,11 +168,11 @@ public class ValidationTests
     public async Task HotReloadValidationAcceptsValidChanges()
     {
         using var server = new NatsController();
-        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
 
-        var result = await server.ApplyChangesAsync(c => c.Debug = true);
+        var result = await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
         Assert.True(result.Success);
     }
 

@@ -13,7 +13,7 @@ public class ConcurrentOperationTests
     public async Task TestConcurrentConfigurationChanges()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         var tasks = new List<Task>();
@@ -27,14 +27,14 @@ public class ConcurrentOperationTests
         }
 
         await Task.WhenAll(tasks);
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
     public async Task TestConcurrentReadsDuringConfigurationChanges()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         var writeTask = Task.Run(async () =>
@@ -44,7 +44,7 @@ public class ConcurrentOperationTests
                 await server.ApplyChangesAsync(c => c.Debug = !c.Debug);
                 await Task.Delay(10);
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         var readTasks = new List<Task>();
         for (int i = 0; i < 20; i++)
@@ -58,7 +58,7 @@ public class ConcurrentOperationTests
 
         await Task.WhenAll(readTasks);
         await writeTask;
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     // Test 3: Concurrent leaf node subject modifications
@@ -126,7 +126,7 @@ public class ConcurrentOperationTests
         {
             foreach (var server in servers)
             {
-                try { await server.ShutdownAsync(); } catch { }
+                try { await server.ShutdownAsync(TestContext.Current.CancellationToken); } catch { }
                 server.Dispose();
             }
         }
@@ -136,28 +136,28 @@ public class ConcurrentOperationTests
     public async Task TestRapidSequentialChanges()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         for (int i = 0; i < 20; i++)
         {
-            await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100));
+            await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100), TestContext.Current.CancellationToken);
         }
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
     public async Task TestConcurrentRollbacks()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         // Create some version history
         for (int i = 0; i < 5; i++)
         {
-            await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100));
+            await server.ApplyChangesAsync(c => c.MaxPayload = 1024 + (i * 100), TestContext.Current.CancellationToken);
         }
 
         // Try concurrent rollbacks
@@ -168,7 +168,7 @@ public class ConcurrentOperationTests
         }
 
         var rollbackResults = await Task.WhenAll(tasks);
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // At least one should succeed
         Assert.True(rollbackResults.Any(r => r.Success), "At least one rollback should succeed");
@@ -185,7 +185,7 @@ public class ConcurrentOperationTests
             {
                 var server = new NatsController();
                 servers.Add(server);
-                var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 + i });
+                var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 + i }, TestContext.Current.CancellationToken);
                 Assert.True(result.Success, $"Failed to start server {i}: {result.ErrorMessage}");
             }
 
@@ -204,7 +204,7 @@ public class ConcurrentOperationTests
         {
             foreach (var server in servers)
             {
-                try { await server.ShutdownAsync(); } catch { }
+                try { await server.ShutdownAsync(TestContext.Current.CancellationToken); } catch { }
                 server.Dispose();
             }
         }

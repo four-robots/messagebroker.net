@@ -14,7 +14,7 @@ public class EventSystemTests
     public async Task TestConfigurationChangingEventFires()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         bool eventFired = false;
@@ -23,8 +23,8 @@ public class EventSystemTests
             eventFired = true;
         };
 
-        await server.ApplyChangesAsync(c => c.Debug = true);
-        await server.ShutdownAsync();
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(eventFired, "ConfigurationChanging event should have fired");
     }
@@ -33,7 +33,7 @@ public class EventSystemTests
     public async Task TestConfigurationChangedEventFires()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         bool eventFired = false;
@@ -42,8 +42,8 @@ public class EventSystemTests
             eventFired = true;
         };
 
-        await server.ApplyChangesAsync(c => c.Debug = true);
-        await server.ShutdownAsync();
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(eventFired, "ConfigurationChanged event should have fired");
     }
@@ -52,7 +52,7 @@ public class EventSystemTests
     public async Task TestConfigurationChangingCanCancelChanges()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         server.ConfigurationChanging += (sender, args) =>
@@ -60,10 +60,10 @@ public class EventSystemTests
             args.CancelChange("Test cancellation");
         };
 
-        var changeResult = await server.ApplyChangesAsync(c => c.Debug = true);
+        var changeResult = await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.False(changeResult.Success, "Change should have been cancelled");
         Assert.False(info.CurrentConfig.Debug, "Debug should still be false");
@@ -73,7 +73,7 @@ public class EventSystemTests
     public async Task TestConfigurationChangedEventProvidesCorrectDiff()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, Debug = false }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         ConfigurationChangedEventArgs? capturedArgs = null;
@@ -82,8 +82,8 @@ public class EventSystemTests
             capturedArgs = args;
         };
 
-        await server.ApplyChangesAsync(c => c.Debug = true);
-        await server.ShutdownAsync();
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(capturedArgs);
         Assert.True(capturedArgs.Diff.Changes.Any(ch => ch.PropertyName == "Debug"), "Diff should contain Debug property change");
@@ -93,7 +93,7 @@ public class EventSystemTests
     public async Task TestMultipleEventHandlersAllFire()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         int handler1Count = 0;
@@ -104,8 +104,8 @@ public class EventSystemTests
         server.ConfigurationChanged += (s, e) => handler2Count++;
         server.ConfigurationChanged += (s, e) => handler3Count++;
 
-        await server.ApplyChangesAsync(c => c.Debug = true);
-        await server.ShutdownAsync();
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, handler1Count);
         Assert.Equal(1, handler2Count);
@@ -116,7 +116,7 @@ public class EventSystemTests
     public async Task TestEventProvidesAccessToOldAndNewConfigurations()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222, MaxPayload = 1024 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         bool correctValues = false;
@@ -126,8 +126,8 @@ public class EventSystemTests
                            args.Proposed.MaxPayload == 2048;
         };
 
-        await server.ApplyChangesAsync(c => c.MaxPayload = 2048);
-        await server.ShutdownAsync();
+        await server.ApplyChangesAsync(c => c.MaxPayload = 2048, TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(correctValues, "Event should provide correct old and new values");
     }
@@ -144,7 +144,7 @@ public class EventSystemTests
                 Port = 17422,
                 ImportSubjects = new List<string> { "old.>" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
@@ -155,7 +155,7 @@ public class EventSystemTests
         server.ConfigurationChanged += (s, e) => changedFired = true;
 
         await server.AddLeafNodeImportSubjectsAsync("new.>");
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(changingFired, "ConfigurationChanging should have fired");
         Assert.True(changedFired, "ConfigurationChanged should have fired");
@@ -172,7 +172,7 @@ public class EventSystemTests
             {
                 ImportSubjects = new List<string> { "original.>" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
@@ -181,10 +181,10 @@ public class EventSystemTests
             args.CancelChange("Not allowed");
         };
 
-        await server.SetLeafNodeImportSubjectsAsync(new[] { "modified.>" });
+        await server.SetLeafNodeImportSubjectsAsync(new[] { "modified.>" }, cancellationToken: TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.Contains("original.>", info.CurrentConfig.LeafNode.ImportSubjects);
         Assert.DoesNotContain("modified.>", info.CurrentConfig.LeafNode.ImportSubjects);
@@ -194,7 +194,7 @@ public class EventSystemTests
     public async Task TestEventsFireInCorrectOrder()
     {
         using var server = new NatsController();
-        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+        var result = await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         var eventOrder = new List<string>();
@@ -202,8 +202,8 @@ public class EventSystemTests
         server.ConfigurationChanging += (s, e) => eventOrder.Add("Changing");
         server.ConfigurationChanged += (s, e) => eventOrder.Add("Changed");
 
-        await server.ApplyChangesAsync(c => c.Debug = true);
-        await server.ShutdownAsync();
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, eventOrder.Count);
         Assert.Equal("Changing", eventOrder[0]);
@@ -216,8 +216,8 @@ public class EventSystemTests
         using var server1 = new NatsController();
         using var server2 = new NatsController();
 
-        var result1 = await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
-        var result2 = await server2.ConfigureAsync(new BrokerConfiguration { Port = 14223 });
+        var result1 = await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
+        var result2 = await server2.ConfigureAsync(new BrokerConfiguration { Port = 14223 }, TestContext.Current.CancellationToken);
 
         Assert.True(result1.Success, $"Failed to start server1: {result1.ErrorMessage}");
         Assert.True(result2.Success, $"Failed to start server2: {result2.ErrorMessage}");
@@ -228,12 +228,12 @@ public class EventSystemTests
         server1.ConfigurationChanged += (s, e) => server1Events++;
         server2.ConfigurationChanged += (s, e) => server2Events++;
 
-        await server1.ApplyChangesAsync(c => c.Debug = true);
+        await server1.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
 
-        await Task.Delay(50); // Small delay to ensure event processing
+        await Task.Delay(50, TestContext.Current.CancellationToken); // Small delay to ensure event processing
 
-        await server1.ShutdownAsync();
-        await server2.ShutdownAsync();
+        await server1.ShutdownAsync(TestContext.Current.CancellationToken);
+        await server2.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, server1Events);
         Assert.Equal(0, server2Events);

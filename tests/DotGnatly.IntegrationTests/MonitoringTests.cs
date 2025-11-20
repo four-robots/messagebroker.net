@@ -23,16 +23,16 @@ public class MonitoringTests
             Description = "Connz monitoring test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
         // Give server time to start
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get connection information
-            var connz = await controller.GetConnzAsync();
+            var connz = await controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(connz);
@@ -44,7 +44,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -60,15 +60,15 @@ public class MonitoringTests
             Description = "Subsz monitoring test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get subscription information
-            var subsz = await controller.GetSubszAsync();
+            var subsz = await controller.GetSubszAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(subsz);
@@ -79,7 +79,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -97,15 +97,15 @@ public class MonitoringTests
             Description = "Jsz monitoring test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get JetStream information
-            var jsz = await controller.GetJszAsync();
+            var jsz = await controller.GetJszAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(jsz);
@@ -117,7 +117,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
 
             // Cleanup JetStream directory
             try
@@ -152,15 +152,15 @@ public class MonitoringTests
             Description = "Routez monitoring test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get route information
-            var routez = await controller.GetRoutezAsync();
+            var routez = await controller.GetRoutezAsync(TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(routez);
@@ -171,7 +171,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -192,15 +192,15 @@ public class MonitoringTests
             Description = "Leafz monitoring test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get leaf node information
-            var leafz = await controller.GetLeafzAsync();
+            var leafz = await controller.GetLeafzAsync(TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(leafz);
@@ -211,7 +211,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -227,15 +227,15 @@ public class MonitoringTests
             Description = "Client management test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get connection list to find a client ID
-            var connz = await controller.GetConnzAsync();
+            var connz = await controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken);
             using var doc = JsonDocument.Parse(connz);
             var root = doc.RootElement;
 
@@ -245,18 +245,18 @@ public class MonitoringTests
             // Test getting non-existent client (should throw or return error)
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
-                await controller.GetClientInfoAsync(99999);
+                await controller.GetClientInfoAsync(99999, TestContext.Current.CancellationToken);
             });
 
             // Test disconnecting non-existent client (should throw or return error)
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
-                await controller.DisconnectClientAsync(99999);
+                await controller.DisconnectClientAsync(99999, TestContext.Current.CancellationToken);
             });
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -272,27 +272,27 @@ public class MonitoringTests
             Description = "Subscription filter test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Test Connz with subscription filter (wildcards allowed)
-            var connzWithSubs = await controller.GetConnzAsync("test.*");
+            var connzWithSubs = await controller.GetConnzAsync("test.*", TestContext.Current.CancellationToken);
             using var doc1 = JsonDocument.Parse(connzWithSubs);
             Assert.True(doc1.RootElement.ValueKind == JsonValueKind.Object);
 
             // Test Subsz with filter
             // Note: In NATS 2.12+, the Test field must be a valid publish subject (no wildcards)
-            var subszFiltered = await controller.GetSubszAsync("test.example");
+            var subszFiltered = await controller.GetSubszAsync("test.example", TestContext.Current.CancellationToken);
             using var doc2 = JsonDocument.Parse(subszFiltered);
             Assert.True(doc2.RootElement.ValueKind == JsonValueKind.Object);
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -310,21 +310,21 @@ public class MonitoringTests
             Description = "Jsz account filter test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Test Jsz with account filter
-            var jszWithAccount = await controller.GetJszAsync("$G");
+            var jszWithAccount = await controller.GetJszAsync("$G", TestContext.Current.CancellationToken);
             using var doc = JsonDocument.Parse(jszWithAccount);
             Assert.True(doc.RootElement.ValueKind == JsonValueKind.Object);
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
 
             // Cleanup
             try
@@ -353,15 +353,15 @@ public class MonitoringTests
             Description = "Accountz monitoring test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get account information
-            var accountz = await controller.GetAccountzAsync();
+            var accountz = await controller.GetAccountzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(accountz);
@@ -372,7 +372,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -390,15 +390,15 @@ public class MonitoringTests
             Description = "Varz monitoring test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get full server variables
-            var varz = await controller.GetVarzAsync();
+            var varz = await controller.GetVarzAsync(TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(varz);
@@ -414,7 +414,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
 
             // Cleanup
             try
@@ -444,15 +444,15 @@ public class MonitoringTests
             // Note: Gateway configuration would be needed for actual gateway connections
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Get gateway information
-            var gatewayz = await controller.GetGatewayzAsync();
+            var gatewayz = await controller.GetGatewayzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(gatewayz);
@@ -463,7 +463,7 @@ public class MonitoringTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 }

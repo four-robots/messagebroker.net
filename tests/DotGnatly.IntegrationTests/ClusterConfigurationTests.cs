@@ -24,9 +24,9 @@ public class ClusterConfigurationTests
                     Port = 16222,
                     Routes = new List<string> { "nats-route://server1:16222", "nats-route://server2:16222" }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            var info = await server.GetInfoAsync();
+            var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
             var cluster = info.CurrentConfig.Cluster;
 
             Assert.Equal("test-cluster", cluster.Name);
@@ -37,7 +37,7 @@ public class ClusterConfigurationTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -47,13 +47,13 @@ public class ClusterConfigurationTests
         using var server = new NatsController();
         try
         {
-            await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
+            await server.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
 
-            var result = await server.EnableClusteringAsync("production-cluster", 16222);
+            var result = await server.EnableClusteringAsync("production-cluster", 16222, cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, "Failed to enable clustering");
 
-            var info = await server.GetInfoAsync();
+            var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
             var cluster = info.CurrentConfig.Cluster;
 
             Assert.Equal("production-cluster", cluster.Name);
@@ -61,7 +61,7 @@ public class ClusterConfigurationTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -80,7 +80,7 @@ public class ClusterConfigurationTests
                     Port = 16222,
                     Routes = new List<string> { "nats-route://server1:16222" }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             var result = await server.AddClusterRoutesAsync(
                 "nats-route://server2:16222",
@@ -88,7 +88,7 @@ public class ClusterConfigurationTests
 
             Assert.True(result.Success, "Failed to add cluster routes");
 
-            var info = await server.GetInfoAsync();
+            var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
             var routes = info.CurrentConfig.Cluster.Routes;
 
             Assert.Equal(3, routes.Count);
@@ -98,7 +98,7 @@ public class ClusterConfigurationTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -122,13 +122,13 @@ public class ClusterConfigurationTests
                         "nats-route://server3:16222"
                     }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             var result = await server.RemoveClusterRoutesAsync("nats-route://server2:16222");
 
             Assert.True(result.Success, "Failed to remove cluster route");
 
-            var info = await server.GetInfoAsync();
+            var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
             var routes = info.CurrentConfig.Cluster.Routes;
 
             Assert.Equal(2, routes.Count);
@@ -138,7 +138,7 @@ public class ClusterConfigurationTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -158,9 +158,9 @@ public class ClusterConfigurationTests
                     AuthUsername = "clusteradmin",
                     AuthPassword = "secretpass"
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            var info = await server.GetInfoAsync();
+            var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
             var cluster = info.CurrentConfig.Cluster;
 
             Assert.Equal("clusteradmin", cluster.AuthUsername);
@@ -168,7 +168,7 @@ public class ClusterConfigurationTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -186,13 +186,13 @@ public class ClusterConfigurationTests
                     Name = "test-cluster",
                     Port = 16222
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            var result = await server.SetClusterAuthenticationAsync("newuser", "newpass");
+            var result = await server.SetClusterAuthenticationAsync("newuser", "newpass", cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, "Failed to set cluster authentication");
 
-            var info = await server.GetInfoAsync();
+            var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
             var cluster = info.CurrentConfig.Cluster;
 
             Assert.Equal("newuser", cluster.AuthUsername);
@@ -200,7 +200,7 @@ public class ClusterConfigurationTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -219,13 +219,13 @@ public class ClusterConfigurationTests
                     Port = 16222,
                     Routes = new List<string> { "nats-route://server1:16222" }
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
-            var result = await server.DisableClusteringAsync();
+            var result = await server.DisableClusteringAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             Assert.True(result.Success, "Failed to disable clustering");
 
-            var info = await server.GetInfoAsync();
+            var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
             var cluster = info.CurrentConfig.Cluster;
 
             Assert.Equal(0, cluster.Port);
@@ -234,7 +234,7 @@ public class ClusterConfigurationTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -252,13 +252,13 @@ public class ClusterConfigurationTests
                     Name = "test-cluster",
                     Port = 14222  // Same as main port
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             Assert.False(result.Success, "Validation should have failed for port conflict");
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -276,13 +276,13 @@ public class ClusterConfigurationTests
                     Port = 16222,
                     Name = null  // Missing required name
                 }
-            });
+            }, TestContext.Current.CancellationToken);
 
             Assert.False(result.Success, "Validation should have failed for missing cluster name");
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 }

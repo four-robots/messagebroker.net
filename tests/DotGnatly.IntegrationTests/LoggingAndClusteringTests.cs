@@ -25,11 +25,11 @@ public class LoggingAndClusteringTests
             LogFileSize = 1024 * 1024 // 1MB
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Clean up log file
         try
@@ -63,15 +63,15 @@ public class LoggingAndClusteringTests
             Debug = true // Generate some log output
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
         // Wait a bit for log file to be created
-        await Task.Delay(1000);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         var logFileExists = File.Exists(logFilePath);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Clean up log file
         try
@@ -98,12 +98,12 @@ public class LoggingAndClusteringTests
         {
             Port = 14224,
             LogTimeUtc = true
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var result = await server.ApplyChangesAsync(c => c.LogTimeUtc = false);
+        var result = await server.ApplyChangesAsync(c => c.LogTimeUtc = false, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
         Assert.False(info.CurrentConfig.LogTimeUtc);
@@ -123,18 +123,18 @@ public class LoggingAndClusteringTests
             Debug = true
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
         // Wait for log file to be created
-        await Task.Delay(1000);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         bool success = false;
         try
         {
             // Call ReOpenLogFile - this should succeed even if no rotation happened
             // In production, external tools (logrotate, etc.) would handle the actual rotation
-            await server.ReOpenLogFileAsync();
+            await server.ReOpenLogFileAsync(TestContext.Current.CancellationToken);
 
             success = true;
         }
@@ -144,7 +144,7 @@ public class LoggingAndClusteringTests
         }
         finally
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
             // Clean up
             try
@@ -172,18 +172,18 @@ public class LoggingAndClusteringTests
         {
             Port = 4226
             // No LogFile configured
-        });
+        }, TestContext.Current.CancellationToken);
 
         // This should not throw even though no log file is configured
         try
         {
-            await server.ReOpenLogFileAsync();
-            await server.ShutdownAsync();
+            await server.ReOpenLogFileAsync(TestContext.Current.CancellationToken);
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
             Assert.True(true);
         }
         catch
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
             Assert.Fail("ReOpenLogFileAsync should not throw when no log file is configured");
         }
     }
@@ -198,10 +198,10 @@ public class LoggingAndClusteringTests
             Port = 4227,
             Debug = true,
             MaxPayload = 2048
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var opts = await server.GetOptsAsync();
-        await server.ShutdownAsync();
+        var opts = await server.GetOptsAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Verify it's valid JSON
         var jsonDoc = JsonDocument.Parse(opts);
@@ -220,10 +220,10 @@ public class LoggingAndClusteringTests
             MaxPayload = 2048,
             Jetstream = true,
             JetstreamStoreDir = Path.Combine(Path.GetTempPath(), "nats-js-opts-test")
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var opts = await server.GetOptsAsync();
-        await server.ShutdownAsync();
+        var opts = await server.GetOptsAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         var jsonDoc = JsonDocument.Parse(opts);
         var root = jsonDoc.RootElement;
@@ -259,18 +259,18 @@ public class LoggingAndClusteringTests
         {
             Port = 4229,
             Debug = false
-        });
+        }, TestContext.Current.CancellationToken);
 
         // Get opts before change
-        var optsBefore = await server.GetOptsAsync();
+        var optsBefore = await server.GetOptsAsync(TestContext.Current.CancellationToken);
 
         // Apply change
-        await server.ApplyChangesAsync(c => c.Debug = true);
+        await server.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
 
         // Get opts after change
-        var optsAfter = await server.GetOptsAsync();
+        var optsAfter = await server.GetOptsAsync(TestContext.Current.CancellationToken);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // The JSON should be different
         Assert.NotEqual(optsBefore, optsAfter);
@@ -289,11 +289,11 @@ public class LoggingAndClusteringTests
             JetstreamDomain = "test-domain"
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Clean up JetStream directory
         try
@@ -325,11 +325,11 @@ public class LoggingAndClusteringTests
             JetstreamUniqueTag = uniqueTag
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Clean up JetStream directory
         try
@@ -362,11 +362,11 @@ public class LoggingAndClusteringTests
             JetstreamUniqueTag = uniqueTag
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Clean up JetStream directory
         try
@@ -398,10 +398,10 @@ public class LoggingAndClusteringTests
             JetstreamStoreDir = Path.Combine(Path.GetTempPath(), "nats-js-reload-test"),
             JetstreamDomain = "initial-domain",
             JetstreamUniqueTag = newTag
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Clean up JetStream directory
         try
@@ -442,11 +442,11 @@ public class LoggingAndClusteringTests
             JetstreamUniqueTag = uniqueTag
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success);
 
-        var info = await server.GetInfoAsync();
-        await server.ShutdownAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Clean up
         try
@@ -484,8 +484,8 @@ public class LoggingAndClusteringTests
             LogFileSize = 10 * 1024 * 1024 // 10MB - valid
         };
 
-        var result = await server.ConfigureAsync(config);
-        await server.ShutdownAsync();
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result.Success);
     }
@@ -501,12 +501,12 @@ public class LoggingAndClusteringTests
             LogFileSize = -1 // Invalid
         };
 
-        var result = await server.ConfigureAsync(config);
+        var result = await server.ConfigureAsync(config, TestContext.Current.CancellationToken);
 
         // Server might not start, so only shutdown if it did
         if (result.Success)
         {
-            await server.ShutdownAsync();
+            await server.ShutdownAsync(TestContext.Current.CancellationToken);
         }
 
         Assert.False(result.Success);

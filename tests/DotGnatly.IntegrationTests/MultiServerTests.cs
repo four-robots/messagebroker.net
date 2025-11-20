@@ -21,19 +21,19 @@ public class MultiServerTests
         var config2 = new BrokerConfiguration { Port = 14223, Description = "Server 2" };
         var config3 = new BrokerConfiguration { Port = 14224, Description = "Server 3" };
 
-        var result1 = await server1.ConfigureAsync(config1);
-        var result2 = await server2.ConfigureAsync(config2);
-        var result3 = await server3.ConfigureAsync(config3);
+        var result1 = await server1.ConfigureAsync(config1, TestContext.Current.CancellationToken);
+        var result2 = await server2.ConfigureAsync(config2, TestContext.Current.CancellationToken);
+        var result3 = await server3.ConfigureAsync(config3, TestContext.Current.CancellationToken);
 
         Assert.True(result1.Success, "Server 1 should start successfully");
         Assert.True(result2.Success, "Server 2 should start successfully");
         Assert.True(result3.Success, "Server 3 should start successfully");
 
-        await Task.Delay(100); // Let servers stabilize
+        await Task.Delay(100, TestContext.Current.CancellationToken); // Let servers stabilize
 
-        await server1.ShutdownAsync();
-        await server2.ShutdownAsync();
-        await server3.ShutdownAsync();
+        await server1.ShutdownAsync(TestContext.Current.CancellationToken);
+        await server2.ShutdownAsync(TestContext.Current.CancellationToken);
+        await server3.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -47,23 +47,23 @@ public class MultiServerTests
             Port = 14222,
             Debug = true,
             MaxPayload = 1024
-        });
+        }, TestContext.Current.CancellationToken);
 
         await server2.ConfigureAsync(new BrokerConfiguration
         {
             Port = 14223,
             Debug = false,
             MaxPayload = 2048
-        });
+        }, TestContext.Current.CancellationToken);
 
-        var info1 = await server1.GetInfoAsync();
-        var info2 = await server2.GetInfoAsync();
+        var info1 = await server1.GetInfoAsync(TestContext.Current.CancellationToken);
+        var info2 = await server2.GetInfoAsync(TestContext.Current.CancellationToken);
 
         var config1 = info1.CurrentConfig;
         var config2 = info2.CurrentConfig;
 
-        await server1.ShutdownAsync();
-        await server2.ShutdownAsync();
+        await server1.ShutdownAsync(TestContext.Current.CancellationToken);
+        await server2.ShutdownAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(14222, config1.Port);
         Assert.True(config1.Debug);
@@ -80,12 +80,12 @@ public class MultiServerTests
         using var server1 = new NatsController();
         using var server2 = new NatsController();
 
-        await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
-        await server2.ConfigureAsync(new BrokerConfiguration { Port = 14223 });
+        await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
+        await server2.ConfigureAsync(new BrokerConfiguration { Port = 14223 }, TestContext.Current.CancellationToken);
 
         // Perform concurrent hot reloads
-        var task1 = server1.ApplyChangesAsync(c => c.Debug = true);
-        var task2 = server2.ApplyChangesAsync(c => c.Debug = false);
+        var task1 = server1.ApplyChangesAsync(c => c.Debug = true, TestContext.Current.CancellationToken);
+        var task2 = server2.ApplyChangesAsync(c => c.Debug = false, TestContext.Current.CancellationToken);
 
         await Task.WhenAll(task1, task2);
 
@@ -95,8 +95,8 @@ public class MultiServerTests
         Assert.True(result1.Success, "Server 1 hot reload should succeed");
         Assert.True(result2.Success, "Server 2 hot reload should succeed");
 
-        await server1.ShutdownAsync();
-        await server2.ShutdownAsync();
+        await server1.ShutdownAsync(TestContext.Current.CancellationToken);
+        await server2.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -104,13 +104,13 @@ public class MultiServerTests
     {
         // Start first server
         using var server1 = new NatsController();
-        await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
-        await server1.ShutdownAsync();
+        await server1.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
+        await server1.ShutdownAsync(TestContext.Current.CancellationToken);
 
         // Start second server on same port after first is stopped
         using var server2 = new NatsController();
-        await server2.ConfigureAsync(new BrokerConfiguration { Port = 14222 });
-        await server2.ShutdownAsync();
+        await server2.ConfigureAsync(new BrokerConfiguration { Port = 14222 }, TestContext.Current.CancellationToken);
+        await server2.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -124,19 +124,19 @@ public class MultiServerTests
             Port = 14222,
             Jetstream = true,
             JetstreamStoreDir = "./jetstream1"
-        });
+        }, TestContext.Current.CancellationToken);
 
         await server2.ConfigureAsync(new BrokerConfiguration
         {
             Port = 14223,
             Jetstream = true,
             JetstreamStoreDir = "./jetstream2"
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await Task.Delay(100);
+        await Task.Delay(100, TestContext.Current.CancellationToken);
 
-        await server1.ShutdownAsync();
-        await server2.ShutdownAsync();
+        await server1.ShutdownAsync(TestContext.Current.CancellationToken);
+        await server2.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -160,12 +160,12 @@ public class MultiServerTests
 
             await Task.WhenAll(tasks);
 
-            await Task.Delay(200); // Let servers stabilize
+            await Task.Delay(200, TestContext.Current.CancellationToken); // Let servers stabilize
 
             // Verify all are running
             foreach (var server in servers)
             {
-                var info = await server.GetInfoAsync();
+                var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
                 Assert.True(server.IsRunning, "Server should be running");
             }
         }
@@ -174,7 +174,7 @@ public class MultiServerTests
             // Cleanup
             foreach (var server in servers)
             {
-                try { await server.ShutdownAsync(); } catch { }
+                try { await server.ShutdownAsync(TestContext.Current.CancellationToken); } catch { }
                 server.Dispose();
             }
         }

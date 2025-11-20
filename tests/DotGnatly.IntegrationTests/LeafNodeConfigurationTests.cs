@@ -22,11 +22,11 @@ public class LeafNodeConfigurationTests
                 ImportSubjects = new List<string> { "events.>", "data.*" },
                 ExportSubjects = new List<string> { "commands.>", "status.*" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
         var leafNode = info.CurrentConfig.LeafNode;
 
         Assert.Equal(2, leafNode.ImportSubjects.Count);
@@ -37,7 +37,7 @@ public class LeafNodeConfigurationTests
         Assert.Contains("commands.>", leafNode.ExportSubjects);
         Assert.Contains("status.*", leafNode.ExportSubjects);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class LeafNodeConfigurationTests
                 Port = 17422,
                 ImportSubjects = new List<string> { "events.>" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
@@ -61,7 +61,7 @@ public class LeafNodeConfigurationTests
 
         Assert.True(result.Success, "Failed to add import subjects");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
         var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
         Assert.Equal(3, importSubjects.Count);
@@ -69,7 +69,7 @@ public class LeafNodeConfigurationTests
         Assert.Contains("data.*", importSubjects);
         Assert.Contains("logs.>", importSubjects);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class LeafNodeConfigurationTests
                 Port = 17422,
                 ImportSubjects = new List<string> { "events.>", "data.*", "logs.>" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
@@ -93,7 +93,7 @@ public class LeafNodeConfigurationTests
 
         Assert.True(result.Success, "Failed to remove import subject");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
         var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
         Assert.Equal(2, importSubjects.Count);
@@ -101,7 +101,7 @@ public class LeafNodeConfigurationTests
         Assert.Contains("logs.>", importSubjects);
         Assert.DoesNotContain("data.*", importSubjects);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class LeafNodeConfigurationTests
                 Port = 17422,
                 ExportSubjects = new List<string> { "commands.>" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
@@ -124,12 +124,12 @@ public class LeafNodeConfigurationTests
 
         Assert.True(result.Success, "Failed to add export subjects");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
         var exportSubjects = info.CurrentConfig.LeafNode.ExportSubjects;
 
         Assert.Equal(3, exportSubjects.Count);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -144,15 +144,15 @@ public class LeafNodeConfigurationTests
                 Port = 17422,
                 ImportSubjects = new List<string> { "old.>", "legacy.*" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
-        var result = await server.SetLeafNodeImportSubjectsAsync(new[] { "new.>", "modern.*" });
+        var result = await server.SetLeafNodeImportSubjectsAsync(new[] { "new.>", "modern.*" }, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, "Failed to replace import subjects");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
         var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
         Assert.Equal(2, importSubjects.Count);
@@ -160,7 +160,7 @@ public class LeafNodeConfigurationTests
         Assert.Contains("modern.*", importSubjects);
         Assert.DoesNotContain("old.>", importSubjects);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -175,22 +175,22 @@ public class LeafNodeConfigurationTests
                 Port = 17422,
                 ExportSubjects = new List<string> { "old.>", "legacy.*" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
-        var result = await server.SetLeafNodeExportSubjectsAsync(new[] { "new.>", "modern.*" });
+        var result = await server.SetLeafNodeExportSubjectsAsync(new[] { "new.>", "modern.*" }, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.True(result.Success, "Failed to replace export subjects");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
         var exportSubjects = info.CurrentConfig.LeafNode.ExportSubjects;
 
         Assert.Equal(2, exportSubjects.Count);
         Assert.Contains("new.>", exportSubjects);
         Assert.Contains("modern.*", exportSubjects);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class LeafNodeConfigurationTests
                 Port = 17422,
                 ImportSubjects = new List<string> { "v1.>" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
@@ -218,7 +218,7 @@ public class LeafNodeConfigurationTests
         // Third reload - remove one
         await server.RemoveLeafNodeImportSubjectsAsync("v1.>");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
         var importSubjects = info.CurrentConfig.LeafNode.ImportSubjects;
 
         Assert.Equal(2, importSubjects.Count);
@@ -226,7 +226,7 @@ public class LeafNodeConfigurationTests
         Assert.Contains("v3.>", importSubjects);
         Assert.DoesNotContain("v1.>", importSubjects);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -247,14 +247,14 @@ public class LeafNodeConfigurationTests
                     ">"                  // Full wildcard
                 }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.True(configResult.Success, $"Configuration failed: {configResult.ErrorMessage}");
 
-        var info = await server.GetInfoAsync();
+        var info = await server.GetInfoAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(4, info.CurrentConfig.LeafNode.ImportSubjects.Count);
 
-        await server.ShutdownAsync();
+        await server.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 }

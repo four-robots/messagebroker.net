@@ -23,15 +23,15 @@ public class AccountManagementTests
             Description = "Account registration test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Register a new account
-            var accountJson = await controller.RegisterAccountAsync("TEST_ACCOUNT_001");
+            var accountJson = await controller.RegisterAccountAsync("TEST_ACCOUNT_001", TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(accountJson);
@@ -43,12 +43,12 @@ public class AccountManagementTests
             // Test duplicate registration (should fail)
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
-                await controller.RegisterAccountAsync("TEST_ACCOUNT_001");
+                await controller.RegisterAccountAsync("TEST_ACCOUNT_001", TestContext.Current.CancellationToken);
             });
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -64,18 +64,18 @@ public class AccountManagementTests
             Description = "Account lookup test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Register an account first
-            var registerJson = await controller.RegisterAccountAsync("TEST_LOOKUP_ACCOUNT");
+            var registerJson = await controller.RegisterAccountAsync("TEST_LOOKUP_ACCOUNT", TestContext.Current.CancellationToken);
 
             // Now look it up
-            var lookupJson = await controller.LookupAccountAsync("TEST_LOOKUP_ACCOUNT");
+            var lookupJson = await controller.LookupAccountAsync("TEST_LOOKUP_ACCOUNT", TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(lookupJson);
@@ -87,7 +87,7 @@ public class AccountManagementTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -103,22 +103,22 @@ public class AccountManagementTests
             Description = "Account lookup error test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Try to lookup non-existent account (should throw)
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
             {
-                await controller.LookupAccountAsync("NONEXISTENT_ACCOUNT");
+                await controller.LookupAccountAsync("NONEXISTENT_ACCOUNT", TestContext.Current.CancellationToken);
             });
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -134,19 +134,19 @@ public class AccountManagementTests
             Description = "Account statistics test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Register some test accounts
-            await controller.RegisterAccountAsync("STATS_ACCOUNT_001");
-            await controller.RegisterAccountAsync("STATS_ACCOUNT_002");
+            await controller.RegisterAccountAsync("STATS_ACCOUNT_001", TestContext.Current.CancellationToken);
+            await controller.RegisterAccountAsync("STATS_ACCOUNT_002", TestContext.Current.CancellationToken);
 
             // Get statistics for all accounts
-            var statzJson = await controller.GetAccountStatzAsync();
+            var statzJson = await controller.GetAccountStatzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(statzJson);
@@ -167,7 +167,7 @@ public class AccountManagementTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 
@@ -183,18 +183,18 @@ public class AccountManagementTests
             Description = "Account statistics filter test"
         };
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, $"Failed to start server: {result.ErrorMessage}");
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         try
         {
             // Register a test account
-            await controller.RegisterAccountAsync("FILTERED_ACCOUNT");
+            await controller.RegisterAccountAsync("FILTERED_ACCOUNT", TestContext.Current.CancellationToken);
 
             // Get statistics for specific account
-            var statzJson = await controller.GetAccountStatzAsync("FILTERED_ACCOUNT");
+            var statzJson = await controller.GetAccountStatzAsync("FILTERED_ACCOUNT", TestContext.Current.CancellationToken);
 
             // Parse and validate JSON
             using var doc = JsonDocument.Parse(statzJson);
@@ -212,7 +212,7 @@ public class AccountManagementTests
         }
         finally
         {
-            await controller.ShutdownAsync();
+            await controller.ShutdownAsync(TestContext.Current.CancellationToken);
         }
     }
 }

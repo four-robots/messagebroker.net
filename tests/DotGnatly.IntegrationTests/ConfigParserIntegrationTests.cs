@@ -77,7 +77,7 @@ max_payload: 8MB
         var controller = new NatsController();
         _controllers.Add(controller);
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Success, result.ErrorMessage);
@@ -87,7 +87,7 @@ max_payload: 8MB
         Assert.True(config.Jetstream);
 
         // Verify server is running
-        var isRunning = await controller.IsServerRunningAsync();
+        var isRunning = await controller.IsServerRunningAsync(TestContext.Current.CancellationToken);
         Assert.True(isRunning);
     }
 
@@ -116,7 +116,7 @@ write_deadline: 10s
         var controller = new NatsController();
         _controllers.Add(controller);
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Success, result.ErrorMessage);
@@ -154,7 +154,7 @@ jetstream {{
         var controller = new NatsController();
         _controllers.Add(controller);
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Success, result.ErrorMessage);
@@ -166,7 +166,7 @@ jetstream {{
         Assert.Equal("test-server-01", config.JetstreamUniqueTag);
 
         // Verify JetStream is enabled
-        var jsEnabled = await controller.IsJetStreamEnabledAsync();
+        var jsEnabled = await controller.IsJetStreamEnabledAsync(TestContext.Current.CancellationToken);
         Assert.True(jsEnabled);
     }
 
@@ -191,7 +191,7 @@ leafnodes {
         var controller = new NatsController();
         _controllers.Add(controller);
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Success, result.ErrorMessage);
@@ -239,7 +239,7 @@ leafnodes {{
         var controller = new NatsController();
         _controllers.Add(controller);
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Success, result.ErrorMessage);
@@ -272,11 +272,11 @@ leafnodes {{
         Assert.Equal(17423, config.LeafNode.Port);
 
         // Verify server is running
-        var isRunning = await controller.IsServerRunningAsync();
+        var isRunning = await controller.IsServerRunningAsync(TestContext.Current.CancellationToken);
         Assert.True(isRunning);
 
         // Verify JetStream is enabled
-        var jsEnabled = await controller.IsJetStreamEnabledAsync();
+        var jsEnabled = await controller.IsJetStreamEnabledAsync(TestContext.Current.CancellationToken);
         Assert.True(jsEnabled);
     }
 
@@ -312,7 +312,7 @@ jetstream {
         var controller = new NatsController();
         _controllers.Add(controller);
 
-        var result = await controller.ConfigureAsync(config);
+        var result = await controller.ConfigureAsync(config, TestContext.Current.CancellationToken);
         Assert.True(result.Success, result.ErrorMessage);
     }
 

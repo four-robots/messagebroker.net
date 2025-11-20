@@ -36,7 +36,7 @@ public class HubAndSpokeTests
                 Port = 17422, // Leaf node listening port
                 ExportSubjects = new List<string> { "hub.>" } // Export subjects from hub
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!hubConfigResult.Success)
         {
@@ -44,7 +44,7 @@ public class HubAndSpokeTests
         }
 
         // Wait for hub to be ready
-        await hub.WaitForReadyAsync(timeoutSeconds: 5);
+        await hub.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
 
         // Start leaf node that connects to hub
         using var leaf = new NatsController();
@@ -56,7 +56,7 @@ public class HubAndSpokeTests
                 RemoteUrls = new List<string> { "nats://localhost:17422" }, // Connect to hub
                 ImportSubjects = new List<string> { "hub.>" } // Import from hub
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!leafConfigResult.Success)
         {
@@ -64,21 +64,21 @@ public class HubAndSpokeTests
         }
 
         // Wait for leaf to be ready
-        await leaf.WaitForReadyAsync(timeoutSeconds: 5);
+        await leaf.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
 
         // Give the leaf node time to establish connection
-        await Task.Delay(1000);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         // Connect NATS clients
         await using var hubClient = new NatsClient(CreateClientOpts("nats://localhost:14222"));
         await using var leafClient = new NatsClient(CreateClientOpts("nats://localhost:14223"));
 
         // Give clients time to establish connection
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         // Subscribe on leaf node
         var receivedMessages = new List<string>();
-        var subscription = leafClient.SubscribeAsync<string>("hub.test");
+        var subscription = leafClient.SubscribeAsync<string>("hub.test", cancellationToken: TestContext.Current.CancellationToken);
         var subscriptionTask = Task.Run(async () =>
         {
             await foreach (var msg in subscription)
@@ -87,18 +87,18 @@ public class HubAndSpokeTests
                 if (receivedMessages.Count >= 3)
                     break;
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         // Give subscription time to establish
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         // Publish messages from hub
-        await hubClient.PublishAsync("hub.test", "Message 1");
-        await hubClient.PublishAsync("hub.test", "Message 2");
-        await hubClient.PublishAsync("hub.test", "Message 3");
+        await hubClient.PublishAsync("hub.test", "Message 1", cancellationToken: TestContext.Current.CancellationToken);
+        await hubClient.PublishAsync("hub.test", "Message 2", cancellationToken: TestContext.Current.CancellationToken);
+        await hubClient.PublishAsync("hub.test", "Message 3", cancellationToken: TestContext.Current.CancellationToken);
 
         // Wait for messages to be received (with timeout)
-        var timeoutTask = Task.Delay(5000);
+        var timeoutTask = Task.Delay(5000, TestContext.Current.CancellationToken);
         var completedTask = await Task.WhenAny(subscriptionTask, timeoutTask);
 
         if (completedTask == timeoutTask)
@@ -111,8 +111,8 @@ public class HubAndSpokeTests
         Assert.Equal("Message 2", receivedMessages[1]);
         Assert.Equal("Message 3", receivedMessages[2]);
 
-        await hub.ShutdownAsync();
-        await leaf.ShutdownAsync();
+        await hub.ShutdownAsync(TestContext.Current.CancellationToken);
+        await leaf.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     [Fact]
@@ -128,14 +128,14 @@ public class HubAndSpokeTests
                 Port = 17422,
                 ImportSubjects = new List<string> { "leaf.>" } // Import from leaf nodes
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!hubConfigResult.Success)
         {
             throw new Exception($"Hub configuration failed: {hubConfigResult.ErrorMessage}");
         }
 
-        await hub.WaitForReadyAsync(timeoutSeconds: 5);
+        await hub.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
 
         // Start leaf node
         using var leaf = new NatsController();
@@ -147,15 +147,15 @@ public class HubAndSpokeTests
                 RemoteUrls = new List<string> { "nats://localhost:17422" },
                 ExportSubjects = new List<string> { "leaf.>" } // Export to hub
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!leafConfigResult.Success)
         {
             throw new Exception($"Leaf configuration failed: {leafConfigResult.ErrorMessage}");
         }
 
-        await leaf.WaitForReadyAsync(timeoutSeconds: 5);
-        await Task.Delay(1000);
+        await leaf.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         // Connect NATS clients
         await using var hubClient = new NatsClient(CreateClientOpts("nats://localhost:14222"));
@@ -163,7 +163,7 @@ public class HubAndSpokeTests
 
         // Subscribe on hub
         var receivedMessages = new List<string>();
-        var subscription = hubClient.SubscribeAsync<string>("leaf.test");
+        var subscription = hubClient.SubscribeAsync<string>("leaf.test", cancellationToken: TestContext.Current.CancellationToken);
         var subscriptionTask = Task.Run(async () =>
         {
             await foreach (var msg in subscription)
@@ -172,16 +172,16 @@ public class HubAndSpokeTests
                 if (receivedMessages.Count >= 3)
                     break;
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         // Publish messages from leaf
-        await leafClient.PublishAsync("leaf.test", "Leaf Message 1");
-        await leafClient.PublishAsync("leaf.test", "Leaf Message 2");
-        await leafClient.PublishAsync("leaf.test", "Leaf Message 3");
+        await leafClient.PublishAsync("leaf.test", "Leaf Message 1", cancellationToken: TestContext.Current.CancellationToken);
+        await leafClient.PublishAsync("leaf.test", "Leaf Message 2", cancellationToken: TestContext.Current.CancellationToken);
+        await leafClient.PublishAsync("leaf.test", "Leaf Message 3", cancellationToken: TestContext.Current.CancellationToken);
 
-        var timeoutTask = Task.Delay(5000);
+        var timeoutTask = Task.Delay(5000, TestContext.Current.CancellationToken);
         var completedTask = await Task.WhenAny(subscriptionTask, timeoutTask);
 
         if (completedTask == timeoutTask)
@@ -191,8 +191,8 @@ public class HubAndSpokeTests
 
         Assert.Equal(3, receivedMessages.Count);
 
-        await hub.ShutdownAsync();
-        await leaf.ShutdownAsync();
+        await hub.ShutdownAsync(TestContext.Current.CancellationToken);
+        await leaf.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     // Test 3: Bidirectional message flow
@@ -314,14 +314,14 @@ public class HubAndSpokeTests
                 ImportSubjects = new List<string> { ">" }, // Import everything
                 ExportSubjects = new List<string> { ">" }  // Export everything
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!hubConfigResult.Success)
         {
             throw new Exception($"Hub configuration failed: {hubConfigResult.ErrorMessage}");
         }
 
-        await hub.WaitForReadyAsync(timeoutSeconds: 5);
+        await hub.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
 
         // Start first leaf
         using var leaf1 = new NatsController();
@@ -334,14 +334,14 @@ public class HubAndSpokeTests
                 ImportSubjects = new List<string> { ">" },
                 ExportSubjects = new List<string> { ">" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!leaf1ConfigResult.Success)
         {
             throw new Exception($"Leaf1 configuration failed: {leaf1ConfigResult.ErrorMessage}");
         }
 
-        await leaf1.WaitForReadyAsync(timeoutSeconds: 5);
+        await leaf1.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
 
         // Start second leaf
         using var leaf2 = new NatsController();
@@ -354,22 +354,22 @@ public class HubAndSpokeTests
                 ImportSubjects = new List<string> { ">" },
                 ExportSubjects = new List<string> { ">" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!leaf2ConfigResult.Success)
         {
             throw new Exception($"Leaf2 configuration failed: {leaf2ConfigResult.ErrorMessage}");
         }
 
-        await leaf2.WaitForReadyAsync(timeoutSeconds: 5);
-        await Task.Delay(1000);
+        await leaf2.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         await using var leaf1Client = new NatsClient(CreateClientOpts("nats://localhost:14223"));
         await using var leaf2Client = new NatsClient(CreateClientOpts("nats://localhost:14224"));
 
         // Subscribe on leaf2
         var receivedMessages = new List<string>();
-        var subscription = leaf2Client.SubscribeAsync<string>("test.message");
+        var subscription = leaf2Client.SubscribeAsync<string>("test.message", cancellationToken: TestContext.Current.CancellationToken);
         var subTask = Task.Run(async () =>
         {
             await foreach (var msg in subscription)
@@ -378,15 +378,15 @@ public class HubAndSpokeTests
                 if (receivedMessages.Count >= 2)
                     break;
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await Task.Delay(500);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         // Publish from leaf1
-        await leaf1Client.PublishAsync("test.message", "Leaf1 to Leaf2 via Hub 1");
-        await leaf1Client.PublishAsync("test.message", "Leaf1 to Leaf2 via Hub 2");
+        await leaf1Client.PublishAsync("test.message", "Leaf1 to Leaf2 via Hub 1", cancellationToken: TestContext.Current.CancellationToken);
+        await leaf1Client.PublishAsync("test.message", "Leaf1 to Leaf2 via Hub 2", cancellationToken: TestContext.Current.CancellationToken);
 
-        var timeout = Task.Delay(5000);
+        var timeout = Task.Delay(5000, TestContext.Current.CancellationToken);
         var completed = await Task.WhenAny(subTask, timeout);
 
         if (completed == timeout)
@@ -396,9 +396,9 @@ public class HubAndSpokeTests
 
         Assert.Equal(2, receivedMessages.Count);
 
-        await hub.ShutdownAsync();
-        await leaf1.ShutdownAsync();
-        await leaf2.ShutdownAsync();
+        await hub.ShutdownAsync(TestContext.Current.CancellationToken);
+        await leaf1.ShutdownAsync(TestContext.Current.CancellationToken);
+        await leaf2.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     // Test 5: Dynamic subject addition - hub-to-leaf
@@ -597,14 +597,14 @@ public class HubAndSpokeTests
                 Port = 17422,
                 ExportSubjects = new List<string> { ">" } // Export everything
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!hubConfigResult.Success)
         {
             throw new Exception($"Hub configuration failed: {hubConfigResult.ErrorMessage}");
         }
 
-        await hub.WaitForReadyAsync(timeoutSeconds: 5);
+        await hub.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
 
         // Start leaf with limited import
         using var leaf = new NatsController();
@@ -616,22 +616,22 @@ public class HubAndSpokeTests
                 RemoteUrls = new List<string> { "nats://localhost:17422" },
                 ImportSubjects = new List<string> { "old.>" }
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
         if (!leafConfigResult.Success)
         {
             throw new Exception($"Leaf configuration failed: {leafConfigResult.ErrorMessage}");
         }
 
-        await leaf.WaitForReadyAsync(timeoutSeconds: 5);
-        await Task.Delay(1000);
+        await leaf.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         await using var hubClient = new NatsClient(CreateClientOpts("nats://localhost:14222"));
         await using var leafClient = new NatsClient(CreateClientOpts("nats://localhost:14223"));
 
         // Test old subject works
         var oldReceived = new List<string>();
-        var oldSub = leafClient.SubscribeAsync<string>("old.test");
+        var oldSub = leafClient.SubscribeAsync<string>("old.test", cancellationToken: TestContext.Current.CancellationToken);
         var oldTask = Task.Run(async () =>
         {
             await foreach (var msg in oldSub)
@@ -640,24 +640,24 @@ public class HubAndSpokeTests
                 if (oldReceived.Count >= 1)
                     break;
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await Task.Delay(500);
-        await hubClient.PublishAsync("old.test", "Old subject message");
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+        await hubClient.PublishAsync("old.test", "Old subject message", cancellationToken: TestContext.Current.CancellationToken);
 
         await Task.WhenAny(oldTask, Task.Delay(2000));
 
         Assert.Single(oldReceived);
 
         // Replace import subjects
-        await leaf.SetLeafNodeImportSubjectsAsync(new[] { "new.>" });
+        await leaf.SetLeafNodeImportSubjectsAsync(new[] { "new.>" }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Give time for config reload
-        await Task.Delay(1000);
+        await Task.Delay(1000, TestContext.Current.CancellationToken);
 
         // Test new subject works
         var newReceived = new List<string>();
-        var newSub = leafClient.SubscribeAsync<string>("new.test");
+        var newSub = leafClient.SubscribeAsync<string>("new.test", cancellationToken: TestContext.Current.CancellationToken);
         var newTask = Task.Run(async () =>
         {
             await foreach (var msg in newSub)
@@ -666,23 +666,23 @@ public class HubAndSpokeTests
                 if (newReceived.Count >= 1)
                     break;
             }
-        });
+        }, TestContext.Current.CancellationToken);
 
-        await Task.Delay(500);
-        await hubClient.PublishAsync("new.test", "New subject message");
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+        await hubClient.PublishAsync("new.test", "New subject message", cancellationToken: TestContext.Current.CancellationToken);
 
         await Task.WhenAny(newTask, Task.Delay(2000));
 
         Assert.Single(newReceived);
 
         // Verify old subject no longer works
-        await hubClient.PublishAsync("old.test", "Should not be received");
-        await Task.Delay(500);
+        await hubClient.PublishAsync("old.test", "Should not be received", cancellationToken: TestContext.Current.CancellationToken);
+        await Task.Delay(500, TestContext.Current.CancellationToken);
 
         Assert.Single(oldReceived);
 
-        await hub.ShutdownAsync();
-        await leaf.ShutdownAsync();
+        await hub.ShutdownAsync(TestContext.Current.CancellationToken);
+        await leaf.ShutdownAsync(TestContext.Current.CancellationToken);
     }
 
     // Test 8: Wildcard subjects in hub-and-spoke
