@@ -1,6 +1,10 @@
-# Claude.MD - DotGnatly
+# CLAUDE.md
 
-This file provides context and guidance for AI assistants working with the DotGnatly codebase.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+---
+
+# DotGnatly Project Guide
 
 ## Project Overview
 
@@ -12,16 +16,20 @@ DotGnatly is a .NET library that provides programmatic control over NATS server 
 
 ### Technology Stack
 - **.NET 8.0/9.0/10.0** - Multi-targeted framework support
-- **C# 12** - Language version with nullable reference types enabled
+- **C# Latest** - Language version with nullable reference types enabled
 - **Go bindings** - Native NATS server via P/Invoke
-- **NATS Server v2.11.0** - Embedded messaging server
+- **NATS Server v2.12** - Embedded messaging server
 - **System.Text.Json** - JSON serialization
-- **No external NuGet dependencies** - Core uses only System.* namespaces
+- **NATS.Net** - Official NATS client library (for Extensions.JetStream only)
+- **Mister.Version** - Automatic semantic versioning for monorepo
+- **No external NuGet dependencies** - Core and Nats projects use only System.* namespaces
 
 ### Layer Architecture
 
 ```
 Application Layer (Consumer Code)
+    ↓
+DotGnatly.Extensions.JetStream (Optional: Client-side JetStream operations)
     ↓
 DotGnatly.Core (Abstractions, Validation, Versioning, Events)
     ↓
@@ -29,7 +37,7 @@ DotGnatly.Nats (NATS Implementation, P/Invoke Bindings)
     ↓
 Native Go Library (nats-bindings.dll/.so)
     ↓
-NATS Server v2.11 (Embedded)
+NATS Server v2.12 (Embedded)
 ```
 
 ## Project Structure
@@ -37,35 +45,46 @@ NATS Server v2.11 (Embedded)
 ```
 DotGnatly/
 ├── src/
-│   ├── DotGnatly.Core/          # Core abstractions and models
-│   │   ├── Abstractions/            # Interfaces (IBrokerController, IConfigurationValidator)
-│   │   ├── Configuration/           # Config models with versioning
-│   │   ├── Validation/              # Pre-apply validation system
-│   │   └── Events/                  # Change notification events
-│   ├── DotGnatly.Natives/       # Native bindings package
-│   │   ├── nats-bindings.dll/.so    # Native Go library (copied from native/)
-│   │   └── README.md                # Natives package documentation
-│   ├── DotGnatly.Nats/          # NATS-specific implementation
-│   │   ├── Bindings/                # P/Invoke layer (Windows/Linux)
-│   │   └── Implementation/          # NatsController
-│   └── DotGnatly.Examples/      # Interactive examples and tests
-├── native/                          # Go source code for native bindings
-│   ├── nats-bindings.go             # cgo bindings implementation
-│   ├── go.mod                       # Go module dependencies
-│   ├── build.sh                     # Linux/macOS build script
-│   ├── build.ps1                    # Windows build script
-│   ├── build-all.sh                 # Cross-platform build
-│   └── README.md                    # Native bindings documentation
-├── docs/                            # Comprehensive documentation (5,592 lines)
+│   ├── DotGnatly.Core/                  # Core abstractions and models
+│   │   ├── Abstractions/                    # Interfaces (IBrokerController, IConfigurationValidator)
+│   │   ├── Configuration/                   # Config models with versioning
+│   │   ├── Validation/                      # Pre-apply validation system
+│   │   └── Events/                          # Change notification events
+│   ├── DotGnatly.Nats/                  # NATS-specific implementation
+│   │   ├── Bindings/                        # P/Invoke layer (Windows/Linux)
+│   │   └── Implementation/                  # NatsController
+│   ├── DotGnatly.Natives/               # Native bindings package
+│   │   ├── nats-bindings.dll/.so            # Native Go library (copied from native/)
+│   │   └── README.md                        # Natives package documentation
+│   ├── DotGnatly.Extensions.JetStream/  # JetStream client-side operations
+│   │   └── (Uses NATS.Net for streams, consumers, KV stores)
+│   ├── Directory.Build.props            # Shared build configuration
+│   ├── Directory.Packages.props         # Central package management
+│   └── mr-version.yml                   # Mister.Version configuration
+├── examples/
+│   └── DotGnatly.Examples/              # Interactive examples and tests
+├── tests/
+│   ├── DotGnatly.Core.Tests/            # Unit tests for Core
+│   ├── DotGnatly.Nats.Tests/            # Unit tests for Nats
+│   ├── DotGnatly.IntegrationTests/      # Integration tests
+│   ├── DotGnatly.Extensions.JetStream.Tests/           # Unit tests for JetStream
+│   └── DotGnatly.Extensions.JetStream.IntegrationTests/  # JetStream integration tests
+├── native/                              # Go source code for native bindings
+│   ├── nats-bindings.go                 # cgo bindings implementation
+│   ├── nats-bindings_test.go            # Go unit tests
+│   ├── go.mod                           # Go module dependencies
+│   ├── build.sh                         # Linux/macOS build script
+│   ├── build.ps1                        # Windows build script
+│   └── README.md                        # Native bindings documentation
+├── docs/                                # Comprehensive documentation
 │   ├── GETTING_STARTED.md
 │   ├── API_DESIGN.md
 │   ├── ARCHITECTURE.md
 │   └── ...
-├── nats-csharp/                     # Original reference implementation
-├── DotGnatly.sln            # Solution file
-├── README.md                        # Main project README
-├── PROJECT_SUMMARY.md               # Detailed project summary
-└── CLAUDE.md                        # This file
+├── DotGnatly.sln                    # Solution file
+├── README.md                            # Main project README
+├── ROADMAP.md                           # Feature implementation roadmap
+└── CLAUDE.md                            # This file
 ```
 
 ## Core Components
@@ -92,7 +111,7 @@ DotGnatly/
 - `ConfigurationChanging` - Pre-change event (cancelable)
 - `ConfigurationChanged` - Post-change event with diff
 
-### DotGnatly.Nats (6 files)
+### DotGnatly.Nats
 
 **Main Implementation:**
 - `NatsController` - Core IBrokerController implementation
@@ -110,6 +129,22 @@ DotGnatly/
 
 **Extensions:**
 - `NatsControllerExtensions` - 16+ fluent API methods (WithPortAsync, EnableJetStreamAsync, etc.)
+
+### DotGnatly.Extensions.JetStream
+
+**Purpose**: Provides client-side JetStream operations using the official NATS.Net library
+
+**Key Features:**
+- Stream management (create, update, delete, list)
+- Consumer management (create, update, delete, subscribe)
+- Key-Value store operations
+- Fluent API that extends `NatsController`
+- Uses NATS.Net client library for robust client-side operations
+
+**Dependencies:**
+- `DotGnatly.Core` - Core abstractions
+- `DotGnatly.Nats` - Server control
+- `NATS.Net` - Official NATS client library
 
 ## Development Workflow
 
@@ -135,24 +170,48 @@ dotnet build DotGnatly.sln -c Release
 
 **Important**: The native bindings must be built before the .NET projects, as the .NET code depends on `nats-bindings.dll` (Windows) or `nats-bindings.so` (Linux).
 
+**Versioning**: The project uses Mister.Version for automatic semantic versioning in a monorepo setup. Version configuration is in `src/mr-version.yml`.
+
 ### Running Examples
 
 ```bash
-# Interactive menu
-cd src/DotGnatly.Examples
+# Interactive menu (from repository root)
+cd examples/DotGnatly.Examples
 dotnet run
 
-# Automated tests
-cd src/DotGnatly.Examples
-dotnet run -- test
+# Note: Examples were moved from src/ to examples/ directory
 ```
 
 ### Testing
 
-The project uses a simple test framework in `DotGnatly.Examples/SimpleTest.cs`:
-- 7 comprehensive test scenarios
-- All tests currently passing
-- Tests cover: basic config, hot reload, validation, rollback, events, info, shutdown
+The project uses xUnit for unit and integration tests:
+
+**Unit Tests:**
+- `DotGnatly.Core.Tests` - Core functionality tests
+- `DotGnatly.Nats.Tests` - NATS controller and bindings tests (40+ monitoring tests)
+- `DotGnatly.Extensions.JetStream.Tests` - JetStream extension tests
+
+**Integration Tests:**
+- `DotGnatly.IntegrationTests` - Full integration tests (11 monitoring tests)
+- `DotGnatly.Extensions.JetStream.IntegrationTests` - JetStream integration tests
+
+**Native Tests:**
+- `native/nats-bindings_test.go` - Go unit tests for native bindings (30+ tests)
+
+**Running Tests:**
+```bash
+# Run all tests
+dotnet test
+
+# Run specific test project
+dotnet test tests/DotGnatly.Core.Tests
+
+# Run with verbose output
+dotnet test -v detailed
+
+# Run tests in parallel
+dotnet test --parallel
+```
 
 ### NuGet Packaging
 
@@ -162,6 +221,7 @@ The project is configured for NuGet packaging with multi-targeting support.
 - `DotGnatly.Core` - Core abstractions (no dependencies)
 - `DotGnatly.Natives` - Native NATS server bindings (platform-specific libraries)
 - `DotGnatly.Nats` - NATS implementation (depends on DotGnatly.Core and DotGnatly.Natives)
+- `DotGnatly.Extensions.JetStream` - JetStream client extensions (depends on DotGnatly.Core, DotGnatly.Nats, and NATS.Net)
 
 **Multi-Targeting:**
 - Supports .NET 8.0, 9.0, and 10.0
@@ -179,6 +239,7 @@ cd native && ./build.sh && cd ..  # Build native bindings first
 dotnet pack src/DotGnatly.Natives/DotGnatly.Natives.csproj -c Release -o ./nupkg
 dotnet pack src/DotGnatly.Core/DotGnatly.Core.csproj -c Release -o ./nupkg
 dotnet pack src/DotGnatly.Nats/DotGnatly.Nats.csproj -c Release -o ./nupkg
+dotnet pack src/DotGnatly.Extensions.JetStream/DotGnatly.Extensions.JetStream.csproj -c Release -o ./nupkg
 ```
 
 **Native Bindings Structure:**
@@ -196,15 +257,20 @@ The `DotGnatly.Natives` package can be versioned and updated independently, allo
 
 **Package Configuration:**
 - Shared properties: `src/Directory.Build.props`
+- Central package management: `src/Directory.Packages.props`
 - Project-specific metadata: Individual `.csproj` files
-- Version: Centrally managed in `Directory.Build.props`
+- Version: Automatically calculated by Mister.Version based on `src/mr-version.yml`
 
 **Testing Packages Locally:**
 ```bash
-dotnet add package DotGnatly.Nats --version 1.0.0 --source ./nupkg
+dotnet add package DotGnatly.Nats --version 0.1.0 --source ./nupkg
 ```
 
-See **[NUGET_PACKAGING.md](NUGET_PACKAGING.md)** for comprehensive packaging documentation, including publishing, versioning, and CI/CD integration.
+**Package Versioning:**
+- Uses Mister.Version for automatic semantic versioning
+- Base version: 0.1.0 (configured in `src/mr-version.yml`)
+- Version auto-increments based on git history and conventional commits
+- Each package can have independent versioning in monorepo setup
 
 ## Important Conventions
 
@@ -346,12 +412,12 @@ cd native
 1. Edit `native/go.mod` and update the version:
    ```go
    require (
-       github.com/nats-io/nats-server/v2 v2.11.0  // Update this
+       github.com/nats-io/nats-server/v2 v2.12.0  // Update this
    )
    ```
-2. Run `cd native && go get github.com/nats-io/nats-server/v2@v2.11.0 && go mod tidy`
+2. Run `cd native && go get github.com/nats-io/nats-server/v2@v2.12.0 && go mod tidy`
 3. Rebuild: `./build.sh` or `.\build.ps1`
-4. Test thoroughly with `cd src/DotGnatly.Examples && dotnet run -- test`
+4. Test thoroughly with `cd examples/DotGnatly.Examples && dotnet run`
 
 See **[native/README.md](../native/README.md)** for comprehensive build documentation.
 
@@ -478,13 +544,14 @@ See **[docs/MONITORING.md](docs/MONITORING.md)** for comprehensive monitoring do
 - `src/DotGnatly.Nats/Extensions/NatsControllerExtensions.cs` - Fluent API
 
 ### Examples
-- `src/DotGnatly.Examples/Program.cs` - Interactive examples
-- `src/DotGnatly.Examples/SimpleTest.cs` - Automated tests
-- `src/DotGnatly.Examples/Monitoring/` - Monitoring examples
+- `examples/DotGnatly.Examples/Program.cs` - Interactive examples
 
 ### Tests
-- `src/DotGnatly.Nats.Tests/Implementation/NatsControllerMonitoringTests.cs` - 40+ unit tests for monitoring
-- `src/DotGnatly.IntegrationTests/MonitoringTests.cs` - 11 integration tests
+- `tests/DotGnatly.Core.Tests/` - Core unit tests
+- `tests/DotGnatly.Nats.Tests/` - NATS controller unit tests (40+ monitoring tests)
+- `tests/DotGnatly.IntegrationTests/` - Integration tests (11 monitoring tests)
+- `tests/DotGnatly.Extensions.JetStream.Tests/` - JetStream unit tests
+- `tests/DotGnatly.Extensions.JetStream.IntegrationTests/` - JetStream integration tests
 - `native/nats-bindings_test.go` - 30+ Go unit tests for native bindings
 
 ### Native Bindings
@@ -539,51 +606,46 @@ Total: 6,500+ lines of documentation
 
 ## Git Workflow
 
-### Current Branch
-- Working on: `claude/create-claude-md-file-01EUfrdXA8MJBcemVJ6mkFUp`
-- Main branch: (to be determined)
+### Main Branch
+- Main branch: `main`
 
 ### Commit Guidelines
 - Use descriptive commit messages
 - Reference issue numbers when applicable
 - Keep commits focused and atomic
-
-### Pushing Changes
-- Always use: `git push -u origin <branch-name>`
-- Branch must start with 'claude/' and end with matching session ID
-- Retry network failures up to 4 times with exponential backoff (2s, 4s, 8s, 16s)
-
-## Build Status
-
-- **Last Build**: SUCCESS
-- **Warnings**: 0
-- **Errors**: 0
-- **Tests**: 7/7 passing
+- For version bumping: Use conventional commits (feat:, fix:, chore:, etc.) as Mister.Version uses them for versioning
 
 ## Version Information
 
-- **Current Version**: 1.0.0
-- **NATS Server Version**: 2.10.x / 2.11.0
-- **.NET Version**: 9.0
-- **C# Version**: 12
-- **Last Updated**: November 2024
+- **Base Version**: 0.1.0 (configured in `src/mr-version.yml`)
+- **NATS Server Version**: 2.12
+- **.NET Frameworks**: 8.0, 9.0, 10.0 (multi-targeted)
+- **C# Version**: Latest
+- **Last Updated**: November 2025
 
 ## Quick Reference
 
 ### Essential Commands
 
 ```bash
-# Build
+# Build (from repository root)
 dotnet build DotGnatly.sln
 
 # Run examples
-cd src/DotGnatly.Examples && dotnet run
+cd examples/DotGnatly.Examples && dotnet run
 
 # Run tests
-cd src/DotGnatly.Examples && dotnet run -- test
+dotnet test
+
+# Run specific test project
+dotnet test tests/DotGnatly.Core.Tests
 
 # Clean
 dotnet clean DotGnatly.sln
+
+# Build native bindings (required before first .NET build)
+cd native && ./build.sh  # Linux/macOS
+cd native && .\build.ps1 # Windows
 ```
 
 ### Essential Code Patterns
@@ -625,15 +687,13 @@ await controller.ShutdownAsync();
 
 ## Support Resources
 
-- **Documentation**: `docs/` folder (6,500+ lines)
-- **Examples**: `src/DotGnatly.Examples/`
+- **Documentation**: `docs/` folder
+- **Examples**: `examples/DotGnatly.Examples/`
 - **Architecture**: `docs/ARCHITECTURE.md`
 - **API Reference**: `docs/API_DESIGN.md`
-- **Monitoring Guide**: `docs/MONITORING.md`
-- **Feature Roadmap**: `TODO_NATS_FEATURES.md`
+- **Feature Roadmap**: `ROADMAP.md`
 - **NATS Community**: https://slack.nats.io
 
 ---
 
-**This file was last updated**: 2025-11-16
-**Project Status**: Active development, all tests passing, 29/35 features implemented (83%)
+**This file was last updated**: 2025-11-20
