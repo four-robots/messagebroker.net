@@ -13,15 +13,4 @@
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="[8.0.0]" />
 		<PackageVersion Include="Mister.Version" Version="[2.2.0]" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<!-- Testing packages -->
-		<PackageVersion Include="coverlet.collector" Version="6.0.4" />
-		<PackageVersion Include="coverlet.msbuild" Version="6.0.4" />
-		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
-		<PackageVersion Include="Moq" Version="4.20.72" />
-		<PackageVersion Include="xunit.v3" Version="1.4.0" />
-		<PackageVersion Include="xunit.v3.runner.visualstudio" Version="1.4.0" />
-		<PackageVersion Include="GitHubActionsTestLogger" Version="3.0.0-alpha1" />
-	</ItemGroup>
 </Project>

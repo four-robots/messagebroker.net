@@ -17,7 +17,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
         _jetstreamDir = Path.Combine(Path.GetTempPath(), $"jetstream-tests-{Guid.NewGuid()}");
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _controller = new NatsController();
 
@@ -36,7 +36,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
         await _controller.WaitForReadyAsync(timeoutSeconds: 10);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_controller != null)
         {
@@ -68,7 +68,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
                 .WithDescription("Basic test stream")
                 .WithStorage(StreamConfigStorage.File)
                 .WithMaxMessages(1000);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_BASIC", streamInfo.Config.Name);
@@ -90,7 +90,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
                 .WithSubjects("test.memory.*")
                 .WithStorage(StreamConfigStorage.Memory)
                 .WithMaxAge(TimeSpan.FromHours(1));
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_MEMORY", streamInfo.Config.Name);
@@ -108,7 +108,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
                 .WithSubjects("test.workqueue.*")
                 .WithRetention(StreamConfigRetention.Workqueue)
                 .WithMaxMessages(5000);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_WORKQUEUE", streamInfo.Config.Name);
@@ -129,7 +129,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
                 .WithDenyPurge()
                 .WithAllowRollup()
                 .WithAllowDirect();
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_ADVANCED", streamInfo.Config.Name);
@@ -144,11 +144,11 @@ public class JetStreamExtensionsTests : IAsyncLifetime
     public async Task ListStreamsAsync_ReturnsAllStreams()
     {
         // Arrange
-        await _controller!.CreateStreamAsync("LIST_TEST_1", b => b.WithSubjects("list.1.*"));
-        await _controller!.CreateStreamAsync("LIST_TEST_2", b => b.WithSubjects("list.2.*"));
+        await _controller!.CreateStreamAsync("LIST_TEST_1", b => b.WithSubjects("list.1.*"), cancellationToken: TestContext.Current.CancellationToken);
+        await _controller!.CreateStreamAsync("LIST_TEST_2", b => b.WithSubjects("list.2.*"), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var streams = await _controller!.ListStreamsAsync();
+        var streams = await _controller!.ListStreamsAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains("LIST_TEST_1", streams);
@@ -159,10 +159,10 @@ public class JetStreamExtensionsTests : IAsyncLifetime
     public async Task GetStreamAsync_ExistingStream_ReturnsStreamInfo()
     {
         // Arrange
-        await _controller!.CreateStreamAsync("GET_TEST", b => b.WithSubjects("get.test.*"));
+        await _controller!.CreateStreamAsync("GET_TEST", b => b.WithSubjects("get.test.*"), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var streamInfo = await _controller!.GetStreamAsync("GET_TEST");
+        var streamInfo = await _controller!.GetStreamAsync("GET_TEST", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("GET_TEST", streamInfo.Config.Name);
@@ -177,13 +177,13 @@ public class JetStreamExtensionsTests : IAsyncLifetime
         // Arrange
         await _controller!.CreateStreamAsync("UPDATE_TEST", b => b
             .WithSubjects("update.test.*")
-            .WithMaxMessages(1000));
+            .WithMaxMessages(1000), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
         var updatedInfo = await _controller!.UpdateStreamAsync("UPDATE_TEST", b => b
             .WithSubjects("update.test.*")
             .WithMaxMessages(2000)
-            .WithDescription("Updated stream"));
+            .WithDescription("Updated stream"), cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("UPDATE_TEST", updatedInfo.Config.Name);
@@ -195,14 +195,14 @@ public class JetStreamExtensionsTests : IAsyncLifetime
     public async Task DeleteStreamAsync_DeletesStream()
     {
         // Arrange
-        await _controller!.CreateStreamAsync("DELETE_TEST", b => b.WithSubjects("delete.test.*"));
+        await _controller!.CreateStreamAsync("DELETE_TEST", b => b.WithSubjects("delete.test.*"), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var deleted = await _controller!.DeleteStreamAsync("DELETE_TEST");
+        var deleted = await _controller!.DeleteStreamAsync("DELETE_TEST", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(deleted);
-        var streams = await _controller!.ListStreamsAsync();
+        var streams = await _controller!.ListStreamsAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain("DELETE_TEST", streams);
     }
 
@@ -210,10 +210,10 @@ public class JetStreamExtensionsTests : IAsyncLifetime
     public async Task PurgeStreamAsync_PurgesMessages()
     {
         // Arrange
-        await _controller!.CreateStreamAsync("PURGE_TEST", b => b.WithSubjects("purge.test.*"));
+        await _controller!.CreateStreamAsync("PURGE_TEST", b => b.WithSubjects("purge.test.*"), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var purgeResponse = await _controller!.PurgeStreamAsync("PURGE_TEST");
+        var purgeResponse = await _controller!.PurgeStreamAsync("PURGE_TEST", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(purgeResponse);
@@ -233,7 +233,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
         }";
 
         // Act
-        var streamInfo = await _controller!.CreateStreamFromJsonAsync(json);
+        var streamInfo = await _controller!.CreateStreamFromJsonAsync(json, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("JSON_TEST", streamInfo.Config.Name);
@@ -255,12 +255,12 @@ public class JetStreamExtensionsTests : IAsyncLifetime
             ""max_msgs"": 3000
         }";
         var tempFile = Path.GetTempFileName();
-        await File.WriteAllTextAsync(tempFile, json);
+        await File.WriteAllTextAsync(tempFile, json, TestContext.Current.CancellationToken);
 
         try
         {
             // Act
-            var streamInfo = await _controller!.CreateStreamFromFileAsync(tempFile);
+            var streamInfo = await _controller!.CreateStreamFromFileAsync(tempFile, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("FILE_TEST", streamInfo.Config.Name);
@@ -288,13 +288,13 @@ public class JetStreamExtensionsTests : IAsyncLifetime
         var json1 = @"{""name"": ""DIR_TEST_1"", ""subjects"": [""dir.1.*""]}";
         var json2 = @"{""name"": ""DIR_TEST_2"", ""subjects"": [""dir.2.*""]}";
 
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream1.json"), json1);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream2.json"), json2);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream1.json"), json1, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream2.json"), json2, TestContext.Current.CancellationToken);
 
         try
         {
             // Act
-            var streamInfos = await _controller!.CreateStreamsFromDirectoryAsync(tempDir);
+            var streamInfos = await _controller!.CreateStreamsFromDirectoryAsync(tempDir, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(2, streamInfos.Count);
@@ -316,7 +316,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
         // Arrange
         await _controller!.CreateStreamAsync("UPDATE_FILE_TEST", b => b
             .WithSubjects("update.file.*")
-            .WithMaxMessages(1000));
+            .WithMaxMessages(1000), cancellationToken: TestContext.Current.CancellationToken);
 
         var json = @"{
             ""name"": ""UPDATE_FILE_TEST"",
@@ -325,12 +325,12 @@ public class JetStreamExtensionsTests : IAsyncLifetime
             ""description"": ""Updated from file""
         }";
         var tempFile = Path.GetTempFileName();
-        await File.WriteAllTextAsync(tempFile, json);
+        await File.WriteAllTextAsync(tempFile, json, TestContext.Current.CancellationToken);
 
         try
         {
             // Act
-            var streamInfo = await _controller!.UpdateStreamFromFileAsync(tempFile);
+            var streamInfo = await _controller!.UpdateStreamFromFileAsync(tempFile, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("UPDATE_FILE_TEST", streamInfo.Config.Name);
@@ -350,7 +350,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
     public async Task GetJetStreamContextAsync_ReturnsValidContext()
     {
         // Act
-        await using var context = await _controller!.GetJetStreamContextAsync();
+        await using var context = await _controller!.GetJetStreamContextAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(context);
@@ -367,7 +367,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
             builder
                 .WithSubjects("orders.*", "shipments.*", "inventory.*")
                 .WithMaxMessages(10000);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("MULTI_SUBJECT_TEST", streamInfo.Config.Name);
@@ -397,7 +397,7 @@ public class JetStreamExtensionsTests : IAsyncLifetime
                 .WithMaxConsumers(5)
                 .WithDiscard(StreamConfigDiscard.Old)
                 .WithDuplicateWindow(TimeSpan.FromMinutes(2));
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("COMPLEX_TEST", streamInfo.Config.Name);

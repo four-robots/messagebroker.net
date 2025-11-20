@@ -16,7 +16,7 @@ public class InMemoryConfigurationStoreTests
         };
 
         // Act
-        await store.SaveAsync(version);
+        await store.SaveAsync(version, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(1, version.Version);
@@ -33,9 +33,9 @@ public class InMemoryConfigurationStoreTests
         var version3 = new ConfigurationVersion { Configuration = new BrokerConfiguration() };
 
         // Act
-        await store.SaveAsync(version1);
-        await store.SaveAsync(version2);
-        await store.SaveAsync(version3);
+        await store.SaveAsync(version1, TestContext.Current.CancellationToken);
+        await store.SaveAsync(version2, TestContext.Current.CancellationToken);
+        await store.SaveAsync(version3, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(1, version1.Version);
@@ -51,7 +51,7 @@ public class InMemoryConfigurationStoreTests
         var store = new InMemoryConfigurationStore();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => store.SaveAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => store.SaveAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -63,10 +63,10 @@ public class InMemoryConfigurationStoreTests
         {
             Configuration = new BrokerConfiguration { Port = 4222, Description = "Test" }
         };
-        await store.SaveAsync(version);
+        await store.SaveAsync(version, TestContext.Current.CancellationToken);
 
         // Act
-        var retrieved = await store.GetVersionAsync(1);
+        var retrieved = await store.GetVersionAsync(1, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(retrieved);
@@ -82,7 +82,7 @@ public class InMemoryConfigurationStoreTests
         var store = new InMemoryConfigurationStore();
 
         // Act
-        var retrieved = await store.GetVersionAsync(999);
+        var retrieved = await store.GetVersionAsync(999, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(retrieved);
@@ -95,7 +95,7 @@ public class InMemoryConfigurationStoreTests
         var store = new InMemoryConfigurationStore();
 
         // Act
-        var latest = await store.GetLatestAsync();
+        var latest = await store.GetLatestAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Null(latest);
@@ -110,12 +110,12 @@ public class InMemoryConfigurationStoreTests
         var version2 = new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V2" } };
         var version3 = new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V3" } };
 
-        await store.SaveAsync(version1);
-        await store.SaveAsync(version2);
-        await store.SaveAsync(version3);
+        await store.SaveAsync(version1, TestContext.Current.CancellationToken);
+        await store.SaveAsync(version2, TestContext.Current.CancellationToken);
+        await store.SaveAsync(version3, TestContext.Current.CancellationToken);
 
         // Act
-        var latest = await store.GetLatestAsync();
+        var latest = await store.GetLatestAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(latest);
@@ -130,7 +130,7 @@ public class InMemoryConfigurationStoreTests
         var store = new InMemoryConfigurationStore();
 
         // Act
-        var history = await store.GetHistoryAsync();
+        var history = await store.GetHistoryAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(history);
@@ -146,11 +146,11 @@ public class InMemoryConfigurationStoreTests
             await store.SaveAsync(new ConfigurationVersion
             {
                 Configuration = new BrokerConfiguration { Description = $"V{i}" }
-            });
+            }, TestContext.Current.CancellationToken);
         }
 
         // Act
-        var history = await store.GetHistoryAsync(count: 3);
+        var history = await store.GetHistoryAsync(count: 3, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(3, history.Count);
@@ -164,11 +164,11 @@ public class InMemoryConfigurationStoreTests
     {
         // Arrange
         var store = new InMemoryConfigurationStore();
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
 
         // Act
-        var history = await store.GetHistoryAsync(count: 10);
+        var history = await store.GetHistoryAsync(count: 10, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(2, history.Count);
@@ -179,16 +179,16 @@ public class InMemoryConfigurationStoreTests
     {
         // Arrange
         var store = new InMemoryConfigurationStore();
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
 
         // Act
         store.Clear();
 
         // Assert
         Assert.Equal(0, store.Count);
-        var latest = await store.GetLatestAsync();
+        var latest = await store.GetLatestAsync(TestContext.Current.CancellationToken);
         Assert.Null(latest);
     }
 
@@ -197,13 +197,13 @@ public class InMemoryConfigurationStoreTests
     {
         // Arrange
         var store = new InMemoryConfigurationStore();
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
         store.Clear();
 
         // Act
         var version = new ConfigurationVersion { Configuration = new BrokerConfiguration() };
-        await store.SaveAsync(version);
+        await store.SaveAsync(version, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(1, version.Version);
@@ -214,9 +214,9 @@ public class InMemoryConfigurationStoreTests
     {
         // Arrange
         var store = new InMemoryConfigurationStore();
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V1" } });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V2" } });
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V3" } });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V1" } }, TestContext.Current.CancellationToken);
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V2" } }, TestContext.Current.CancellationToken);
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration { Description = "V3" } }, TestContext.Current.CancellationToken);
 
         // Act
         var all = store.GetAll();
@@ -240,9 +240,9 @@ public class InMemoryConfigurationStoreTests
         };
 
         // Act
-        await store.SaveAsync(version);
+        await store.SaveAsync(version, TestContext.Current.CancellationToken);
         var nextVersion = new ConfigurationVersion { Configuration = new BrokerConfiguration() };
-        await store.SaveAsync(nextVersion);
+        await store.SaveAsync(nextVersion, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(5, version.Version);
@@ -258,10 +258,10 @@ public class InMemoryConfigurationStoreTests
         // Act & Assert
         Assert.Equal(0, store.Count);
 
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
         Assert.Equal(1, store.Count);
 
-        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() });
+        await store.SaveAsync(new ConfigurationVersion { Configuration = new BrokerConfiguration() }, TestContext.Current.CancellationToken);
         Assert.Equal(2, store.Count);
 
         store.Clear();

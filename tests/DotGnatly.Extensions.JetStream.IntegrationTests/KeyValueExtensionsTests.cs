@@ -17,7 +17,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         _jetstreamDir = Path.Combine(Path.GetTempPath(), $"kv-tests-{Guid.NewGuid()}");
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         _controller = new NatsController();
 
@@ -36,7 +36,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         await _controller.WaitForReadyAsync(timeoutSeconds: 10);
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         if (_controller != null)
         {
@@ -66,7 +66,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
             builder
                 .WithDescription("Basic test bucket")
                 .WithMaxHistoryPerKey(1);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_BASIC", store.Bucket);
@@ -82,13 +82,13 @@ public class KeyValueExtensionsTests : IAsyncLifetime
                 .WithDescription("Memory test bucket")
                 .WithStorage(NatsKVStorageType.Memory)
                 .WithMaxHistoryPerKey(3);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_MEMORY", store.Bucket);
 
         // Verify by getting status
-        var status = await _controller!.GetKeyValueStatusAsync("TEST_MEMORY");
+        var status = await _controller!.GetKeyValueStatusAsync("TEST_MEMORY", cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("TEST_MEMORY", status.Bucket);
     }
 
@@ -102,7 +102,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
                 .WithDescription("TTL test bucket")
                 .WithTTL(TimeSpan.FromHours(1))
                 .WithMaxHistoryPerKey(1);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_TTL", store.Bucket);
@@ -118,7 +118,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
                 .WithDescription("Replicas test bucket")
                 .WithReplicas(1) // Single replica for standalone server
                 .WithMaxHistoryPerKey(5);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_REPLICAS", store.Bucket);
@@ -134,7 +134,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
                 .WithDescription("Max size test bucket")
                 .WithMaxBucketSize(1024 * 1024) // 1MB
                 .WithMaxHistoryPerKey(1);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("TEST_MAXSIZE", store.Bucket);
@@ -144,10 +144,10 @@ public class KeyValueExtensionsTests : IAsyncLifetime
     public async Task GetKeyValueAsync_ExistingBucket_ReturnsStore()
     {
         // Arrange
-        await _controller!.CreateKeyValueAsync("GET_TEST", b => b.WithMaxHistoryPerKey(1));
+        await _controller!.CreateKeyValueAsync("GET_TEST", b => b.WithMaxHistoryPerKey(1), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var store = await _controller!.GetKeyValueAsync("GET_TEST");
+        var store = await _controller!.GetKeyValueAsync("GET_TEST", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("GET_TEST", store.Bucket);
@@ -157,11 +157,11 @@ public class KeyValueExtensionsTests : IAsyncLifetime
     public async Task ListKeyValuesAsync_ReturnsAllBuckets()
     {
         // Arrange
-        await _controller!.CreateKeyValueAsync("LIST_TEST_1", b => b.WithMaxHistoryPerKey(1));
-        await _controller!.CreateKeyValueAsync("LIST_TEST_2", b => b.WithMaxHistoryPerKey(1));
+        await _controller!.CreateKeyValueAsync("LIST_TEST_1", b => b.WithMaxHistoryPerKey(1), cancellationToken: TestContext.Current.CancellationToken);
+        await _controller!.CreateKeyValueAsync("LIST_TEST_2", b => b.WithMaxHistoryPerKey(1), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var buckets = await _controller!.ListKeyValuesAsync();
+        var buckets = await _controller!.ListKeyValuesAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Contains("LIST_TEST_1", buckets);
@@ -174,10 +174,10 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         // Arrange
         await _controller!.CreateKeyValueAsync("STATUS_TEST", b => b
             .WithDescription("Status test bucket")
-            .WithMaxHistoryPerKey(3));
+            .WithMaxHistoryPerKey(3), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var status = await _controller!.GetKeyValueStatusAsync("STATUS_TEST");
+        var status = await _controller!.GetKeyValueStatusAsync("STATUS_TEST", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("STATUS_TEST", status.Bucket);
@@ -190,18 +190,18 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         // Arrange
         await _controller!.CreateKeyValueAsync("UPDATE_TEST", b => b
             .WithMaxHistoryPerKey(1)
-            .WithDescription("Original description"));
+            .WithDescription("Original description"), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
         var updatedStore = await _controller!.UpdateKeyValueAsync("UPDATE_TEST", b => b
             .WithMaxHistoryPerKey(5)
-            .WithDescription("Updated description"));
+            .WithDescription("Updated description"), cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("UPDATE_TEST", updatedStore.Bucket);
 
         // Verify update by checking status
-        var status = await _controller!.GetKeyValueStatusAsync("UPDATE_TEST");
+        var status = await _controller!.GetKeyValueStatusAsync("UPDATE_TEST", cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("UPDATE_TEST", status.Bucket);
     }
 
@@ -222,14 +222,14 @@ public class KeyValueExtensionsTests : IAsyncLifetime
     public async Task DeleteKeyValueAsync_DeletesBucket()
     {
         // Arrange
-        await _controller!.CreateKeyValueAsync("DELETE_TEST", b => b.WithMaxHistoryPerKey(1));
+        await _controller!.CreateKeyValueAsync("DELETE_TEST", b => b.WithMaxHistoryPerKey(1), cancellationToken: TestContext.Current.CancellationToken);
 
         // Act
-        var deleted = await _controller!.DeleteKeyValueAsync("DELETE_TEST");
+        var deleted = await _controller!.DeleteKeyValueAsync("DELETE_TEST", cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(deleted);
-        var buckets = await _controller!.ListKeyValuesAsync();
+        var buckets = await _controller!.ListKeyValuesAsync(cancellationToken: TestContext.Current.CancellationToken);
         Assert.DoesNotContain("DELETE_TEST", buckets);
     }
 
@@ -245,7 +245,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         }";
 
         // Act
-        var store = await _controller!.CreateKeyValueFromJsonAsync(json);
+        var store = await _controller!.CreateKeyValueFromJsonAsync(json, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("JSON_TEST", store.Bucket);
@@ -262,12 +262,12 @@ public class KeyValueExtensionsTests : IAsyncLifetime
             ""storage"": ""file""
         }";
         var tempFile = Path.GetTempFileName();
-        await File.WriteAllTextAsync(tempFile, json);
+        await File.WriteAllTextAsync(tempFile, json, TestContext.Current.CancellationToken);
 
         try
         {
             // Act
-            var store = await _controller!.CreateKeyValueFromFileAsync(tempFile);
+            var store = await _controller!.CreateKeyValueFromFileAsync(tempFile, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal("FILE_TEST", store.Bucket);
@@ -291,13 +291,13 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         var json1 = @"{""bucket"": ""DIR_TEST_1"", ""max_history_per_key"": 1}";
         var json2 = @"{""bucket"": ""DIR_TEST_2"", ""max_history_per_key"": 1}";
 
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket1.json"), json1);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket2.json"), json2);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket1.json"), json1, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket2.json"), json2, TestContext.Current.CancellationToken);
 
         try
         {
             // Act
-            var stores = await _controller!.CreateKeyValuesFromDirectoryAsync(tempDir);
+            var stores = await _controller!.CreateKeyValuesFromDirectoryAsync(tempDir, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             Assert.Equal(2, stores.Count);
@@ -326,13 +326,13 @@ public class KeyValueExtensionsTests : IAsyncLifetime
                 .WithMaxBucketSize(10 * 1024 * 1024) // 10MB
                 .WithReplicas(1)
                 .WithStorage(NatsKVStorageType.File);
-        });
+        }, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("COMPLEX_TEST", store.Bucket);
 
         // Verify via status
-        var status = await _controller!.GetKeyValueStatusAsync("COMPLEX_TEST");
+        var status = await _controller!.GetKeyValueStatusAsync("COMPLEX_TEST", cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("COMPLEX_TEST", status.Bucket);
     }
 
@@ -348,7 +348,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         }";
 
         // Act
-        var store = await _controller!.CreateKeyValueFromJsonAsync(json);
+        var store = await _controller!.CreateKeyValueFromJsonAsync(json, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("JSON_TTL_TEST", store.Bucket);
@@ -366,7 +366,7 @@ public class KeyValueExtensionsTests : IAsyncLifetime
         }";
 
         // Act
-        var store = await _controller!.CreateKeyValueFromJsonAsync(json);
+        var store = await _controller!.CreateKeyValueFromJsonAsync(json, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("JSON_SIZE_TEST", store.Bucket);

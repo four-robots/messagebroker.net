@@ -8,8 +8,10 @@
 		<LangVersion>latest</LangVersion>
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<NoWarn>$(NoWarn);NU1507;CS1591;CS8618</NoWarn>
+		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+		<UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
 	</PropertyGroup>
-	
+
 	<ItemGroup>
 		<PackageReference Include="coverlet.collector" />
 		<PackageReference Include="coverlet.msbuild" />
@@ -21,6 +23,7 @@
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="Moq" />
+		<PackageReference Include="Microsoft.Testing.Platform" />
 	</ItemGroup>
 
 </Project>

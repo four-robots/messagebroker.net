@@ -177,7 +177,7 @@ public class KVConfigJsonTests
             ""storage"": ""file""
         }";
         var tempFile = Path.GetTempFileName();
-        await File.WriteAllTextAsync(tempFile, json);
+        await File.WriteAllTextAsync(tempFile, json, TestContext.Current.CancellationToken);
 
         try
         {
@@ -217,8 +217,8 @@ public class KVConfigJsonTests
         var json1 = @"{""bucket"": ""BUCKET1"", ""description"": ""First bucket""}";
         var json2 = @"{""bucket"": ""BUCKET2"", ""description"": ""Second bucket""}";
 
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket1.json"), json1);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket2.json"), json2);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket1.json"), json1, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "bucket2.json"), json2, TestContext.Current.CancellationToken);
 
         try
         {
@@ -258,9 +258,9 @@ public class KVConfigJsonTests
         var json1 = @"{""bucket"": ""BUCKET1""}";
         var json2 = @"{""bucket"": ""BUCKET2""}";
 
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "kv-bucket1.json"), json1);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "kv-bucket2.json"), json2);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "other.json"), json1);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "kv-bucket1.json"), json1, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "kv-bucket2.json"), json2, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "other.json"), json1, TestContext.Current.CancellationToken);
 
         try
         {

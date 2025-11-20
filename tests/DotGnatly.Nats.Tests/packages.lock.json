@@ -30,6 +30,12 @@
           "Microsoft.TestPlatform.TestHost": "18.0.1"
         }
       },
+      "Microsoft.Testing.Platform": {
+        "type": "Direct",
+        "requested": "[2.0.2, )",
+        "resolved": "2.0.2",
+        "contentHash": "43NCOTEENtdc9fmlzX9KHQR14AZEYek5r4jOJlWPhTyV1+aYAQYl4x773nYXU5TKxV6+rMuniJ7wcj9C9qrP1A=="
+      },
       "Moq": {
         "type": "Direct",
         "requested": "[4.20.72, )",
@@ -81,11 +87,6 @@
         "dependencies": {
           "Microsoft.Testing.Platform": "1.6.2"
         }
-      },
-      "Microsoft.Testing.Platform": {
-        "type": "Transitive",
-        "resolved": "1.6.2",
-        "contentHash": "7CFJKN3An5Ra6YOrTCAi7VldSRTxGGokqC0NSNrpKTKO6NJJby10EWwnqV/v2tawcRzfSbLpKNpvBv7s7ZoD3Q=="
       },
       "Microsoft.Testing.Platform.MSBuild": {
         "type": "Transitive",

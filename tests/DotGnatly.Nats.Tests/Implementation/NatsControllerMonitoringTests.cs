@@ -82,7 +82,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(connzPtr);
 
         // Act
-        var result = await _controller.GetConnzAsync();
+        var result = await _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotNull(result);
@@ -105,7 +105,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(connzJson));
 
         // Act
-        await _controller.GetConnzAsync(filter);
+        await _controller.GetConnzAsync(filter, TestContext.Current.CancellationToken);
 
         // Assert
         _mockBindings.Verify(b => b.GetConnz(filter), Times.Once);
@@ -123,7 +123,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetConnzAsync());
+            () => _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Contains("Failed to get connection info", exception.Message);
         _mockBindings.Verify(b => b.FreeString(errorPtr), Times.Once);
@@ -136,7 +136,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetConnzAsync());
+            () => _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(subszJson));
 
         // Act
-        var result = await _controller.GetSubszAsync();
+        var result = await _controller.GetSubszAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -190,7 +190,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetSubszAsync());
+            () => _controller.GetSubszAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Contains("Failed to get subscription info", exception.Message);
     }
@@ -217,7 +217,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(jszJson));
 
         // Act
-        var result = await _controller.GetJszAsync();
+        var result = await _controller.GetJszAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -237,7 +237,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(jszJson));
 
         // Act
-        await _controller.GetJszAsync(account);
+        await _controller.GetJszAsync(account, TestContext.Current.CancellationToken);
 
         // Assert
         _mockBindings.Verify(b => b.GetJsz(account), Times.Once);
@@ -261,7 +261,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(routezJson));
 
         // Act
-        var result = await _controller.GetRoutezAsync();
+        var result = await _controller.GetRoutezAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -286,7 +286,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(leafzJson));
 
         // Act
-        var result = await _controller.GetLeafzAsync();
+        var result = await _controller.GetLeafzAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -308,7 +308,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString("OK"));
 
         // Act
-        await _controller.DisconnectClientAsync(clientId);
+        await _controller.DisconnectClientAsync(clientId, TestContext.Current.CancellationToken);
 
         // Assert - no exception thrown means success
         _mockBindings.Verify(b => b.DisconnectClientByID(clientId), Times.Once);
@@ -326,7 +326,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.DisconnectClientAsync(clientId));
+            () => _controller.DisconnectClientAsync(clientId, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -341,7 +341,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.DisconnectClientAsync(clientId));
+            () => _controller.DisconnectClientAsync(clientId, TestContext.Current.CancellationToken));
 
         Assert.Contains("Some error occurred", exception.Message);
     }
@@ -367,7 +367,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(clientInfoJson));
 
         // Act
-        var result = await _controller.GetClientInfoAsync(clientId);
+        var result = await _controller.GetClientInfoAsync(clientId, TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -387,7 +387,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetClientInfoAsync(clientId));
+            () => _controller.GetClientInfoAsync(clientId, TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -408,7 +408,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(accountzJson));
 
         // Act
-        var result = await _controller.GetAccountzAsync();
+        var result = await _controller.GetAccountzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -427,7 +427,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(accountzJson));
 
         // Act
-        await _controller.GetAccountzAsync(account);
+        await _controller.GetAccountzAsync(account, TestContext.Current.CancellationToken);
 
         // Assert
         _mockBindings.Verify(b => b.GetAccountz(account), Times.Once);
@@ -455,7 +455,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(varzJson));
 
         // Act
-        var result = await _controller.GetVarzAsync();
+        var result = await _controller.GetVarzAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -475,7 +475,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetVarzAsync());
+            () => _controller.GetVarzAsync(TestContext.Current.CancellationToken));
 
         Assert.Contains("Failed to get server variables", exception.Message);
     }
@@ -500,7 +500,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(gatewayzJson));
 
         // Act
-        var result = await _controller.GetGatewayzAsync();
+        var result = await _controller.GetGatewayzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -520,7 +520,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(gatewayzJson));
 
         // Act
-        await _controller.GetGatewayzAsync(gatewayName);
+        await _controller.GetGatewayzAsync(gatewayName, TestContext.Current.CancellationToken);
 
         // Assert
         _mockBindings.Verify(b => b.GetGatewayz(gatewayName), Times.Once);
@@ -547,14 +547,14 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.GetGatewayz(null)).Returns(testPtr);
 
         // Act
-        await _controller.GetConnzAsync();
-        await _controller.GetSubszAsync();
-        await _controller.GetJszAsync();
-        await _controller.GetRoutezAsync();
-        await _controller.GetLeafzAsync();
-        await _controller.GetAccountzAsync();
-        await _controller.GetVarzAsync();
-        await _controller.GetGatewayzAsync();
+        await _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await _controller.GetSubszAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await _controller.GetJszAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await _controller.GetRoutezAsync(TestContext.Current.CancellationToken);
+        await _controller.GetLeafzAsync(TestContext.Current.CancellationToken);
+        await _controller.GetAccountzAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await _controller.GetVarzAsync(TestContext.Current.CancellationToken);
+        await _controller.GetGatewayzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert - FreeString should be called 8 times
         _mockBindings.Verify(b => b.FreeString(testPtr), Times.Exactly(8));
@@ -572,7 +572,7 @@ public class NatsControllerMonitoringTests : IDisposable
         // Act
         try
         {
-            await _controller.GetConnzAsync();
+            await _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken);
         }
         catch (InvalidOperationException)
         {
@@ -603,11 +603,11 @@ public class NatsControllerMonitoringTests : IDisposable
         // Act - Make concurrent calls
         var tasks = new[]
         {
-            _controller.GetConnzAsync(),
-            _controller.GetSubszAsync(),
-            _controller.GetVarzAsync(),
-            _controller.GetConnzAsync(),
-            _controller.GetSubszAsync()
+            _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken),
+            _controller.GetSubszAsync(cancellationToken: TestContext.Current.CancellationToken),
+            _controller.GetVarzAsync(TestContext.Current.CancellationToken),
+            _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken),
+            _controller.GetSubszAsync(cancellationToken: TestContext.Current.CancellationToken)
         };
 
         var results = await Task.WhenAll(tasks);
@@ -632,7 +632,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(connzJson));
 
         // Act
-        await _controller.GetConnzAsync();
+        await _controller.GetConnzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         _mockBindings.Verify(b => b.SetCurrentPort(4222), Times.AtLeastOnce);
@@ -660,7 +660,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(accountJson));
 
         // Act
-        var result = await _controller.RegisterAccountAsync(accountName);
+        var result = await _controller.RegisterAccountAsync(accountName, TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -677,7 +677,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
-            () => _controller.RegisterAccountAsync(""));
+            () => _controller.RegisterAccountAsync("", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -688,7 +688,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
-            () => _controller.RegisterAccountAsync(null!));
+            () => _controller.RegisterAccountAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -704,7 +704,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.RegisterAccountAsync(accountName));
+            () => _controller.RegisterAccountAsync(accountName, TestContext.Current.CancellationToken));
 
         Assert.Contains("Account already exists", exception.Message);
         _mockBindings.Verify(b => b.FreeString(errorPtr), Times.Once);
@@ -717,7 +717,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.RegisterAccountAsync("TEST_ACCOUNT"));
+            () => _controller.RegisterAccountAsync("TEST_ACCOUNT", TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -743,7 +743,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(accountJson));
 
         // Act
-        var result = await _controller.LookupAccountAsync(accountName);
+        var result = await _controller.LookupAccountAsync(accountName, TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -762,7 +762,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
-            () => _controller.LookupAccountAsync(""));
+            () => _controller.LookupAccountAsync("", TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -773,7 +773,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(
-            () => _controller.LookupAccountAsync(null!));
+            () => _controller.LookupAccountAsync(null!, TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -789,7 +789,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.LookupAccountAsync(accountName));
+            () => _controller.LookupAccountAsync(accountName, TestContext.Current.CancellationToken));
 
         Assert.Contains("Account not found", exception.Message);
         _mockBindings.Verify(b => b.FreeString(errorPtr), Times.Once);
@@ -802,7 +802,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.LookupAccountAsync("TEST_ACCOUNT"));
+            () => _controller.LookupAccountAsync("TEST_ACCOUNT", TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -832,7 +832,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(statzJson));
 
         // Act
-        var result = await _controller.GetAccountStatzAsync();
+        var result = await _controller.GetAccountStatzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         var doc = JsonDocument.Parse(result);
@@ -859,7 +859,7 @@ public class NatsControllerMonitoringTests : IDisposable
             .Returns(CreateManagedString(statzJson));
 
         // Act
-        await _controller.GetAccountStatzAsync(accountFilter);
+        await _controller.GetAccountStatzAsync(accountFilter, TestContext.Current.CancellationToken);
 
         // Assert
         _mockBindings.Verify(b => b.GetAccountStatz(accountFilter), Times.Once);
@@ -877,7 +877,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetAccountStatzAsync());
+            () => _controller.GetAccountStatzAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Contains("Failed to get account statistics", exception.Message);
         _mockBindings.Verify(b => b.FreeString(errorPtr), Times.Once);
@@ -890,7 +890,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetAccountStatzAsync());
+            () => _controller.GetAccountStatzAsync(cancellationToken: TestContext.Current.CancellationToken));
     }
 
     #endregion
@@ -909,9 +909,9 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.GetAccountStatz(null)).Returns(testPtr);
 
         // Act
-        await _controller.RegisterAccountAsync("TEST1");
-        await _controller.LookupAccountAsync("TEST2");
-        await _controller.GetAccountStatzAsync();
+        await _controller.RegisterAccountAsync("TEST1", TestContext.Current.CancellationToken);
+        await _controller.LookupAccountAsync("TEST2", TestContext.Current.CancellationToken);
+        await _controller.GetAccountStatzAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert - FreeString should be called 3 times
         _mockBindings.Verify(b => b.FreeString(testPtr), Times.Exactly(3));
@@ -932,7 +932,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.GetServerID()).Returns(testPtr);
 
         // Act
-        var result = await _controller.GetServerIdAsync();
+        var result = await _controller.GetServerIdAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(serverId, result);
@@ -951,7 +951,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetServerIdAsync());
+            () => _controller.GetServerIdAsync(TestContext.Current.CancellationToken));
 
         _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
     }
@@ -963,7 +963,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetServerIdAsync());
+            () => _controller.GetServerIdAsync(TestContext.Current.CancellationToken));
 
         // Should not call binding if server not running
         _mockBindings.Verify(b => b.GetServerID(), Times.Never);
@@ -980,7 +980,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.GetServerName()).Returns(testPtr);
 
         // Act
-        var result = await _controller.GetServerNameAsync();
+        var result = await _controller.GetServerNameAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(serverName, result);
@@ -998,7 +998,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.GetServerName()).Returns(testPtr);
 
         // Act
-        var result = await _controller.GetServerNameAsync();
+        var result = await _controller.GetServerNameAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal("", result);
@@ -1016,7 +1016,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetServerNameAsync());
+            () => _controller.GetServerNameAsync(TestContext.Current.CancellationToken));
 
         _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
     }
@@ -1028,7 +1028,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.GetServerNameAsync());
+            () => _controller.GetServerNameAsync(TestContext.Current.CancellationToken));
 
         _mockBindings.Verify(b => b.GetServerName(), Times.Never);
     }
@@ -1043,7 +1043,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.IsServerRunning()).Returns(testPtr);
 
         // Act
-        var result = await _controller.IsServerRunningAsync();
+        var result = await _controller.IsServerRunningAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -1061,7 +1061,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.IsServerRunning()).Returns(testPtr);
 
         // Act
-        var result = await _controller.IsServerRunningAsync();
+        var result = await _controller.IsServerRunningAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -1074,7 +1074,7 @@ public class NatsControllerMonitoringTests : IDisposable
         // Arrange - No configuration
 
         // Act
-        var result = await _controller.IsServerRunningAsync();
+        var result = await _controller.IsServerRunningAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -1092,7 +1092,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.IsServerRunning()).Returns(testPtr);
 
         // Act
-        var result = await _controller.IsServerRunningAsync();
+        var result = await _controller.IsServerRunningAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -1112,9 +1112,9 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.IsServerRunning()).Returns(runningPtr);
 
         // Act
-        await _controller.GetServerIdAsync();
-        await _controller.GetServerNameAsync();
-        await _controller.IsServerRunningAsync();
+        await _controller.GetServerIdAsync(TestContext.Current.CancellationToken);
+        await _controller.GetServerNameAsync(TestContext.Current.CancellationToken);
+        await _controller.IsServerRunningAsync(TestContext.Current.CancellationToken);
 
         // Assert - FreeString should be called for each method
         _mockBindings.Verify(b => b.FreeString(idPtr), Times.Once);
@@ -1136,7 +1136,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.WaitForReadyState(5)).Returns(testPtr);
 
         // Act
-        var result = await _controller.WaitForReadyAsync(timeoutSeconds: 5);
+        var result = await _controller.WaitForReadyAsync(timeoutSeconds: 5, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -1154,7 +1154,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.WaitForReadyState(1)).Returns(testPtr);
 
         // Act
-        var result = await _controller.WaitForReadyAsync(timeoutSeconds: 1);
+        var result = await _controller.WaitForReadyAsync(timeoutSeconds: 1, cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -1172,7 +1172,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.WaitForReadyAsync());
+            () => _controller.WaitForReadyAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
     }
@@ -1184,7 +1184,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.WaitForReadyAsync());
+            () => _controller.WaitForReadyAsync(cancellationToken: TestContext.Current.CancellationToken));
 
         _mockBindings.Verify(b => b.WaitForReadyState(It.IsAny<int>()), Times.Never);
     }
@@ -1199,7 +1199,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.WaitForReadyState(5)).Returns(testPtr);
 
         // Act - Call without specifying timeout (should use default 5)
-        var result = await _controller.WaitForReadyAsync();
+        var result = await _controller.WaitForReadyAsync(cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -1216,7 +1216,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.IsJetStreamEnabled()).Returns(testPtr);
 
         // Act
-        var result = await _controller.IsJetStreamEnabledAsync();
+        var result = await _controller.IsJetStreamEnabledAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result);
@@ -1234,7 +1234,7 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.IsJetStreamEnabled()).Returns(testPtr);
 
         // Act
-        var result = await _controller.IsJetStreamEnabledAsync();
+        var result = await _controller.IsJetStreamEnabledAsync(TestContext.Current.CancellationToken);
 
         // Assert
         Assert.False(result);
@@ -1252,7 +1252,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.IsJetStreamEnabledAsync());
+            () => _controller.IsJetStreamEnabledAsync(TestContext.Current.CancellationToken));
 
         _mockBindings.Verify(b => b.FreeString(testPtr), Times.Once);
     }
@@ -1264,7 +1264,7 @@ public class NatsControllerMonitoringTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _controller.IsJetStreamEnabledAsync());
+            () => _controller.IsJetStreamEnabledAsync(TestContext.Current.CancellationToken));
 
         _mockBindings.Verify(b => b.IsJetStreamEnabled(), Times.Never);
     }
@@ -1281,8 +1281,8 @@ public class NatsControllerMonitoringTests : IDisposable
         _mockBindings.Setup(b => b.IsJetStreamEnabled()).Returns(jsPtr);
 
         // Act
-        await _controller.WaitForReadyAsync();
-        await _controller.IsJetStreamEnabledAsync();
+        await _controller.WaitForReadyAsync(cancellationToken: TestContext.Current.CancellationToken);
+        await _controller.IsJetStreamEnabledAsync(TestContext.Current.CancellationToken);
 
         // Assert - FreeString should be called for each method
         _mockBindings.Verify(b => b.FreeString(readyPtr), Times.Once);

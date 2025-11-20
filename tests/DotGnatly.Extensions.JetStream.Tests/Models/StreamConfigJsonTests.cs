@@ -291,7 +291,7 @@ public class StreamConfigJsonTests
             ""storage"": ""file""
         }";
         var tempFile = Path.GetTempFileName();
-        await File.WriteAllTextAsync(tempFile, json);
+        await File.WriteAllTextAsync(tempFile, json, TestContext.Current.CancellationToken);
 
         try
         {
@@ -331,8 +331,8 @@ public class StreamConfigJsonTests
         var json1 = @"{""name"": ""STREAM1"", ""subjects"": [""stream1.*""]}";
         var json2 = @"{""name"": ""STREAM2"", ""subjects"": [""stream2.*""]}";
 
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream1.json"), json1);
-        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream2.json"), json2);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream1.json"), json1, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(tempDir, "stream2.json"), json2, TestContext.Current.CancellationToken);
 
         try
         {
