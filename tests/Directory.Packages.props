@@ -9,12 +9,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Build and analysis tools -->
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="[8.0.0]" />
-		<PackageVersion Include="Mister.Version" Version="[2.2.0]" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<!-- Testing packages -->
 		<PackageVersion Include="coverlet.collector" Version="6.0.4" />
 		<PackageVersion Include="coverlet.msbuild" Version="6.0.4" />

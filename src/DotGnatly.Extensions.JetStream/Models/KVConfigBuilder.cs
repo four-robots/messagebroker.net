@@ -112,7 +112,7 @@ public class KVConfigBuilder
         {
             Description = _description,
             History = _maxHistoryPerKey,
-            Ttl = _ttl,
+            LimitMarkerTTL = _ttl,
             MaxBytes = _maxBucketSize,
             NumberOfReplicas = _replicas,
             Storage = _storage

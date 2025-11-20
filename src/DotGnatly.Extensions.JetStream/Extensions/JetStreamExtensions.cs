@@ -126,7 +126,7 @@ public static class JetStreamExtensions
         // Create the stream
         var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
 
-        return await stream.GetInfoAsync(cancellationToken);
+        return stream.Info;
     }
 
     /// <summary>
@@ -153,9 +153,9 @@ public static class JetStreamExtensions
         }
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var stream = await context.JetStream.GetStreamAsync(streamName, cancellationToken);
+        var stream = await context.JetStream.GetStreamAsync(streamName, cancellationToken: cancellationToken);
 
-        return await stream.GetInfoAsync(cancellationToken);
+        return stream.Info;
     }
 
     /// <summary>
@@ -252,7 +252,7 @@ public static class JetStreamExtensions
         // Update the stream
         var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
 
-        return await stream.GetInfoAsync(cancellationToken);
+        return stream.Info;
     }
 
     /// <summary>
@@ -279,9 +279,9 @@ public static class JetStreamExtensions
         }
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var stream = await context.JetStream.GetStreamAsync(streamName, cancellationToken);
+        var stream = await context.JetStream.GetStreamAsync(streamName, cancellationToken: cancellationToken);
 
-        return await stream.PurgeAsync(cancellationToken: cancellationToken);
+        return await stream.PurgeAsync(new StreamPurgeRequest(), cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -314,7 +314,7 @@ public static class JetStreamExtensions
         var streamConfig = builder.Build();
         var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
 
-        return await stream.GetInfoAsync(cancellationToken);
+        return stream.Info;
     }
 
     /// <summary>
@@ -348,7 +348,7 @@ public static class JetStreamExtensions
         var streamConfig = builder.Build();
         var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
 
-        return await stream.GetInfoAsync(cancellationToken);
+        return stream.Info;
     }
 
     /// <summary>
@@ -387,7 +387,7 @@ public static class JetStreamExtensions
             var builder = configJson.ToBuilder();
             var streamConfig = builder.Build();
             var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
-            var info = await stream.GetInfoAsync(cancellationToken);
+            var info = stream.Info;
             streamInfos.Add(info);
         }
 
@@ -425,6 +425,6 @@ public static class JetStreamExtensions
         var streamConfig = builder.Build();
         var stream = await context.JetStream.CreateStreamAsync(streamConfig, cancellationToken);
 
-        return await stream.GetInfoAsync(cancellationToken);
+        return stream.Info;
     }
 }

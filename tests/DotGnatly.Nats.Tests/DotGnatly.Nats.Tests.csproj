@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\DotGnatly.Core\DotGnatly.Core.csproj" />
+		<ProjectReference Include="..\..\src\DotGnatly.Nats\DotGnatly.Nats.csproj" />
+	</ItemGroup>
+
+</Project>

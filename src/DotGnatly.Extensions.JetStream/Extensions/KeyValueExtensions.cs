@@ -49,7 +49,7 @@ public static class KeyValueExtensions
         var kvConfig = builder.Build();
 
         // Create KV context
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
 
         // Create the KV store
         return await kvContext.CreateStoreAsync(kvConfig, cancellationToken);
@@ -79,7 +79,7 @@ public static class KeyValueExtensions
         }
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
 
         return await kvContext.GetStoreAsync(bucket, cancellationToken);
     }
@@ -101,10 +101,10 @@ public static class KeyValueExtensions
         }
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
 
         var buckets = new List<string>();
-        await foreach (var bucket in kvContext.ListStoreNamesAsync(cancellationToken: cancellationToken))
+        await foreach (var bucket in kvContext.GetBucketNamesAsync(cancellationToken: cancellationToken))
         {
             buckets.Add(bucket);
         }
@@ -136,7 +136,7 @@ public static class KeyValueExtensions
         }
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
 
         return await kvContext.DeleteStoreAsync(bucket, cancellationToken);
     }
@@ -165,38 +165,10 @@ public static class KeyValueExtensions
         }
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
 
-        return await kvContext.GetStatusAsync(bucket, cancellationToken);
-    }
-
-    /// <summary>
-    /// Purges all keys from a Key-Value store while keeping the bucket.
-    /// </summary>
-    /// <param name="controller">The NatsController instance.</param>
-    /// <param name="bucket">The name of the KV bucket to purge.</param>
-    /// <param name="cancellationToken">Token to cancel the operation.</param>
-    /// <returns>True if the bucket was purged successfully.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when controller or bucket is null.</exception>
-    public static async Task<bool> PurgeKeyValueAsync(
-        this NatsController controller,
-        string bucket,
-        CancellationToken cancellationToken = default)
-    {
-        if (controller == null)
-        {
-            throw new ArgumentNullException(nameof(controller));
-        }
-
-        if (string.IsNullOrWhiteSpace(bucket))
-        {
-            throw new ArgumentNullException(nameof(bucket));
-        }
-
-        await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
-
-        return await kvContext.PurgeStoreAsync(bucket, cancellationToken);
+        var store = await kvContext.GetStoreAsync(bucket, cancellationToken);
+        return await store.GetStatusAsync(cancellationToken);
     }
 
     /// <summary>
@@ -237,7 +209,7 @@ public static class KeyValueExtensions
         var kvConfig = builder.Build();
 
         // Create KV context
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
 
         // Update the KV store
         return await kvContext.UpdateStoreAsync(kvConfig, cancellationToken);
@@ -270,7 +242,7 @@ public static class KeyValueExtensions
         var builder = configJson.ToBuilder();
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
         var kvConfig = builder.Build();
 
         return await kvContext.CreateStoreAsync(kvConfig, cancellationToken);
@@ -304,7 +276,7 @@ public static class KeyValueExtensions
         var builder = configJson.ToBuilder();
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
         var kvConfig = builder.Build();
 
         return await kvContext.CreateStoreAsync(kvConfig, cancellationToken);
@@ -340,7 +312,7 @@ public static class KeyValueExtensions
         var stores = new List<INatsKVStore>();
 
         await using var context = await controller.GetJetStreamContextAsync(cancellationToken);
-        var kvContext = new NatsKVContext(context.Connection);
+        var kvContext = new NatsKVContext(context.JetStream);
 
         foreach (var configJson in configs)
         {

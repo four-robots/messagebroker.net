@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\DotGnatly.Extensions.JetStream\DotGnatly.Extensions.JetStream.csproj" />
+		<ProjectReference Include="..\..\src\DotGnatly.Core\DotGnatly.Core.csproj" />
+		<ProjectReference Include="..\..\src\DotGnatly.Nats\DotGnatly.Nats.csproj" />
+		<ProjectReference Include="..\..\src\DotGnatly.Natives\DotGnatly.Natives.csproj" />
+	</ItemGroup>
+
+</Project>

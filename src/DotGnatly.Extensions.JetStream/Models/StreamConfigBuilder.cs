@@ -244,10 +244,10 @@ public class StreamConfigBuilder
 
         if (!string.IsNullOrWhiteSpace(externalApi) || !string.IsNullOrWhiteSpace(externalDeliver))
         {
-            source.External = new External
+            source.External = new ExternalStreamSource
             {
-                ApiPrefix = externalApi ?? string.Empty,
-                DeliverPrefix = externalDeliver ?? string.Empty
+                Api = externalApi ?? string.Empty,
+                Deliver = externalDeliver ?? string.Empty
             };
         }
 
@@ -323,7 +323,7 @@ public class StreamConfigBuilder
             Subjects = _subjects,
             Retention = _retention,
             Storage = _storage,
-            Replicas = _replicas,
+            NumReplicas = _replicas,
             MaxMsgs = _maxMsgs,
             MaxBytes = _maxBytes,
             MaxAge = _maxAge,
@@ -341,7 +341,7 @@ public class StreamConfigBuilder
             Sealed = _sealed,
             DenyDelete = _denyDelete,
             DenyPurge = _denyPurge,
-            AllowRollup = _allowRollup,
+            AllowRollupHdrs = _allowRollup,
             AllowDirect = _allowDirect
         };
     }

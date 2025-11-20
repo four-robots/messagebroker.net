@@ -42,15 +42,8 @@
 		<PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(IsTestProject)'!='true'">
-		<PackageReference Include="Mister.Version" PrivateAssets="All" />		
-	</ItemGroup>	
-
-	<ItemGroup Condition="'$(IsTestProject)'=='true'">
-		<PackageReference Include="coverlet.collector" />
-		<PackageReference Include="coverlet.msbuild" />
-		<!-- this library does not support MTP -->
-		<!-- <PackageReference Include="GitHubActionsTestLogger" /> -->
+	<ItemGroup>
+		<PackageReference Include="Mister.Version" PrivateAssets="All" />
 	</ItemGroup>
 
 	<!-- Include icon.png in the package -->
