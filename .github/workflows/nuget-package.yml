@@ -1,6 +1,10 @@
 name: NuGet Package
 
 on:
+  push:
+    branches:
+      - main
+      - develop
   release:
     types: [published, created]
   workflow_dispatch:
@@ -10,16 +14,66 @@ on:
         required: false
         default: false
         type: boolean
+      prerelease-type:
+        description: 'Prerelease type'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - alpha
+          - beta
+          - rc
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
+  calculate-version:
+    name: Calculate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.calculate.outputs.version }}
+      major: ${{ steps.calculate.outputs.major }}
+      minor: ${{ steps.calculate.outputs.minor }}
+      patch: ${{ steps.calculate.outputs.patch }}
+      has-changes: ${{ steps.calculate.outputs.has-changes }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Required for Mr-Version to analyze git history
+
+    - name: Setup Mr-Version
+      uses: mr-version/setup@v1
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Calculate version
+      id: calculate
+      uses: mr-version/calculate@v1
+      with:
+        projects: 'src/**/*.csproj'
+        prerelease-type: ${{ github.event.inputs.prerelease-type || 'none' }}
+        tag-prefix: 'v'
+        update-project-properties: false
+
+    - name: Display version info
+      run: |
+        echo "## Version Information" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version**: ${{ steps.calculate.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Major**: ${{ steps.calculate.outputs.major }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Minor**: ${{ steps.calculate.outputs.minor }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Patch**: ${{ steps.calculate.outputs.patch }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Has Changes**: ${{ steps.calculate.outputs.has-changes }}" >> $GITHUB_STEP_SUMMARY
+
   build-native-bindings:
     name: Build Native Bindings on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -68,7 +122,7 @@ jobs:
   package:
     name: Package NuGet
     runs-on: ubuntu-latest
-    needs: build-native-bindings
+    needs: [calculate-version, build-native-bindings]
 
     steps:
     - name: Checkout code
@@ -112,7 +166,7 @@ jobs:
       run: dotnet restore DotGnatly.sln
 
     - name: Build solution
-      run: dotnet build DotGnatly.sln --configuration Release --no-restore
+      run: dotnet build DotGnatly.sln --configuration Release --no-restore /p:Version=${{ needs.calculate-version.outputs.version }}
 
     - name: Create NuGet packages directory
       run: mkdir -p ./nupkg
@@ -237,3 +291,45 @@ jobs:
           echo "### 📦 Packages Available as Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "Packages not published to NuGet.org" >> $GITHUB_STEP_SUMMARY
         fi
+
+  tag-version:
+    name: Tag Repository
+    runs-on: ubuntu-latest
+    needs: [calculate-version, package]
+    if: |
+      (github.event_name == 'release' && !github.event.release.prerelease) ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish) ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'))
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Mr-Version
+      uses: mr-version/setup@v1
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Create and push tags
+      id: tag
+      uses: mr-version/tag@v1
+      with:
+        projects: 'src/**/*.csproj'
+        tag-prefix: 'v'
+        create-global-tags: true
+        global-tag-strategy: 'all'
+        only-changed: false
+
+    - name: Display tag summary
+      run: |
+        echo "## ✅ Version Tags Created" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Tags Count**: ${{ steps.tag.outputs.tags-count }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Tags:" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo '${{ steps.tag.outputs.tags-created }}' | jq -r '.[]' >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
