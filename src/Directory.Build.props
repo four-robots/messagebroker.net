@@ -1,7 +1,8 @@
 <Project>
   <PropertyGroup>
     <!-- Shared Package Properties -->
-    <Version>1.0.0</Version>
+    <!-- Version is managed by Mr-Version (mr-version.yml) -->
+    <Version Condition="'$(Version)' == ''">0.1.0</Version>
     <Authors>DotGnatly Contributors</Authors>
     <Company>DotGnatly</Company>
     <Copyright>Copyright (c) 2024 DotGnatly Contributors</Copyright>
