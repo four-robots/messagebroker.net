@@ -14,12 +14,6 @@
         "resolved": "6.0.4",
         "contentHash": "Qa7Hg+wrOMDKpXVn2dw4Wlun490bIWsFW0fdNJQFJLZnbU27MCP0HJ2mPgS+3EQBQUb0zKlkwiQzP+j38Hc3Iw=="
       },
-      "GitHubActionsTestLogger": {
-        "type": "Direct",
-        "requested": "[3.0.0-alpha1, )",
-        "resolved": "3.0.0-alpha1",
-        "contentHash": "nh9hZgpyznm2ctsMv1R1O17aPuDVVWunv8vM/F6eI+ov+KGgxt8HCZpzJKLixcmrCag9KTxyo6rZcfLxuOP7ag=="
-      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Direct",
         "requested": "[18.0.1, )",
@@ -29,12 +23,6 @@
           "Microsoft.CodeCoverage": "18.0.1",
           "Microsoft.TestPlatform.TestHost": "18.0.1"
         }
-      },
-      "Microsoft.Testing.Platform": {
-        "type": "Direct",
-        "requested": "[2.0.2, )",
-        "resolved": "2.0.2",
-        "contentHash": "43NCOTEENtdc9fmlzX9KHQR14AZEYek5r4jOJlWPhTyV1+aYAQYl4x773nYXU5TKxV6+rMuniJ7wcj9C9qrP1A=="
       },
       "Moq": {
         "type": "Direct",
@@ -51,13 +39,15 @@
         "resolved": "3.1.5",
         "contentHash": "tKi7dSTwP4m5m9eXPM2Ime4Kn7xNf4x4zT9sdLO/G4hZVnQCRiMTWoSZqI/pYTVeI27oPPqHBKYI/DjJ9GsYgA=="
       },
-      "xunit.v3": {
+      "xunit.v3.mtp-v2": {
         "type": "Direct",
         "requested": "[3.2.0, )",
         "resolved": "3.2.0",
-        "contentHash": "ABdobDsBRs0JV+Ux6t0sM26noKFVbCkGOvU/x/YeShjI4aYH+thZeOGg8k5etju+5Ud4BZfzQEtVfvnAx8G2cg==",
+        "contentHash": "oJ1rQAOSq/kkjj5gGu/gPvVlqK6oiscysikZSgwJVh8U+iiMbJcRb50b/vno/B3S4NS+bdg2VUAWdWU5DA2O9g==",
         "dependencies": {
-          "xunit.v3.mtp-v1": "[3.2.0]"
+          "xunit.analyzers": "1.25.0",
+          "xunit.v3.assert": "[3.2.0]",
+          "xunit.v3.core.mtp-v2": "[3.2.0]"
         }
       },
       "Castle.Core": {
@@ -149,27 +139,27 @@
       },
       "Microsoft.Testing.Extensions.Telemetry": {
         "type": "Transitive",
-        "resolved": "1.9.0",
-        "contentHash": "4ica7o+ZreUCsXoQLShWeLz6K5q9D/B+VgXvmpPSLsnSpK4DLZfMyltBaBr83Tnm21c1riOKcXXEk920Ael17Q==",
+        "resolved": "2.0.1",
+        "contentHash": "qfzQF/XSjjtcir+wEPdVOIaseQqTqucNWO3uw+dbSflpIC9y9+o+Kq8+Xi0O9AGxukgMz/r4QTdNEK2FauYSCA==",
         "dependencies": {
           "Microsoft.ApplicationInsights": "2.23.0",
-          "Microsoft.Testing.Platform": "1.9.0"
+          "Microsoft.Testing.Platform": "2.0.1"
         }
       },
       "Microsoft.Testing.Extensions.TrxReport.Abstractions": {
         "type": "Transitive",
-        "resolved": "1.9.0",
-        "contentHash": "ZC7Xwva/+dREnZ5BU0gozA1uT2cFwt90uY9maPLy1lLpiedR/Fu3K2FiwLg70hJjT+tGblYmxzuNa8z1jQVSGw==",
+        "resolved": "2.0.1",
+        "contentHash": "GCyRVLdFiOlGkgZItt2kHJRn/NY9zhEF5EQwjFCOl6fwr+uSy0KtwwGHF5uERevjEEBTqRbj4wwrraAqRyq1Zw==",
         "dependencies": {
-          "Microsoft.Testing.Platform": "1.9.0"
+          "Microsoft.Testing.Platform": "2.0.1"
         }
       },
       "Microsoft.Testing.Platform.MSBuild": {
         "type": "Transitive",
-        "resolved": "1.9.0",
-        "contentHash": "P7c0HfBJ/AqKyRfmaA+cyl8I9jxDEyvQRJvMUH5IZCjACTPQ9wXb0xdA0CmcxhBUtm20GxWvx2fq3fMxG11hDg==",
+        "resolved": "2.0.1",
+        "contentHash": "zI8svKM2d1wAu20u+cMRo13oJv4uyPcCmVZixvKk+W34d1F7hH2msEzyQ4zv3NEliE60JMM9cdDxWcA3yU2oAA==",
         "dependencies": {
-          "Microsoft.Testing.Platform": "1.9.0"
+          "Microsoft.Testing.Platform": "2.0.1"
         }
       },
       "Microsoft.TestPlatform.ObjectModel": {
@@ -286,15 +276,15 @@
           "Microsoft.Bcl.AsyncInterfaces": "6.0.0"
         }
       },
-      "xunit.v3.core.mtp-v1": {
+      "xunit.v3.core.mtp-v2": {
         "type": "Transitive",
         "resolved": "3.2.0",
-        "contentHash": "0B+nZqJXl6BGTXT6kOf4LOnH5qxDvrufctNTjlxjXne4SqYybhCnfYpWRLy9NJ/0JkELyVlap8YK7HH+x/sHeQ==",
+        "contentHash": "uSqUqbZEUkaMRI9wNuFrocYO+ZGzYaDhHrSCVi6dKZF9M7YveOJky8l1cGX51OJ2+TKTZtBjrHfiJ4QKJ8wEzA==",
         "dependencies": {
-          "Microsoft.Testing.Extensions.Telemetry": "1.9.0",
-          "Microsoft.Testing.Extensions.TrxReport.Abstractions": "1.9.0",
-          "Microsoft.Testing.Platform": "1.9.0",
-          "Microsoft.Testing.Platform.MSBuild": "1.9.0",
+          "Microsoft.Testing.Extensions.Telemetry": "2.0.1",
+          "Microsoft.Testing.Extensions.TrxReport.Abstractions": "2.0.1",
+          "Microsoft.Testing.Platform": "2.0.1",
+          "Microsoft.Testing.Platform.MSBuild": "2.0.1",
           "xunit.v3.extensibility.core": "[3.2.0]",
           "xunit.v3.runner.inproc.console": "[3.2.0]"
         }
@@ -305,16 +295,6 @@
         "contentHash": "89MWZ5gXT6VJ/qe9OCASBsaenFr00UCccFbkJxzkOsrAkoFjJSDJ+5xqXpZUxTBGJ4Gw91bJ4bwW9Fag0b8xhw==",
         "dependencies": {
           "xunit.v3.common": "[3.2.0]"
-        }
-      },
-      "xunit.v3.mtp-v1": {
-        "type": "Transitive",
-        "resolved": "3.2.0",
-        "contentHash": "Rg5djTBTao7QUEK28EXeacjwC6LnU/NunlJzYrNkhtOgggpueYzGDfmyKu5hDbAEXhAl6vjrzfcCnhZyX8Q+DA==",
-        "dependencies": {
-          "xunit.analyzers": "1.25.0",
-          "xunit.v3.assert": "[3.2.0]",
-          "xunit.v3.core.mtp-v1": "[3.2.0]"
         }
       },
       "xunit.v3.runner.common": {
@@ -341,8 +321,8 @@
       "dotgnatly.extensions.jetstream": {
         "type": "Project",
         "dependencies": {
-          "DotGnatly.Core": "[0.1.0, )",
-          "DotGnatly.Nats": "[0.1.0, )",
+          "DotGnatly.Core": "[1.0.0, )",
+          "DotGnatly.Nats": "[1.0.0, )",
           "NATS.Net": "[2.6.11, )"
         }
       },
@@ -352,9 +332,15 @@
       "dotgnatly.nats": {
         "type": "Project",
         "dependencies": {
-          "DotGnatly.Core": "[0.1.0, )",
-          "DotGnatly.Natives": "[0.1.0, )"
+          "DotGnatly.Core": "[1.0.0, )",
+          "DotGnatly.Natives": "[1.0.0, )"
         }
+      },
+      "Microsoft.Testing.Platform": {
+        "type": "CentralTransitive",
+        "requested": "[2.0.2, )",
+        "resolved": "2.0.2",
+        "contentHash": "43NCOTEENtdc9fmlzX9KHQR14AZEYek5r4jOJlWPhTyV1+aYAQYl4x773nYXU5TKxV6+rMuniJ7wcj9C9qrP1A=="
       },
       "NATS.Net": {
         "type": "CentralTransitive",

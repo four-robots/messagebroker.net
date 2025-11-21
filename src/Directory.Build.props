@@ -43,7 +43,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Mister.Version" PrivateAssets="All" />
+		<!--<PackageReference Include="Mister.Version" PrivateAssets="All" />-->
 	</ItemGroup>
 
 	<!-- Include icon.png in the package -->

@@ -2,12 +2,6 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
-      "Mister.Version": {
-        "type": "Direct",
-        "requested": "[2.2.0, 2.2.0]",
-        "resolved": "2.2.0",
-        "contentHash": "fJawAe0mcKaPlZeMTpuVVkd4E53f8sN099IX8gS5A14aGRAj++HrQfRFRZB9X9YVzXGgjaoO/oSPcVZD1+Cp7Q=="
-      },
       "NATS.Net": {
         "type": "Direct",
         "requested": "[2.6.11, )",
@@ -164,18 +158,12 @@
       "dotgnatly.nats": {
         "type": "Project",
         "dependencies": {
-          "DotGnatly.Core": "[1.0.0, )",
-          "DotGnatly.Natives": "[1.0.0, )"
+          "DotGnatly.Core": "[0.1.0, )",
+          "DotGnatly.Natives": "[0.1.0, )"
         }
       }
     },
     "net8.0": {
-      "Mister.Version": {
-        "type": "Direct",
-        "requested": "[2.2.0, 2.2.0]",
-        "resolved": "2.2.0",
-        "contentHash": "fJawAe0mcKaPlZeMTpuVVkd4E53f8sN099IX8gS5A14aGRAj++HrQfRFRZB9X9YVzXGgjaoO/oSPcVZD1+Cp7Q=="
-      },
       "NATS.Net": {
         "type": "Direct",
         "requested": "[2.6.11, )",
@@ -338,18 +326,12 @@
       "dotgnatly.nats": {
         "type": "Project",
         "dependencies": {
-          "DotGnatly.Core": "[1.0.0, )",
-          "DotGnatly.Natives": "[1.0.0, )"
+          "DotGnatly.Core": "[0.1.0, )",
+          "DotGnatly.Natives": "[0.1.0, )"
         }
       }
     },
     "net9.0": {
-      "Mister.Version": {
-        "type": "Direct",
-        "requested": "[2.2.0, 2.2.0]",
-        "resolved": "2.2.0",
-        "contentHash": "fJawAe0mcKaPlZeMTpuVVkd4E53f8sN099IX8gS5A14aGRAj++HrQfRFRZB9X9YVzXGgjaoO/oSPcVZD1+Cp7Q=="
-      },
       "NATS.Net": {
         "type": "Direct",
         "requested": "[2.6.11, )",
@@ -506,8 +488,8 @@
       "dotgnatly.nats": {
         "type": "Project",
         "dependencies": {
-          "DotGnatly.Core": "[1.0.0, )",
-          "DotGnatly.Natives": "[1.0.0, )"
+          "DotGnatly.Core": "[0.1.0, )",
+          "DotGnatly.Natives": "[0.1.0, )"
         }
       }
     }
